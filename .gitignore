@@ -10,10 +10,19 @@ Thumbs.db
 # Dependencies
 node_modules/
 
-# Build artifacts (QUAN TRỌNG: Không push các file đã nén lên GitHub)
+# --- Build artifacts & External Libraries ---
 static/css/*.min.css
 static/js/*.min.js
 static/css/tailwind.css
+
+# Plyr and Prism
+static/css/plyr.css
+static/css/prism.css
+static/js/plyr.polyfilled.js
+static/js/prism.js
+# AlpineJS
+static/js/alpine.min.js
+static/js/alpine-collapse.min.js
 
 # Logs
 *.log
