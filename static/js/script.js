@@ -198,6 +198,31 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 console.error("Fetch users error", e);
             }
         },
+        async fetchActiveTasks() {
+            try {
+                const res = await fetch('/api/tasks');
+                const data = await res.json();
+                if (res.ok && data.tasks) {
+                    for (const [id, task] of Object.entries(data.tasks)) {
+                        if (!this.uploadQueue.some(t => t.id === id)) {
+                            // Don't restore finished tasks to keep UI clean
+                            if (task.status === 'done' || task.status === 'error') continue;
+                            
+                            this.uploadQueue.push({
+                                id: id,
+                                name: task.filename || 'File',
+                                progress: task.percent,
+                                statusText: task.status,
+                                hasError: task.status === 'error',
+                                isCancelled: false
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Fetch tasks error", e);
+            }
+        },
         async fetchChildAPIKey() {
             try {
                 const res = await fetch('/api/settings/child-api-key');
@@ -470,6 +495,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 this.checkUpdate();
                 this.initWebSocket();
                 this.fetchPasskeys();
+                this.fetchActiveTasks();
                 
                 if (!this.isAdmin) {
                     this.fetchChildAPIKey();
