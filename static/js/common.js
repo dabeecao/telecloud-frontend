@@ -162,6 +162,7 @@ const TeleCloud = {
             err_failed_to_write_chunk: 'Lỗi ghi mảnh dữ liệu!',
             err_tg_msgid: 'Không lấy được ID tin nhắn từ Telegram!',
             setup_confirm_password: 'Xác nhận mật khẩu',
+            err_admin_disabled: 'Admin chưa cho phép bật tính năng này cho các tài khoản con!',
             // share.html specific
             preparing_file: 'Đang chuẩn bị file...',
             wait_tg: 'Kết nối máy chủ Telegram, vui lòng đợi',
@@ -193,6 +194,10 @@ const TeleCloud = {
             api_key_delete_title: 'Xóa API Key',
             api_key_delete_msg: 'Bạn có chắc muốn xóa API Key? Các tích hợp đang sử dụng key này sẽ bị mất quyền truy cập.',
             api_toggle_error: 'Không thể thay đổi trạng thái Upload API!',
+            global_settings: 'Cài đặt hệ thống (Toàn cục)',
+            personal_settings: 'Cài đặt cá nhân',
+            admin_toggle_note: 'Bạn đang quản lý cài đặt cho toàn bộ hệ thống.',
+            child_toggle_note: 'Cài đặt này chỉ áp dụng riêng cho tài khoản của bạn.',
             upload_api_doc_title: 'Tài liệu API',
             upload_api_show_key: 'Hiển thị key',
             upload_api_hide_key: 'Ẩn key',
@@ -220,16 +225,26 @@ const TeleCloud = {
             create_child_account: 'Tạo tài khoản con',
             delete_user_confirm_title: 'Xóa tài khoản',
             delete_user_confirm_msg: 'Bạn có chắc chắn muốn xóa tài khoản {u}? Thư mục của họ vẫn sẽ được giữ lại.',
-            toast_user_created: 'Đã tạo tài khoản thành công!',
+            toast_user_created: 'Đã tạo tài khoản thành công! Mật khẩu mặc định là abc123',
             toast_user_deleted: 'Đã xóa tài khoản!',
-            no_child_accounts: 'Chưa có tài khoản con nào.'
+            toast_password_reset: 'Đã reset mật khẩu tài khoản {u} về mặc định (abc123)!',
+            no_child_accounts: 'Chưa có tài khoản con nào.',
+            reset_admin_title: 'Đặt lại mật khẩu Admin',
+            reset_admin_desc: 'Vui lòng thiết lập mật khẩu mới cho tài khoản quản trị.',
+            invalid_token: 'Mã xác thực không hợp lệ hoặc đã hết hạn.',
+            reset_failed: 'Đặt lại mật khẩu thất bại.',
+            reset_error: 'Đã có lỗi xảy ra khi đặt lại mật khẩu.',
+            reset_password: 'Reset mật khẩu',
+            reset_password_confirm_title: 'Reset mật khẩu',
+            reset_password_confirm_msg: 'Bạn có chắc chắn muốn reset mật khẩu của {u} về mặc định (abc123)? Người dùng sẽ phải đổi mật khẩu mới ở lần đăng nhập tiếp theo.',
+            force_password_change_title: 'Đổi mật khẩu lần đầu',
+            force_password_change_msg: 'Đây là lần đăng nhập đầu tiên hoặc mật khẩu của bạn vừa được reset. Vui lòng nhập mật khẩu mới để tiếp tục sử dụng hệ thống.'
         },
         en: {
             home: 'File Manager',
             upload: 'Upload',
             new_folder: 'New Folder',
             logout: 'Logout',
-            login: 'Login',
             refresh: 'Refresh',
             search_placeholder: 'Search files or folders...',
             empty_folder: 'This folder is empty',
@@ -379,6 +394,7 @@ const TeleCloud = {
             err_failed_to_write_chunk: 'Error writing data chunk!',
             err_tg_msgid: 'Failed to get MessageID from Telegram!',
             setup_confirm_password: 'Confirm Password',
+            err_admin_disabled: 'Admin has not enabled this feature for child accounts!',
             // share.html specific
             preparing_file: 'Preparing file...',
             wait_tg: 'Connecting to Telegram, please wait',
@@ -410,6 +426,10 @@ const TeleCloud = {
             api_key_delete_title: 'Delete API Key',
             api_key_delete_msg: 'Are you sure you want to delete the API Key? Integrations using this key will lose access.',
             api_toggle_error: 'Failed to change Upload API status!',
+            global_settings: 'System Settings (Global)',
+            personal_settings: 'Personal Settings',
+            admin_toggle_note: 'You are managing settings for the entire system.',
+            child_toggle_note: 'This setting only applies to your own account.',
             upload_api_doc_title: 'API Documentation',
             upload_api_show_key: 'Show key',
             upload_api_hide_key: 'Hide key',
@@ -437,9 +457,20 @@ const TeleCloud = {
             create_child_account: 'Create Child Account',
             delete_user_confirm_title: 'Delete Account',
             delete_user_confirm_msg: 'Are you sure you want to delete {u}? Their folder will remain.',
-            toast_user_created: 'Account created successfully!',
+            toast_user_created: 'Account created successfully! Default password is abc123',
             toast_user_deleted: 'Account deleted!',
-            no_child_accounts: 'No child accounts.'
+            toast_password_reset: 'Reset password for {u} to default (abc123)!',
+            no_child_accounts: 'No child accounts.',
+            reset_admin_title: 'Reset Admin Password',
+            reset_admin_desc: 'Please set a new password for your administrator account.',
+            invalid_token: 'Invalid or expired reset token.',
+            reset_failed: 'Reset failed.',
+            reset_error: 'An error occurred during password reset.',
+            reset_password: 'Reset Password',
+            reset_password_confirm_title: 'Reset Password',
+            reset_password_confirm_msg: 'Are you sure you want to reset password for {u} to default (abc123)? User will be forced to change password on next login.',
+            force_password_change_title: 'First Login Password Change',
+            force_password_change_msg: 'This is your first login or your password has been reset. Please set a new password to continue.'
         }
     },
 
@@ -491,7 +522,15 @@ const TeleCloud = {
 
     parseMarkdown(text) {
         if (!text) return '';
-        return text
+        // Security: Escape HTML special characters before processing markdown
+        const escapedText = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        return escapedText
             .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold mt-3 mb-1">$1</h3>')
             .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold mt-4 mb-2">$1</h2>')
             .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold mt-5 mb-2">$1</h1>')

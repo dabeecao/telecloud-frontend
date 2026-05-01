@@ -1,4 +1,4 @@
-function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '') {
+function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true) {
     return {
         isLoggedIn: initialIsLoggedIn,
         maxUploadSizeMB: initialMaxUploadSizeMB,
@@ -9,7 +9,11 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
         webdavPassword: webdavPassword,
         uploadAPIEnabled: uploadAPIEnabled,
         uploadAPIKey: uploadAPIKey,
+        globalWebdavEnabled: globalWebdavEnabled,
+        globalAPIEnabled: globalAPIEnabled,
         showAPIKey: false,
+        childAPIKey: '',
+        showChildAPIKey: false,
         currentTab: 'files',
         viewMode: localStorage.getItem('viewMode') || 'list',
         toggleViewMode() {
@@ -28,6 +32,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
         users: [],
         userForm: { username: '', password: '' },
         isCreatingUser: false,
+        isLoggingIn: false,
         isLoading: false, 
         isRefreshing: false,
         isPreparingDownload: false,
@@ -39,6 +44,31 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
             const errorKey = 'err_' + errorStr.toLowerCase().replace(/ /g, '_');
             const translated = this.t(errorKey);
             return (translated !== errorKey) ? translated : (this.t(defaultKey) + ' (' + errorStr + ')');
+        },
+        async resetAdmin() {
+            if (this.password !== this.confirmPassword) {
+                this.showToast(this.t('toast_pass_mismatch'), 'error');
+                return;
+            }
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            if (!token) {
+                this.showToast(this.t('invalid_token'), 'error');
+                return;
+            }
+            let fd = new FormData();
+            fd.append('token', token);
+            fd.append('password', this.password);
+            try {
+                let res = await fetch('/reset-admin', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) window.location.href = '/login';
+                else {
+                    let d = await res.json();
+                    this.showToast(this.handleCommonError(d.error, 'reset_failed'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('reset_error'), 'error');
+            }
         },
         async setupAdmin() {
             if (this.password !== this.confirmPassword) {
@@ -84,12 +114,18 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
             let newState = !this.webdavEnabled;
             let fd = new FormData();
             fd.append('enabled', newState);
+            let url = this.isAdmin ? '/api/settings/webdav' : '/api/settings/child-webdav';
             try {
-                let res = await fetch('/api/settings/webdav', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                let res = await fetch(url, { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
                 if (res.ok) {
                     this.webdavEnabled = newState;
                 } else {
-                    this.showToast(this.t('webdav_toggle_error'), 'error');
+                    let d = await res.json();
+                    if (d.error === 'ADMIN_DISABLED') {
+                        this.showToast(this.t('err_admin_disabled'), 'error');
+                    } else {
+                        this.showToast(this.t('webdav_toggle_error'), 'error');
+                    }
                 }
             } catch(e) {
                 this.showToast(this.t('status_error'), 'error');
@@ -99,16 +135,22 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
             let newState = !this.uploadAPIEnabled;
             let fd = new FormData();
             fd.append('enabled', newState);
+            let url = this.isAdmin ? '/api/settings/upload-api' : '/api/settings/child-api';
             try {
-                let res = await fetch('/api/settings/upload-api', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                let res = await fetch(url, { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
                 if (res.ok) {
                     this.uploadAPIEnabled = newState;
                     // Auto-generate a key if enabling and no key exists
-                    if (newState && !this.uploadAPIKey) {
-                        await this.regenerateAPIKey();
+                    if (newState && (this.isAdmin ? !this.uploadAPIKey : !this.childAPIKey)) {
+                        this.isAdmin ? await this.regenerateAPIKey() : await this.regenerateChildAPIKey();
                     }
                 } else {
-                    this.showToast(this.t('api_toggle_error'), 'error');
+                    let d = await res.json();
+                    if (d.error === 'ADMIN_DISABLED') {
+                        this.showToast(this.t('err_admin_disabled'), 'error');
+                    } else {
+                        this.showToast(this.t('api_toggle_error'), 'error');
+                    }
                 }
             } catch(e) {
                 this.showToast(this.t('status_error'), 'error');
@@ -154,16 +196,55 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 console.error("Fetch users error", e);
             }
         },
+        async fetchChildAPIKey() {
+            try {
+                const res = await fetch('/api/settings/child-api-key');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.childAPIKey = data.api_key || '';
+                }
+            } catch (e) {
+                console.error("Fetch child API key error", e);
+            }
+        },
+        async regenerateChildAPIKey() {
+            try {
+                const res = await fetch('/api/settings/child-api-key', { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.childAPIKey = data.api_key;
+                    this.showChildAPIKey = true;
+                    this.showToast(this.t('api_key_regenerated'), 'success');
+                } else {
+                    this.showToast(this.t('api_toggle_error'), 'error');
+                }
+            } catch(e) {
+                this.showToast(this.t('status_error'), 'error');
+            }
+        },
+        async deleteChildAPIKey() {
+            const confirmed = await this.customConfirm(this.t('api_key_delete_title'), this.t('api_key_delete_msg'), true);
+            if (!confirmed) return;
+            try {
+                const res = await fetch('/api/settings/child-api-key', { method: 'DELETE', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    this.childAPIKey = '';
+                    this.showChildAPIKey = false;
+                    this.showToast(this.t('api_key_deleted'), 'success');
+                }
+            } catch(e) {
+                this.showToast(this.t('status_error'), 'error');
+            }
+        },
         async createUser() {
             this.isCreatingUser = true;
             try {
                 let fd = new FormData();
                 fd.append('username', this.userForm.username);
-                fd.append('password', this.userForm.password);
                 const res = await fetch('/api/users', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
                 if (res.ok) {
                     this.showToast(this.t('toast_user_created'), 'success');
-                    this.userForm = { username: '', password: '' };
+                    this.userForm = { username: '' };
                     this.fetchUsers();
                 } else {
                     const data = await res.json();
@@ -190,6 +271,21 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 this.showToast(this.t('conn_error'), 'error');
             }
         },
+        async resetUserPassword(username) {
+            const confirmed = await this.customConfirm(this.t('reset_password_confirm_title'), this.t('reset_password_confirm_msg', {u: username}), false);
+            if (!confirmed) return;
+            try {
+                const res = await fetch(`/api/users/${username}/reset-pass`, { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    this.showToast(this.t('toast_password_reset', {u: username}), 'success');
+                } else {
+                    this.showToast(this.t('status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            }
+        },
+
         toggleLang() { 
             this.lang = TeleCloud.toggleLang();
         },
@@ -340,7 +436,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
         toastTimeout: null,
         plyrInstance: null,
         fileInfoModal: { show: false, file: null, typeName: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
-        modal: { show: false, type: 'alert', title: '', message: '', input: '', resolve: null, isDanger: false },
+        modal: { show: false, type: 'alert', title: '', message: '', input: '', resolve: null, isDanger: false, inputType: 'text' },
         contextMenu: { show: false, x: 0, y: 0, file: null },
         init() { 
             if (this.isLoggedIn) {
@@ -348,6 +444,10 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 this.checkUpdate();
                 this.initWebSocket();
                 
+                if (!this.isAdmin) {
+                    this.fetchChildAPIKey();
+                }
+
                 // Add hasError to existing tasks if any (for persistence, though queue is currently memory-only)
                 this.uploadQueue.forEach(t => { if(t.hasError === undefined) t.hasError = false; });
             }
@@ -458,9 +558,9 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 this.ws.close();
             };
         },
-        showUIModal(type, title, message = '', defaultValue = '', isDanger = false) {
+        showUIModal(type, title, message = '', defaultValue = '', isDanger = false, inputType = 'text') {
             return new Promise((resolve) => {
-                this.modal = { show: true, type, title, message, input: defaultValue, resolve, isDanger };
+                this.modal = { show: true, type, title, message, input: defaultValue, resolve, isDanger, inputType };
                 if (type === 'prompt') {
                     setTimeout(() => { if (this.$refs.modalInput) this.$refs.modalInput.focus(); }, 100);
                 }
@@ -470,7 +570,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
             if (this.modal.resolve) this.modal.resolve(result);
             this.modal.show = false;
         },
-        async customPrompt(title, defaultValue = '') { return await this.showUIModal('prompt', title, '', defaultValue); },
+        async customPrompt(title, defaultValue = '', inputType = 'text') { return await this.showUIModal('prompt', title, '', defaultValue, false, inputType); },
         async customConfirm(title, message, isDanger = false) { return await this.showUIModal('confirm', title, message, '', isDanger); },
         async customAlert(title, message) { return await this.showUIModal('alert', title, message); },
         openContextMenu(e, file) {
@@ -485,17 +585,63 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
         },
         closeContextMenu() { this.contextMenu.show = false; },
         async login() {
-            const fd = new FormData(); 
-            fd.append('username', this.username);
-            fd.append('password', this.password);
-            const res = await fetch('/login', { method: 'POST', body: fd });
-            if (res.ok) { 
-                window.location.href = '/'; 
-            } else {
-                const data = await res.json();
-                this.showToast(this.handleCommonError(data.error, 'toast_login_fail'), 'error');
+            if (this.isLoggingIn) return;
+            this.isLoggingIn = true;
+            try {
+                const fd = new FormData(); 
+                fd.append('username', this.username);
+                fd.append('password', this.password);
+                const res = await fetch('/login', { method: 'POST', body: fd });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'force_password_change') {
+                        await this.customAlert(this.t('force_password_change_title'), this.t('force_password_change_msg'));
+                        const newPass = await this.customPrompt(this.t('new_password'), "", "password");
+                        if (!newPass) return;
+                        const confirmPass = await this.customPrompt(this.t('confirm_password'), "", "password");
+                        if (newPass !== confirmPass) {
+                            this.showToast(this.t('toast_pass_mismatch'), 'error');
+                            return;
+                        }
+                        
+                        // Call change password API
+                        let cfd = new FormData();
+                        cfd.append('old_password', this.password);
+                        cfd.append('new_password', newPass);
+                        let cres = await fetch('/api/settings/password', { 
+                            method: 'POST', 
+                            body: cfd, 
+                            headers: { 
+                                'X-CSRF-Token': TeleCloud.getCsrfToken(),
+                                // We need to pass the login credentials because we don't have a session yet
+                                'Authorization': 'Basic ' + btoa(this.username + ':' + this.password)
+                            } 
+                        });
+
+                        if (cres.ok) {
+                            this.showToast(this.t('toast_pass_changed'), 'success');
+                            // After change, log in again automatically to get a real session
+                            // Note: recursive call, but it's okay here as it's a new attempt
+                            this.isLoggingIn = false; // Reset to allow the recursive call
+                            return await this.login();
+                        } else {
+                            const d = await cres.json();
+                            this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                        }
+                    } else {
+                        window.location.href = '/'; 
+                    }
+                } else {
+                    const data = await res.json();
+                    this.showToast(this.handleCommonError(data.error, 'toast_login_fail'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            } finally {
+                this.isLoggingIn = false;
             }
         },
+
         async logout() { await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }); window.location.href = '/login'; },
         getBreadcrumbs() { return this.currentPath === '/' ? [] : this.currentPath.split('/').filter(Boolean); },
         navigateToFolder(folderName) { this.currentPath = this.currentPath === '/' ? '/' + folderName : this.currentPath + '/' + folderName; this.fetchFiles(); },
@@ -505,6 +651,17 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
             if (!silentLoad && (!this.files || this.files.length === 0)) { this.isLoading = true; } else { this.isRefreshing = true; }
             try {
                 const res = await fetch(`/api/files?path=${encodeURIComponent(this.currentPath)}`);
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                if (res.status === 403) {
+                    const data = await res.json();
+                    if (data.error === 'force_password_change') {
+                        this.logout();
+                        return;
+                    }
+                }
                 const data = await res.json();
                 this.files = data.files || [];
                 this.selectedIds = this.selectedIds.filter(id => this.files.some(f => f.id === id));

@@ -25,6 +25,11 @@
     <link rel="stylesheet" href="/static/css/prism.min.css">
     <script src="/static/js/prism.min.js"></script>
 
+    <div id="app-config" class="hidden"
+        data-webdav-user="{{ .webdav_user }}"
+        data-webdav-pass="{{ .webdav_password }}"
+        data-api-key="{{ .upload_api_key }}"></div>
+
     <!-- SEO & Social Meta Tags -->
     <meta name="description" content="TeleCloud OS - Cloud file management via Telegram">
     <meta property="og:title" content="TeleCloud OS">
@@ -39,7 +44,7 @@
 
 <body
     class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-full relative overflow-hidden flex flex-col transition-colors duration-500"
-    x-data="cloudApp(true, {{ .max_upload_size_mb }}, {{ if .is_admin }}true{{ else }}false{{ end }}, {{ .storage_used }}, {{ if .webdav_enabled }}true{{ else }}false{{ end }}, '{{ .webdav_user }}', '{{ .webdav_password }}', {{ if .upload_api_enabled }}true{{ else }}false{{ end }}, '{{ .upload_api_key }}')"
+    x-data="cloudApp(true, {{ .max_upload_size_mb }}, {{ if .is_admin }}true{{ else }}false{{ end }}, {{ .storage_used }}, {{ if .webdav_enabled }}true{{ else }}false{{ end }}, document.getElementById('app-config').dataset.webdavUser, document.getElementById('app-config').dataset.webdavPass, {{ if .upload_api_enabled }}true{{ else }}false{{ end }}, document.getElementById('app-config').dataset.apiKey, {{ if .global_webdav_enabled }}true{{ else }}false{{ end }}, {{ if .global_api_enabled }}true{{ else }}false{{ end }})"
     @dragover.prevent="dragOver = true" @dragleave.prevent="dragOver = false" @drop.prevent="handleDrop($event)">
 
     <div class="blob-1"></div>
@@ -100,9 +105,10 @@
             <p class="text-slate-600 dark:text-slate-300 text-sm mb-5" x-text="modal.message" x-show="modal.message">
             </p>
             <template x-if="modal.type === 'prompt'">
-                <input type="text" x-model="modal.input" x-ref="modalInput" @keydown.enter="closeUIModal(modal.input)"
+                <input :type="modal.inputType || 'text'" x-model="modal.input" x-ref="modalInput" @keydown.enter="closeUIModal(modal.input)"
                     class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white mb-5 transition-all">
             </template>
+
             <div class="flex flex-col gap-2 mt-2" x-show="modal.type === 'update'">
                 <button @click="closeUIModal('confirm')"
                     class="w-full px-5 py-4 rounded-2xl text-white font-bold bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/25 transition-all active:scale-95 flex items-center justify-center gap-2">
@@ -472,27 +478,36 @@
                             account and preferences.</p>
                     </div>
 
+                    <div class="mb-4 px-2">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid" :class="isAdmin ? 'fa-shield-halved text-amber-500' : 'fa-user-gear text-blue-500'"></i>
+                            <span x-text="isAdmin ? t('global_settings') : t('personal_settings')"></span>
+                        </h3>
+                    </div>
+
                     <div class="grid grid-cols-1 gap-6" :class="isAdmin ? 'md:grid-cols-2' : ''">
-                        <div class="flex flex-col gap-6" x-show="isAdmin">
-                            {{ if .is_admin }}
+                        <div class="flex flex-col gap-6">
                             <!-- WebDAV Card -->
                             <div class="glass-panel p-6 rounded-3xl border border-white/10">
-                                <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center justify-between mb-2">
                                     <h3 class="text-lg font-bold flex items-center gap-2">
                                         <i class="fa-solid fa-network-wired text-blue-500"></i>
                                         WebDAV
                                     </h3>
                                     <button @click="toggleWebDAV"
-                                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                        :class="webdavEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'"
+                                        class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                        :class="[webdavEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600', (!isAdmin && !globalWebdavEnabled) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer']"
                                         role="switch" :aria-checked="webdavEnabled">
                                         <span aria-hidden="true"
                                             class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                                             :class="webdavEnabled ? 'translate-x-5' : 'translate-x-0'"></span>
                                     </button>
                                 </div>
-                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" x-text="t('webdav_desc')">
+                                <p class="text-[10px] font-medium mb-3 flex items-center gap-1.5" :class="(!isAdmin && !globalWebdavEnabled) ? 'text-red-500' : 'text-slate-400'" x-cloak>
+                                    <i class="fa-solid opacity-70" :class="(!isAdmin && !globalWebdavEnabled) ? 'fa-lock' : 'fa-circle-info'"></i>
+                                    <span x-text="(!isAdmin && !globalWebdavEnabled) ? t('err_admin_disabled') : (isAdmin ? t('admin_toggle_note') : t('child_toggle_note'))"></span>
                                 </p>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" x-text="t('webdav_desc')"></p>
 
                                 <div x-show="webdavEnabled" x-collapse>
                                     <div class="space-y-4 pt-2">
@@ -549,14 +564,18 @@
                                         <span x-text="t('upload_api')"></span>
                                     </h3>
                                     <button @click="toggleUploadAPI"
-                                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                        :class="uploadAPIEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'"
+                                        class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                        :class="[uploadAPIEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600', (!isAdmin && !globalAPIEnabled) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer']"
                                         role="switch" :aria-checked="uploadAPIEnabled">
                                         <span aria-hidden="true"
                                             class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                                             :class="uploadAPIEnabled ? 'translate-x-5' : 'translate-x-0'"></span>
                                     </button>
                                 </div>
+                                <p class="text-[10px] font-medium mb-3 flex items-center gap-1.5" :class="(!isAdmin && !globalAPIEnabled) ? 'text-red-500' : 'text-slate-400'" x-cloak>
+                                    <i class="fa-solid opacity-70" :class="(!isAdmin && !globalAPIEnabled) ? 'fa-lock' : 'fa-circle-info'"></i>
+                                    <span x-text="(!isAdmin && !globalAPIEnabled) ? t('err_admin_disabled') : (isAdmin ? t('admin_toggle_note') : t('child_toggle_note'))"></span>
+                                </p>
                                 <p class="text-sm text-slate-500 dark:text-slate-400 mb-1" x-text="t('upload_api_desc')"></p>
                                 <p class="text-[11px] text-slate-400 mb-4 font-medium flex items-center gap-1.5"><i class="fa-solid fa-circle-info opacity-70"></i><span x-text="t('max_size')"></span>: <span class="font-bold text-slate-600 dark:text-slate-300" x-text="maxUploadSizeMB"></span> MB</p>
 
@@ -583,20 +602,20 @@
                                         <div>
                                             <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block"
                                                 x-text="t('upload_api_key_label')"></label>
-                                            <template x-if="!uploadAPIKey">
+                                            <template x-if="isAdmin ? !uploadAPIKey : !childAPIKey">
                                                 <p class="text-sm text-slate-400 italic p-3 rounded-xl bg-slate-100 dark:bg-slate-800" x-text="t('upload_api_no_key')"></p>
                                             </template>
-                                            <template x-if="uploadAPIKey">
+                                            <template x-if="isAdmin ? uploadAPIKey : childAPIKey">
                                                 <div class="flex items-center gap-2">
                                                     <div class="flex-1 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-mono text-xs break-all select-all"
-                                                        x-text="showAPIKey ? uploadAPIKey : uploadAPIKey.substring(0,8) + '••••••••••••••••••••••••••••'"></div>
+                                                        x-text="isAdmin ? (showAPIKey ? uploadAPIKey : uploadAPIKey.substring(0,8) + '••••••••••••••••••••••••••••') : (showChildAPIKey ? childAPIKey : childAPIKey.substring(0,8) + '••••••••••••••••••••••••••••')"></div>
                                                     <div class="flex flex-col gap-1.5 shrink-0">
-                                                        <button @click="showAPIKey = !showAPIKey"
+                                                        <button @click="isAdmin ? showAPIKey = !showAPIKey : showChildAPIKey = !showChildAPIKey"
                                                             class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white transition-all"
-                                                            :title="showAPIKey ? t('upload_api_hide_key') : t('upload_api_show_key')">
-                                                            <i class="fa-solid text-sm" :class="showAPIKey ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                                            :title="(isAdmin ? showAPIKey : showChildAPIKey) ? t('upload_api_hide_key') : t('upload_api_show_key')">
+                                                            <i class="fa-solid text-sm" :class="(isAdmin ? showAPIKey : showChildAPIKey) ? 'fa-eye-slash' : 'fa-eye'"></i>
                                                         </button>
-                                                        <button @click="TeleCloud.copyToClipboard(uploadAPIKey); showToast(t('toast_copied', {t: t('label_api_key')}), 'success')"
+                                                        <button @click="TeleCloud.copyToClipboard(isAdmin ? uploadAPIKey : childAPIKey); showToast(t('toast_copied', {t: t('label_api_key')}), 'success')"
                                                             class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white transition-all"
                                                             :title="t('upload_api_copy_key')">
                                                             <i class="fa-solid fa-copy text-sm"></i>
@@ -608,13 +627,13 @@
 
                                         <!-- Key Actions -->
                                         <div class="flex gap-2">
-                                            <button @click="regenerateAPIKey"
+                                            <button @click="isAdmin ? regenerateAPIKey() : regenerateChildAPIKey()"
                                                 class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold shadow-lg shadow-violet-500/20 transition-all active:scale-95">
                                                 <i class="fa-solid fa-rotate-right"></i>
                                                 <span x-text="t('upload_api_regenerate')"></span>
                                             </button>
-                                            <template x-if="uploadAPIKey">
-                                                <button @click="deleteAPIKey"
+                                            <template x-if="isAdmin ? uploadAPIKey : childAPIKey">
+                                                <button @click="isAdmin ? deleteAPIKey() : deleteChildAPIKey()"
                                                     class="px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold transition-all active:scale-95"
                                                     :title="t('upload_api_delete_key')">
                                                     <i class="fa-solid fa-trash"></i>
@@ -643,7 +662,7 @@
   -H 'Authorization: Bearer <YOUR_API_KEY>' \\
   -F 'file=@/path/to/yourfile.txt' \\
   -F 'path=/'`"></code></pre>
-                                                    <button @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${uploadAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
+                                                    <button @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${isAdmin ? uploadAPIKey : childAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
                                                         class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 bg-slate-700 hover:bg-violet-600 text-white rounded-lg transition-all text-[10px]">
                                                         <i class="fa-solid fa-copy"></i>
                                                     </button>
@@ -658,7 +677,7 @@
   -F 'file=@/path/to/yourfile.txt' \\
   -F 'path=/' \\
   -F 'share=public'`"></code></pre>
-                                                    <button @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${uploadAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/' -F 'share=public'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
+                                                    <button @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${isAdmin ? uploadAPIKey : childAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/' -F 'share=public'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
                                                         class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 bg-slate-700 hover:bg-violet-600 text-white rounded-lg transition-all text-[10px]">
                                                         <i class="fa-solid fa-copy"></i>
                                                     </button>
@@ -741,10 +760,10 @@
                                     </div>
                                 </div>
                             </div>
-                            {{ end }}
                         </div>
 
-                        <div class="flex flex-col gap-6" :class="!isAdmin ? 'max-w-xl mx-auto w-full' : ''">
+                        <div class="flex flex-col gap-6">
+                            <!-- Change Password Card -->
                             <div class="glass-panel p-6 rounded-3xl border border-white/10 h-max">
                                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                                     <i class="fa-solid fa-key text-blue-500"></i>
@@ -772,6 +791,7 @@
                                         x-text="t('save_changes')">Save</button>
                                 </form>
                             </div>
+
 
                             <div
                                 class="mt-2 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 sm:hidden">
@@ -816,10 +836,6 @@
                                         <input type="text" x-model="userForm.username" :placeholder="t('username')" required
                                             class="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                                     </div>
-                                    <div>
-                                        <input type="password" autocomplete="new-password" x-model="userForm.password" :placeholder="t('password')" required
-                                            class="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                                    </div>
                                     <button type="submit"
                                         class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors flex justify-center items-center gap-2" :disabled="isCreatingUser">
                                         <i class="fa-solid fa-plus" x-show="!isCreatingUser"></i>
@@ -850,9 +866,14 @@
                                                     <span x-text="formatDate(user.created_at)"></span>
                                                 </div>
                                             </div>
-                                            <button @click="deleteUser(user.username)" class="text-red-500 hover:text-red-600 p-2 transition-colors">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
+                                            <div class="flex items-center gap-1">
+                                                <button @click="resetUserPassword(user.username)" class="text-blue-500 hover:text-blue-600 p-2 transition-colors" :title="t('reset_password')">
+                                                    <i class="fa-solid fa-key"></i>
+                                                </button>
+                                                <button @click="deleteUser(user.username)" class="text-red-500 hover:text-red-600 p-2 transition-colors">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </template>
                                     <template x-if="users.length === 0">
