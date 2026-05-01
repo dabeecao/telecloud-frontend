@@ -72,7 +72,7 @@
                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner shrink-0 transition-colors overflow-hidden relative"
                     :class="fileInfoModal.bgColor">
                     <template x-if="fileInfoModal.file?.has_thumb">
-                        <img :src="`/api/files/${fileInfoModal.file.id}/thumb`"
+                        <img :src="`/s/${shareToken}/file/${fileInfoModal.file.id}/thumb`"
                             class="w-full h-full object-cover absolute inset-0 z-10">
                     </template>
                     <template x-if="!fileInfoModal.file?.has_thumb">
@@ -289,7 +289,7 @@
                                                         <template x-if="!file.is_folder">
                                                             <div class="w-full h-full relative flex items-center justify-center">
                                                                 <template x-if="file.has_thumb">
-                                                                    <img :src="`/api/files/${file.id}/thumb`" loading="lazy" alt="thumb" class="w-full h-full object-cover rounded-xl shadow-sm">
+                                                                    <img :src="`/s/${shareToken}/file/${file.id}/thumb`" loading="lazy" alt="thumb" class="w-full h-full object-cover rounded-xl shadow-sm">
                                                                 </template>
                                                                 <template x-if="!file.has_thumb">
                                                                     <div x-html="getFileTypeData(file.filename).i" class="scale-75 opacity-80" :class="getFileTypeData(file.filename).c.split(' ')[1]"></div>
@@ -350,7 +350,7 @@
                                                     <template x-if="!file.is_folder">
                                                         <div class="w-full h-full relative flex items-center justify-center">
                                                             <template x-if="file.has_thumb">
-                                                                <img :src="`/api/files/${file.id}/thumb`" loading="lazy" alt="thumb" class="w-full h-full object-cover rounded-2xl shadow-sm">
+                                                                <img :src="`/s/${shareToken}/file/${file.id}/thumb`" loading="lazy" alt="thumb" class="w-full h-full object-cover rounded-2xl shadow-sm">
                                                             </template>
                                                             <template x-if="!file.has_thumb">
                                                                 <div x-html="getFileTypeData(file.filename).i" class="scale-[1.5] md:scale-[2] opacity-80" :class="getFileTypeData(file.filename).c.split(' ')[1]"></div>
