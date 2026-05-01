@@ -415,6 +415,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
         uploadDragOver: false,
         uploadQueue: [], 
         isQueueMinimized: false,
+        passkeys: [],
         get isAllUploadsDone() {
             if (this.uploadQueue.length === 0) return false;
             return this.uploadQueue.every(t => t.progress === 100 || t.isCancelled);
@@ -443,6 +444,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 this.fetchFiles(false);
                 this.checkUpdate();
                 this.initWebSocket();
+                this.fetchPasskeys();
                 
                 if (!this.isAdmin) {
                     this.fetchChildAPIKey();
@@ -640,6 +642,73 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 this.showToast(this.t('conn_error'), 'error');
             } finally {
                 this.isLoggingIn = false;
+            }
+        },
+        async loginWithPasskey() {
+            if (!window.PublicKeyCredential) {
+                this.showToast(this.t('passkey_not_supported'), 'error');
+                return;
+            }
+            try {
+                const beginResp = await fetch('/api/passkey/login/begin' + (this.username ? '?username=' + this.username : ''));
+                const options = await beginResp.json();
+                if (options.error) throw new Error(options.error);
+                const bufferToBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+                const base64ToBuffer = (base64) => {
+                    const binary = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
+                    const buffer = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) buffer[i] = binary.charCodeAt(i);
+                    return buffer.buffer;
+                };
+                options.publicKey.challenge = base64ToBuffer(options.publicKey.challenge);
+                if (options.publicKey.allowCredentials) {
+                    options.publicKey.allowCredentials.forEach(c => c.id = base64ToBuffer(c.id));
+                }
+                const credential = await navigator.credentials.get(options);
+                const finishResp = await fetch('/api/passkey/login/finish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': TeleCloud.getCsrfToken() },
+                    body: JSON.stringify({
+                        id: credential.id,
+                        rawId: bufferToBase64(credential.rawId),
+                        type: credential.type,
+                        response: {
+                            authenticatorData: bufferToBase64(credential.response.authenticatorData),
+                            clientDataJSON: bufferToBase64(credential.response.clientDataJSON),
+                            signature: bufferToBase64(credential.response.signature),
+                            userHandle: credential.response.userHandle ? bufferToBase64(credential.response.userHandle) : null
+                        }
+                    })
+                });
+                const result = await finishResp.json();
+                if (result.status === 'force_password_change') {
+                    await this.customAlert(this.t('force_password_change_title'), this.t('force_password_change_msg'));
+                    const newPass = await this.customPrompt(this.t('new_password'), "", "password");
+                    if (!newPass) return;
+                    const confirmPass = await this.customPrompt(this.t('confirm_password'), "", "password");
+                    if (newPass !== confirmPass) {
+                        this.showToast(this.t('toast_pass_mismatch'), 'error');
+                        return;
+                    }
+                    let cfd = new FormData();
+                    cfd.append('old_password', "");
+                    cfd.append('new_password', newPass);
+                    let cres = await fetch('/api/settings/password', { method: 'POST', body: cfd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                    if (cres.ok) {
+                        this.showToast(this.t('toast_pass_changed'), 'success');
+                        window.location.href = '/';
+                    } else {
+                        const d = await cres.json();
+                        this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                    }
+                } else if (result.status === 'success') {
+                    window.location.href = '/';
+                } else {
+                    throw new Error(result.error || 'Authentication failed');
+                }
+            } catch (err) {
+                console.error(err);
+                this.showToast(this.t('passkey_error') + ': ' + err.message, 'error');
             }
         },
 
@@ -976,6 +1045,121 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                 this.fileInfoModal.isMedia = true;
             } finally {
                 this.fileInfoModal.isPreviewLoading = false;
+            }
+        },
+
+        async fetchPasskeys() {
+            try {
+                const resp = await fetch('/api/passkeys');
+                this.passkeys = (await resp.json()) || [];
+            } catch (err) {
+                console.error('Failed to fetch passkeys', err);
+                this.passkeys = [];
+            }
+        },
+
+        async registerPasskey() {
+            if (!window.PublicKeyCredential) {
+                this.showToast(this.t('passkey_not_supported'), 'error');
+                return;
+            }
+
+            const name = await this.customPrompt(this.t('passkey_name_prompt'), "My Passkey");
+            if (!name) return;
+
+            try {
+                const beginResp = await fetch('/api/passkey/register/begin');
+                const options = await beginResp.json();
+                
+                if (options.error) throw new Error(options.error);
+
+                // Prepare options
+                const bufferToBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+                const base64ToBuffer = (base64) => {
+                    const binary = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
+                    const buffer = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) buffer[i] = binary.charCodeAt(i);
+                    return buffer.buffer;
+                };
+
+                options.publicKey.challenge = base64ToBuffer(options.publicKey.challenge);
+                options.publicKey.user.id = base64ToBuffer(options.publicKey.user.id);
+                if (options.publicKey.excludeCredentials) {
+                    options.publicKey.excludeCredentials.forEach(c => c.id = base64ToBuffer(c.id));
+                }
+
+                const credential = await navigator.credentials.create(options);
+                
+                const finishResp = await fetch('/api/passkey/register/finish?name=' + encodeURIComponent(name), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': TeleCloud.getCsrfToken() },
+                    body: JSON.stringify({
+                        id: credential.id,
+                        rawId: bufferToBase64(credential.rawId),
+                        type: credential.type,
+                        response: {
+                            attestationObject: bufferToBase64(credential.response.attestationObject),
+                            clientDataJSON: bufferToBase64(credential.response.clientDataJSON),
+                            transports: credential.response.getTransports ? credential.response.getTransports() : []
+                        }
+                    })
+                });
+
+                const result = await finishResp.json();
+                if (result.status === 'success') {
+                    this.showToast(this.t('passkey_registered'), 'success');
+                    this.fetchPasskeys();
+                } else {
+                    throw new Error(result.error || 'Registration failed');
+                }
+            } catch (err) {
+                console.error(err);
+                this.showToast(this.t('passkey_error') + ': ' + err.message, 'error');
+            }
+        },
+
+        async deletePasskey(id) {
+            const ok = await this.customConfirm(this.t('delete_confirm_title'), this.t('delete_confirm_msg'), true);
+            if (!ok) return;
+
+            try {
+                const resp = await fetch('/api/passkeys/' + id, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
+                });
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    this.showToast(this.t('passkey_deleted'), 'success');
+                    this.fetchPasskeys();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (err) {
+                this.showToast(this.t('passkey_error'), 'error');
+            }
+        },
+
+        async renamePasskey(id, currentName) {
+            const newName = await this.customPrompt(this.t('passkey_name_prompt'), currentName || "");
+            if (!newName || newName === currentName) return;
+
+            try {
+                const fd = new FormData();
+                fd.append('name', newName);
+                const resp = await fetch(`/api/passkeys/${id}/rename`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() },
+                    body: fd
+                });
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    this.showToast(this.t('passkey_renamed'), 'success');
+                    this.fetchPasskeys();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (err) {
+                this.showToast(this.t('passkey_error'), 'error');
             }
         }
     }

@@ -9,21 +9,21 @@
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 
-    <link rel="stylesheet" href="/static/css/tailwind.css?v=2">
+    <link rel="stylesheet" href="/static/css/tailwind.css?v={{ .version }}">
 
     <link rel="stylesheet" href="/static/css/fontawesome.min.css">
 
-    <link rel="stylesheet" href="/static/css/style.min.css">
+    <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
 
-    <script src="/static/js/common.min.js"></script>
+    <script src="/static/js/common.min.js?v={{ .version }}"></script>
     <script>TeleCloud.version = '{{ .version }}';</script>
-    <script src="/static/js/script.min.js"></script>
+    <script src="/static/js/script.min.js?v={{ .version }}"></script>
     <script defer src="/static/js/alpine-collapse.min.js"></script>
     <script defer src="/static/js/alpine.min.js"></script>
-    <link rel="stylesheet" href="/static/css/plyr.min.css" />
-    <script src="/static/js/plyr.polyfilled.js"></script>
-    <link rel="stylesheet" href="/static/css/prism.min.css">
-    <script src="/static/js/prism.min.js"></script>
+    <link rel="stylesheet" href="/static/css/plyr.min.css?v={{ .version }}" />
+    <script src="/static/js/plyr.polyfilled.js?v={{ .version }}"></script>
+    <link rel="stylesheet" href="/static/css/prism.min.css?v={{ .version }}">
+    <script src="/static/js/prism.min.js?v={{ .version }}"></script>
 
     <div id="app-config" class="hidden"
         data-webdav-user="{{ .webdav_user }}"
@@ -115,7 +115,6 @@
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     <span x-text="t('update_now')"></span>
                 </button>
-                <p class="text-[10px] text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-500/10 p-2 rounded-xl border border-amber-200/50 dark:border-amber-500/20 text-center" x-text="t('cloudflare_purge')"></p>
                 <div class="grid grid-cols-2 gap-2">
                     <button @click="closeUIModal('dismiss_today')"
                         class="px-3 py-3 rounded-2xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-[10px] font-bold transition-colors uppercase tracking-wider border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
@@ -763,6 +762,49 @@
                         </div>
 
                         <div class="flex flex-col gap-6">
+                            <div class="glass-panel p-6 rounded-3xl border border-white/10 h-max">
+                                <h3 class="text-lg font-bold mb-4 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-fingerprint text-blue-500"></i>
+                                        <span x-text="t('passkeys')">Passkeys</span>
+                                    </div>
+                                    <button @click="registerPasskey"
+                                        class="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 shadow-lg shadow-blue-500/20">
+                                        <i class="fa-solid fa-plus"></i>
+                                        <span x-text="t('add_passkey')">Add</span>
+                                    </button>
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4" x-text="t('passkey_desc')">Use biometrics or security keys for faster and safer login.</p>
+                                
+                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar" x-show="passkeys.length > 0">
+                                    <template x-for="pk in passkeys" :key="pk.id">
+                                        <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 group">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600">
+                                                    <i class="fa-solid fa-fingerprint"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200" x-text="pk.name || ('Passkey #' + pk.id)"></div>
+                                                    <div class="text-[10px] text-slate-400" x-text="formatDate(pk.created_at)"></div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button @click="renamePasskey(pk.id, pk.name)" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all" :title="t('rename')">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button @click="deletePasskey(pk.id)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all" :title="t('delete')">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div x-show="passkeys.length === 0" class="text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                                    <i class="fa-solid fa-key text-slate-300 dark:text-slate-700 text-2xl mb-2"></i>
+                                    <p class="text-[10px] text-slate-400 font-medium" x-text="t('no_passkeys')">No passkeys registered</p>
+                                </div>
+                            </div>
+
                             <!-- Change Password Card -->
                             <div class="glass-panel p-6 rounded-3xl border border-white/10 h-max">
                                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
@@ -893,7 +935,6 @@
                         </div>
                         <h2 class="text-2xl font-bold mb-2 relative z-10" x-text="t('changelog')">Changelog</h2>
                         <p class="text-sm text-indigo-100 relative z-10 max-w-lg" x-text="t('latest_release') + ': ' + (changelog[0]?.tag || '...')"></p>
-                        <p class="text-[11px] text-white/70 mt-2 relative z-10 italic" x-text="t('cloudflare_purge')"></p>
                     </div>
 
                     <div class="space-y-6">
@@ -1446,4 +1487,7 @@
 
 </body>
 
+    <script>
+        // Use the passkey methods already defined in script.js
+    </script>
 </html>

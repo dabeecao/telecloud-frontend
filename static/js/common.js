@@ -179,7 +179,6 @@ const TeleCloud = {
             changelog: 'Cập nhật',
             latest_release: 'Bản mới nhất',
             update_now: 'Xem bản cập nhật',
-            cloudflare_purge: 'Lưu ý: Nếu bạn dùng Cloudflare, hãy Purge Cache để cập nhật giao diện mới nhất.',
             // Upload API
             upload_api: 'Upload API',
             upload_api_desc: 'Cho phép upload file từ xa qua HTTP API với Bearer Token. Dùng cho tích hợp script, CI/CD, v.v.',
@@ -238,7 +237,20 @@ const TeleCloud = {
             reset_password_confirm_title: 'Reset mật khẩu',
             reset_password_confirm_msg: 'Bạn có chắc chắn muốn reset mật khẩu của {u} về mặc định (abc123)? Người dùng sẽ phải đổi mật khẩu mới ở lần đăng nhập tiếp theo.',
             force_password_change_title: 'Đổi mật khẩu lần đầu',
-            force_password_change_msg: 'Đây là lần đăng nhập đầu tiên hoặc mật khẩu của bạn vừa được reset. Vui lòng nhập mật khẩu mới để tiếp tục sử dụng hệ thống.'
+            force_password_change_msg: 'Đây là lần đăng nhập đầu tiên hoặc mật khẩu của bạn vừa được reset. Vui lòng nhập mật khẩu mới để tiếp tục sử dụng hệ thống.',
+            // Passkey
+            or_continue_with: 'hoặc tiếp tục với',
+            login_passkey: 'Đăng nhập bằng Passkey',
+            passkeys: 'Passkeys',
+            add_passkey: 'Thêm Passkey',
+            passkey_desc: 'Sử dụng sinh trắc học hoặc khóa bảo mật để đăng nhập nhanh và an toàn hơn.',
+            no_passkeys: 'Chưa có passkey nào',
+            passkey_registered: 'Đã đăng ký Passkey thành công',
+            passkey_deleted: 'Đã xóa Passkey thành công',
+            passkey_error: 'Thao tác Passkey thất bại',
+            passkey_not_supported: 'Trình duyệt không hỗ trợ Passkey',
+            passkey_name_prompt: 'Nhập tên cho Passkey này (ví dụ: iPhone của tôi, MacBook...):',
+            passkey_renamed: 'Đã đổi tên Passkey thành công'
         },
         en: {
             home: 'File Manager',
@@ -411,7 +423,6 @@ const TeleCloud = {
             changelog: 'Changelog',
             latest_release: 'Latest Release',
             update_now: 'View Changelog',
-            cloudflare_purge: 'Note: If you use Cloudflare, please Purge Cache to get the latest interface.',
             // Upload API
             upload_api: 'Upload API',
             upload_api_desc: 'Allow remote file uploads via HTTP API with Bearer Token. Use for scripts, CI/CD integrations, etc.',
@@ -470,7 +481,20 @@ const TeleCloud = {
             reset_password_confirm_title: 'Reset Password',
             reset_password_confirm_msg: 'Are you sure you want to reset password for {u} to default (abc123)? User will be forced to change password on next login.',
             force_password_change_title: 'First Login Password Change',
-            force_password_change_msg: 'This is your first login or your password has been reset. Please set a new password to continue.'
+            force_password_change_msg: 'This is your first login or your password has been reset. Please set a new password to continue.',
+            // Passkey
+            or_continue_with: 'or continue with',
+            login_passkey: 'Login with Passkey',
+            passkeys: 'Passkeys',
+            add_passkey: 'Add Passkey',
+            passkey_desc: 'Use biometrics or security keys for faster and safer login.',
+            no_passkeys: 'No passkeys registered',
+            passkey_registered: 'Passkey registered successfully',
+            passkey_deleted: 'Passkey deleted successfully',
+            passkey_error: 'Passkey action failed',
+            passkey_not_supported: 'Passkeys are not supported on this browser',
+            passkey_name_prompt: 'Enter a name for this Passkey (e.g., My iPhone, MacBook...):',
+            passkey_renamed: 'Passkey renamed successfully'
         }
     },
 

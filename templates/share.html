@@ -7,17 +7,17 @@
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     
-    <link rel="stylesheet" href="/static/css/tailwind.css">
+    <link rel="stylesheet" href="/static/css/tailwind.css?v={{ .version }}">
     <link rel="stylesheet" href="/static/css/fontawesome.min.css">
     
-    <link rel="stylesheet" href="/static/css/style.min.css">
-    <script src="/static/js/common.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
+    <script src="/static/js/common.min.js?v={{ .version }}"></script>
     
     <script defer src="/static/js/alpine.min.js"></script>
-    <link rel="stylesheet" href="/static/css/plyr.min.css" />
-    <script src="/static/js/plyr.polyfilled.js"></script>
-    <link rel="stylesheet" href="/static/css/prism.min.css" />
-    <script src="/static/js/prism.min.js"></script>
+    <link rel="stylesheet" href="/static/css/plyr.min.css?v={{ .version }}" />
+    <script src="/static/js/plyr.polyfilled.js?v={{ .version }}"></script>
+    <link rel="stylesheet" href="/static/css/prism.min.css?v={{ .version }}" />
+    <script src="/static/js/prism.min.js?v={{ .version }}"></script>
 
     <!-- SEO & Social Meta Tags -->
     <meta name="description" content="Download file {{ .filename }} from TeleCloud OS">
