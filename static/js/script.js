@@ -620,9 +620,10 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
 
                         if (cres.ok) {
                             this.showToast(this.t('toast_pass_changed'), 'success');
+                            // Update stored password to the new one so the next login() call succeeds
+                            this.password = newPass;
                             // After change, log in again automatically to get a real session
-                            // Note: recursive call, but it's okay here as it's a new attempt
-                            this.isLoggingIn = false; // Reset to allow the recursive call
+                            this.isLoggingIn = false; 
                             return await this.login();
                         } else {
                             const d = await cres.json();
