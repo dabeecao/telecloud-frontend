@@ -91,6 +91,46 @@
         </div>
     </div>
 
+    <div x-show="remoteUploadModal" x-cloak
+        class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+        x-transition.opacity>
+        <div @click.outside="remoteUploadModal = false"
+            class="glass-menu w-[90%] max-w-md rounded-[2rem] p-6 shadow-2xl animate-modal-in border border-white/20">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white" x-text="t('remote_upload')"></h3>
+                <button @click="remoteUploadModal = false"
+                    class="text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-full transition-colors shrink-0">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block" x-text="t('url_label')"></label>
+                    <input type="url" x-model="remoteUrl" @keydown.enter="submitRemoteUpload"
+                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all"
+                        placeholder="https://example.com/file.zip">
+                </div>
+
+                <div class="flex items-center gap-2 px-1">
+                    <input type="checkbox" id="remoteOverwrite" x-model="remoteOverwrite" class="w-4 h-4 rounded accent-blue-600">
+                    <label for="remoteOverwrite" class="text-sm text-slate-600 dark:text-slate-300 cursor-pointer" x-text="t('overwrite_existing')"></label>
+                </div>
+
+                <button @click="submitRemoteUpload"
+                    class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                    <span x-text="t('start_upload')"></span>
+                </button>
+            </div>
+
+            <div class="mt-4 text-center text-[10px] text-slate-500 dark:text-slate-400 italic">
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                <span x-text="t('remote_upload_note')"></span>
+            </div>
+        </div>
+    </div>
+
     <div x-show="modal.show" x-cloak
         class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
         x-transition.opacity>
@@ -393,6 +433,11 @@
                         class="hidden sm:flex px-3 py-1.5 bg-white/50 dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold items-center gap-2 transition-colors">
                         <i class="fa-solid fa-folder-plus"></i><span class="hidden lg:inline"
                             x-text="t('new_folder')"></span>
+                    </button>
+                    <button @click="remoteUploadModal = true"
+                        class="hidden sm:flex px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm shadow-md shadow-indigo-500/25 font-semibold items-center gap-2 transition-all">
+                        <i class="fa-solid fa-link"></i><span class="hidden sm:inline"
+                            x-text="t('remote_upload')"></span>
                     </button>
                     <button @click="uploadModal = true"
                         class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm shadow-md shadow-blue-500/25 font-semibold flex items-center gap-2 transition-all">
@@ -1305,6 +1350,15 @@
                     </button>
 
                     <div class="h-px bg-slate-200 dark:bg-slate-700/50 my-1 mx-2"></div>
+
+                    <button @click="remoteUploadModal = true; showMobileAdd = false"
+                        class="flex items-center gap-3 px-3 py-3 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-700 dark:text-slate-200 font-medium transition-colors">
+                        <div
+                            class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-500 shrink-0">
+                            <i class="fa-solid fa-link"></i>
+                        </div>
+                        <span x-text="t('remote_upload')"></span>
+                    </button>
 
                     <button @click="uploadModal = true; showMobileAdd = false"
                         class="flex items-center gap-3 px-3 py-3 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-700 dark:text-slate-200 font-medium transition-colors">

@@ -475,12 +475,17 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                     this.fetchChildAPIKey();
                 }
 
-                if (!this.isAdmin) {
-                    this.fetchChildAPIKey();
-                }
-
-                // Add hasError to existing tasks if any (for persistence, though queue is currently memory-only)
+                // Add hasError to existing tasks if any
                 this.uploadQueue.forEach(t => { if(t.hasError === undefined) t.hasError = false; });
+
+                // Warn user before leaving page if uploads are active
+                window.addEventListener('beforeunload', (e) => {
+                    const hasActiveUploads = this.uploadQueue.some(t => !t.hasError && t.progress < 100);
+                    if (hasActiveUploads) {
+                        e.preventDefault();
+                        e.returnValue = ''; // Standard way to trigger the browser's confirmation dialog
+                    }
+                });
             }
         },
         async checkUpdate() {
@@ -797,7 +802,54 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
             this.fetchFiles(true);
             this.showToast(this.t('toast_deleted', {n: idsToDelete.length}), 'success');
         },
+        remoteUploadModal: false,
+        remoteUrl: '',
+        remoteOverwrite: false,
+        async submitRemoteUpload() {
+            if (!this.remoteUrl) return;
+            
+            try {
+                const u = new URL(this.remoteUrl);
+                if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
+            } catch (e) {
+                this.showToast(this.t('err_invalid_url'), 'error');
+                return;
+            }
+            this.remoteUploadModal = false;
+            let fd = new FormData();
+            fd.append('url', this.remoteUrl);
+            fd.append('path', this.currentPath);
+            fd.append('overwrite', this.remoteOverwrite);
+            
+            try {
+                let res = await fetch('/api/remote-upload', { 
+                    method: 'POST', 
+                    body: fd, 
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                });
+                if (res.ok) {
+                    let d = await res.json();
+                    this.uploadQueue.push({
+                        id: d.task_id,
+                        name: 'URL: ' + (this.remoteUrl.split('/').pop() || this.remoteUrl),
+                        progress: 0,
+                        statusText: this.t('preparing_upload'),
+                        isCancelled: false,
+                        hasError: false
+                    });
+                    this.remoteUrl = '';
+                    this.showToast(this.t('toast_dl_started'), 'success');
+                } else {
+                    let d = await res.json();
+                    this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            }
+        },
+
         handleDrop(e) { this.dragOver = false; this.uploadFiles(Array.from(e.dataTransfer.files)); },
+
         handleUploadModalSelect(e) { this.uploadFiles(Array.from(e.target.files)); e.target.value = ''; this.uploadModal = false; },
         handleUploadModalDrop(e) { this.uploadDragOver = false; this.uploadModal = false; this.uploadFiles(Array.from(e.dataTransfer.files)); },
         async uploadFiles(fileList) {
@@ -814,7 +866,8 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                     statusText: this.t('waiting_slot'), 
                     isCancelled: false,
                     file: file,
-                    hasError: false
+                    hasError: false,
+                    targetPath: this.currentPath
                 };
                 
                 if (this.maxUploadSizeMB > 0 && file.size > maxSizeBytes) {
@@ -838,7 +891,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                     if (task.isCancelled) continue;
                     
                     task.statusText = this.t('preparing_upload');
-                    await this.uploadSingleFile(task.file, task.id);
+                    await this.uploadSingleFile(task.file, task.id, task.targetPath);
                 }
             };
 
@@ -857,10 +910,10 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
             task.statusText = this.t('preparing_upload');
             task.isCancelled = false;
             
-            await this.uploadSingleFile(task.file, taskId);
+            await this.uploadSingleFile(task.file, taskId, task.targetPath);
         },
 
-        async uploadSingleFile(file, taskId) {
+        async uploadSingleFile(file, taskId, targetPath) {
             const CHUNK_SIZE = 10 * 1024 * 1024;
             const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
             let hasError = false;
@@ -880,7 +933,7 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                     const end = Math.min(start + CHUNK_SIZE, file.size);
                     const chunk = file.slice(start, end);
                     const fd = new FormData(); 
-                    fd.append('file', chunk); fd.append('filename', file.name); fd.append('path', this.currentPath); 
+                    fd.append('file', chunk); fd.append('filename', file.name); fd.append('path', targetPath); 
                     fd.append('task_id', taskId); fd.append('chunk_index', chunkIndex); fd.append('total_chunks', totalChunks);
 
                     let retries = 3;
