@@ -23,7 +23,7 @@
     <!-- SEO & Social Meta Tags -->
     <meta name="description" content="Download file {{ .filename }} from TeleCloud OS">
     <meta property="og:title" content="{{ .filename }} - TeleCloud">
-    <meta property="og:description" content="Size: {{ .size }} - Created: {{ .created_at }}">
+    <meta property="og:description" content="Size: {{ .formatted_size }} - Created: {{ .created_at }}">
     <meta property="og:type" content="website">
     {{ if .has_thumb }}
     <meta property="og:image" content="/s/{{ .token }}/thumb">
