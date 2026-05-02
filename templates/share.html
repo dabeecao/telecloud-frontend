@@ -8,13 +8,13 @@
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     
     <link rel="stylesheet" href="/static/css/tailwind.css?v={{ .version }}">
-    <link rel="stylesheet" href="/static/css/fontawesome.min.css">
+    <link rel="stylesheet" href="/static/css/fontawesome.min.css?v={{ .version }}">
     
     <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
     <script>window.TELECLOUD_VERSION = '{{ .version }}';</script>
     <script src="/static/js/common.min.js?v={{ .version }}"></script>
     
-    <script defer src="/static/js/alpine.min.js"></script>
+    <script defer src="/static/js/alpine.min.js?v={{ .version }}"></script>
     <link rel="stylesheet" href="/static/css/plyr.min.css?v={{ .version }}" />
     <script src="/static/js/plyr.polyfilled.js?v={{ .version }}"></script>
     <link rel="stylesheet" href="/static/css/prism.min.css?v={{ .version }}" />
@@ -47,7 +47,11 @@
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
-        }
+        },
+        isMedia: false,
+        showTextPreviewPrompt: false,
+        isPreviewLoading: false,
+        textPreviewHtml: '',
       }">
     
     <div class="blob-1"></div>
@@ -111,19 +115,34 @@
                     <div class="w-full bg-white/40 dark:bg-slate-900/40 rounded-2xl p-4 border border-slate-200/50 dark:border-slate-700/50 space-y-3 text-sm transition-all duration-300">
                         <div class="flex justify-between items-center">
                             <span class="text-slate-500 dark:text-slate-400" x-text="t('size') + ':'"></span>
-                            <span class="font-bold text-slate-800 dark:text-slate-200" id="formatted-size">{{ .size }}</span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200" x-text="TeleCloud.formatBytes({{ .size }})"></span>
                         </div>
                         <div class="h-px w-full bg-slate-200/50 dark:bg-slate-700/50"></div>
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-500 dark:text-slate-400" x-text="t('date') + ':'"></span>
-                            <span class="font-bold text-slate-800 dark:text-slate-200" id="formatted-date">{{ .created_at }}</span>
+                            <span x-text="t('date') + ':'"></span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200" x-text="TeleCloud.formatDate('{{ .created_at }}', lang)"></span>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex flex-col gap-4 w-full justify-center">
                     
-                    <div id="media-preview-container" class="w-full mb-2 hidden flex-col items-center justify-center rounded-[1.5rem] p-1.5 glass-button shadow-sm transition-all">
+                    <div id="media-preview-container" x-show="isMedia" x-cloak class="w-full mb-2 flex-col items-center justify-center rounded-[1.5rem] p-1.5 glass-button shadow-sm transition-all">
+                        <!-- Image/Video/Audio injected here -->
+                        <div id="media-injected-content"></div>
+
+                        <!-- Text Preview Prompt (Reactive) -->
+                        <div x-show="showTextPreviewPrompt" class="p-4 w-full flex flex-col items-center gap-4 animate-fade-in">
+                            <button @click="loadTextPreview" :disabled="isPreviewLoading"
+                                class="px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-500 hover:text-white transition-all font-bold text-sm flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm active:scale-95">
+                                <i class="fa-solid" :class="isPreviewLoading ? 'fa-circle-notch fa-spin' : 'fa-eye'"></i>
+                                <span x-text="isPreviewLoading ? t('loading') : t('load_preview')"></span>
+                            </button>
+                            <p class="text-[10px] opacity-40 italic" x-text="t('preview_manual')"></p>
+                        </div>
+
+                        <!-- Text Preview Content -->
+                        <div x-show="textPreviewHtml" x-html="textPreviewHtml" class="w-full animate-fade-in"></div>
                     </div>
             
                     <form method="POST" action="/s/{{ .token }}/dl" target="hidden_download_iframe" id="download-form" class="w-full">
@@ -158,11 +177,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const rawFilename = document.getElementById('raw-filename').innerText.trim();
-            const rawSize = parseInt(document.getElementById('formatted-size').innerText) || 0;
-            const rawDate = document.getElementById('formatted-date').innerText;
+            const rawSize = parseInt('{{ .size }}') || 0;
+            const rawDate = '{{ .created_at }}';
 
-            document.getElementById('formatted-size').innerText = TeleCloud.formatBytes(rawSize);
-            document.getElementById('formatted-date').innerText = TeleCloud.formatDate(rawDate);
+            // Size is now handled reactively by Alpine via TeleCloud.formatBytes({{ .size }})
+            // Date is now handled reactively by Alpine via TeleCloud.formatDate('{{ .created_at }}', lang)
 
             function applyFileTypeStyling(filename, scope) {
                 const container = document.getElementById('file-icon-container');
@@ -204,28 +223,33 @@
             let isMedia = false;
             let playerTarget = null;
 
+            let injectedHtml = '';
+
             if (imgExts.includes(ext)) {
-                previewContainer.innerHTML = '<img src="' + streamUrl + '" alt="' + rawFilename + '" class="max-h-72 object-contain rounded-[1rem] w-full shadow-lg">';
+                injectedHtml = '<img src="' + streamUrl + '" alt="' + rawFilename + '" class="max-h-72 object-contain rounded-[1rem] w-full shadow-lg">';
                 isMedia = true;
+                alpineScope.isMedia = true;
             } else if (videoExts.includes(ext)) {
                 const typeAttr = mimeTypes[ext] || 'video/mp4';
                 const posterAttr = hasThumb ? 'data-poster="' + thumbUrl + '"' : '';
-                previewContainer.innerHTML = '<div class="w-full relative z-20 rounded-[1rem] bg-black shadow-md"><video id="tele-player" playsinline controls preload="none" ' + posterAttr + '><source src="' + streamUrl + '" type="' + typeAttr + '"></video></div>';
+                injectedHtml = '<div class="w-full relative z-20 rounded-[1rem] bg-black shadow-md"><video id="tele-player" playsinline controls preload="none" ' + posterAttr + '><source src="' + streamUrl + '" type="' + typeAttr + '"></video></div>';
                 isMedia = true;
+                alpineScope.isMedia = true;
                 playerTarget = '#tele-player';
             } else if (audioExts.includes(ext)) {
                 const typeAttr = mimeTypes[ext] || 'audio/mpeg';
                 const coverHtml = hasThumb ? '<img src="' + thumbUrl + '" class="w-48 h-48 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '';
-                previewContainer.innerHTML = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4">' + coverHtml + '<audio id="tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
+                injectedHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4">' + coverHtml + '<audio id="tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
                 isMedia = true;
+                alpineScope.isMedia = true;
                 playerTarget = '#tele-player';
             } else if (textExts.includes(ext)) {
-                previewContainer.innerHTML = '<div class="p-4 w-full flex flex-col items-center gap-4 animate-fade-in"><button id="btn-load-preview" class="px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-500 hover:text-white transition-all font-bold text-sm flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm active:scale-95"><i class="fa-solid fa-eye"></i> ' + TeleCloud.t('load_preview') + '</button><p class="text-[10px] opacity-40 italic">' + TeleCloud.t('preview_manual') + '</p></div>';
-                
-                document.getElementById('btn-load-preview').addEventListener('click', function() {
-                    const btn = this;
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + TeleCloud.t('loading');
+                alpineScope.isMedia = true;
+                alpineScope.showTextPreviewPrompt = true;
+
+                alpineScope.loadTextPreview = function() {
+                    if (this.isPreviewLoading) return;
+                    this.isPreviewLoading = true;
                     
                     fetch(streamUrl, { headers: { 'Range': 'bytes=0-262144' } })
                         .then(r => {
@@ -235,20 +259,30 @@
                         .then(content => {
                             const langClass = 'language-' + (langMap[ext] || 'none');
                             const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                            previewContainer.innerHTML = '<div class="w-full max-h-[60vh] overflow-auto rounded-xl bg-slate-900 text-left relative animate-fade-in"><pre class="!m-0 !p-4 !bg-transparent"><code class="' + langClass + '">' + escaped + '</code></pre></div>';
-                            if (window.Prism) Prism.highlightAllUnder(previewContainer);
+                            this.textPreviewHtml = '<div class="w-full max-h-[60vh] overflow-auto rounded-xl bg-slate-900 text-left relative"><pre class="!m-0 !p-4 !bg-transparent"><code class="' + langClass + '">' + escaped + '</code></pre></div>';
+                            this.showTextPreviewPrompt = false;
+                            this.$nextTick(() => {
+                                if (window.Prism) Prism.highlightAllUnder(document.querySelector('#media-preview-container'));
+                            });
                         })
                         .catch(err => {
                             console.error("Preview error:", err);
-                            previewContainer.innerHTML = '<div class="p-6 text-center text-red-500"><i class="fa-solid fa-circle-exclamation text-4xl mb-3"></i><p class="text-sm">' + TeleCloud.t('preview_error') + '</p></div>';
+                            this.textPreviewHtml = '<div class="p-6 text-center text-red-500"><i class="fa-solid fa-circle-exclamation text-4xl mb-3"></i><p class="text-sm">' + TeleCloud.t('preview_error') + '</p></div>';
+                            this.showTextPreviewPrompt = false;
+                        })
+                        .finally(() => {
+                            this.isPreviewLoading = false;
                         });
-                });
+                };
                 isMedia = true;
             }
 
             if (isMedia) {
-                previewContainer.classList.remove('hidden');
-                previewContainer.classList.add('flex');
+                const mediaInjectedContent = document.getElementById('media-injected-content');
+                if (injectedHtml) {
+                    mediaInjectedContent.innerHTML = injectedHtml;
+                }
+                
                 const mainCard = document.getElementById('main-card');
                 const contentGrid = document.getElementById('main-content-grid');
                 const iconContainer = document.getElementById('file-icon-container');

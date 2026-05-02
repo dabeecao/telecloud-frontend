@@ -74,10 +74,20 @@ const TeleCloud = {
         }
         if (isNaN(d.getTime())) return dateStr;
         const options = { hour: '2-digit', minute: '2-digit' };
-        if (lang === 'vi') {
-            return d.toLocaleDateString('vi-VN') + ' ' + this.t('at_time', {}, lang) + ' ' + d.toLocaleTimeString('vi-VN', options);
-        }
-        return d.toLocaleDateString('en-US') + ' ' + this.t('at_time', {}, lang) + ' ' + d.toLocaleTimeString('en-US', options);
+        
+        const localeMap = {
+            'vi': 'vi-VN',
+            'en': 'en-US',
+            'km': 'km-KH',
+            'ar': 'ar-SA',
+            'hi': 'hi-IN',
+            'ru': 'ru-RU',
+            'zh': 'zh-CN',
+            'ja': 'ja-JP'
+        };
+        const locale = localeMap[lang] || 'en-US';
+        
+        return d.toLocaleDateString(locale) + ' ' + this.t('at_time', {}, lang) + ' ' + d.toLocaleTimeString(locale, options);
     },
 
     parseMarkdown(text) {
