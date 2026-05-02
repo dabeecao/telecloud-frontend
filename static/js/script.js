@@ -1,7 +1,6 @@
-function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true, webauthnRPID = '', webauthnOrigins = '') {
+function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true, webauthnRPID = '', webauthnOrigins = '') {
     return {
         isLoggedIn: initialIsLoggedIn,
-        maxUploadSizeMB: initialMaxUploadSizeMB,
         isAdmin: isAdmin,
         storageUsed: storageUsed,
         webdavEnabled: webdavEnabled,
@@ -579,11 +578,26 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                         if (data.size && data.size > 0 && (!task.size || task.size === 0)) {
                             task.size = data.size;
                         }
-                        if (data.status === 'downloading') {
-                            task.statusText = data.message ? this.t(data.message) : this.t('starting');
+                        if (data.status === 'downloading' || data.status === 'telegram' || data.status === 'done') {
+                            let msg = data.message;
+                            if (msg && msg.startsWith('uploading_part_')) {
+                                const matchOf = msg.match(/uploading_part_(\d+)_of_(\d+)/);
+                                if (matchOf) {
+                                    msg = this.t('uploading_part_x_of_y', {x: matchOf[1], y: matchOf[2]});
+                                } else {
+                                    const matchSingle = msg.match(/uploading_part_(\d+)/);
+                                    if (matchSingle) {
+                                        msg = this.t('uploading_part', {n: matchSingle[1]});
+                                    }
+                                }
+                            } else {
+                                msg = this.t(msg);
+                            }
+                            task.statusText = msg || this.t(data.status);
                             task.hasError = false;
-                        } else if (data.status === 'uploading_to_server') {
-                            // Let the client handle the first 50% of progress to avoid jumping during parallel uploads
+                        }
+
+                        if (data.status === 'uploading_to_server') {
                             if (!task.hasError) {
                                 task.statusText = data.message || task.statusText;
                             }
@@ -591,11 +605,12 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                             task.statusText = this.t('waiting_slot');
                             task.hasError = false;
                             task.progress = 50;
-                        } else if (data.status === 'telegram' || data.status === 'done') {
-                            task.progress = 50 + Math.round(data.percent / 2);
-                            task.hasError = false;
                         }
-                        
+
+                        if (data.status === 'telegram' || data.status === 'done') {
+                            task.progress = 50 + Math.round(data.percent / 2);
+                        }
+
                         if (data.status === 'done') {
                             task.progress = 100;
                             task.statusText = this.t('done');
@@ -606,9 +621,6 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                             const translated = this.t(errorMsg);
                             task.statusText = this.t('status_error') + ': ' + (translated !== errorMsg ? translated : errorMsg);
                             task.hasError = true;
-                        } else if (data.status === 'telegram') {
-                            task.statusText = this.t('syncing_tg');
-                            task.hasError = false;
                         }
                     }
                 } catch (e) {
@@ -898,7 +910,6 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
         handleUploadModalSelect(e) { this.uploadFiles(Array.from(e.target.files)); e.target.value = ''; this.uploadModal = false; },
         handleUploadModalDrop(e) { this.uploadDragOver = false; this.uploadModal = false; this.uploadFiles(Array.from(e.dataTransfer.files)); },
         async uploadFiles(fileList) {
-            const maxSizeBytes = this.maxUploadSizeMB * 1024 * 1024;
             const newTasks = [];
             
             for (let i = 0; i < fileList.length; i++) {
@@ -915,12 +926,6 @@ function cloudApp(initialIsLoggedIn, initialMaxUploadSizeMB, isAdmin = true, sto
                     targetPath: this.currentPath,
                     size: file.size
                 };
-                
-                if (this.maxUploadSizeMB > 0 && file.size > maxSizeBytes) {
-                    task.statusText = this.t('status_error') + ': ' + this.t('file_too_large_title');
-                    task.hasError = true;
-                    task.progress = 0;
-                }
                 
                 newTasks.push(task);
             }

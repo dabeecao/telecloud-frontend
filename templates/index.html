@@ -39,7 +39,7 @@
 
 <body
     class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-full relative overflow-hidden flex flex-col transition-colors duration-500"
-    x-data="cloudApp(true, {{ .max_upload_size_mb }}, {{ if .is_admin }}true{{ else }}false{{ end }}, {{ .storage_used }}, {{ if .webdav_enabled }}true{{ else }}false{{ end }}, '{{ .webdav_user }}', '{{ .webdav_password }}', {{ if .upload_api_enabled }}true{{ else }}false{{ end }}, '{{ .upload_api_key }}', {{ if .global_webdav_enabled }}true{{ else }}false{{ end }}, {{ if .global_api_enabled }}true{{ else }}false{{ end }}, '{{ .webauthn_rpid }}', '{{ .webauthn_rporigin }}')"
+    x-data="cloudApp(true, {{ if .is_admin }}true{{ else }}false{{ end }}, {{ .storage_used }}, {{ if .webdav_enabled }}true{{ else }}false{{ end }}, '{{ .webdav_user }}', '{{ .webdav_password }}', {{ if .upload_api_enabled }}true{{ else }}false{{ end }}, '{{ .upload_api_key }}', {{ if .global_webdav_enabled }}true{{ else }}false{{ end }}, {{ if .global_api_enabled }}true{{ else }}false{{ end }}, '{{ .webauthn_rpid }}', '{{ .webauthn_rporigin }}')"
     @dragover.prevent="dragOver = true" @dragleave.prevent="dragOver = false" @drop.prevent="handleDrop($event)">
 
     <div class="blob-1"></div>
@@ -50,7 +50,8 @@
         <div class="text-center">
             <i class="fa-solid fa-cloud-arrow-up text-7xl text-white mx-auto mb-4 animate-bounce block"></i>
             <h2 class="text-3xl font-bold text-white shadow-sm" x-text="t('drop_files')"></h2>
-            <p class="text-white/80 mt-2"><span x-text="t('max_limit')"></span>: <span x-text="maxUploadSizeMB"></span> MB</p>
+            <p class="text-white/80 mt-2" x-text="t('unlimited_split')"></p>
+            <p class="text-white/60 text-xs mt-1" x-text="t('large_file_support')"></p>
         </div>
     </div>
 
@@ -84,9 +85,9 @@
                 </button>
             </div>
 
-            <div class="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
-                <span x-text="t('max_size')"></span>: <span class="font-semibold text-slate-700 dark:text-slate-300"
-                    x-text="maxUploadSizeMB"></span> MB
+            <div class="mt-4 text-center text-[10px] text-slate-500 dark:text-slate-400">
+                <span x-text="t('max_size')"></span>: <span class="font-semibold text-slate-700 dark:text-slate-300" x-text="t('unlimited_split')"></span>
+                <span class="block mt-1 opacity-75" x-text="t('large_file_support')"></span>
             </div>
         </div>
     </div>
@@ -630,7 +631,7 @@
                                     <span x-text="(!isAdmin && !globalAPIEnabled) ? t('err_admin_disabled') : (isAdmin ? t('admin_toggle_note') : t('child_toggle_note'))"></span>
                                 </p>
                                 <p class="text-sm text-slate-500 dark:text-slate-400 mb-1" x-text="t('upload_api_desc')"></p>
-                                <p class="text-[11px] text-slate-400 mb-4 font-medium flex items-center gap-1.5"><i class="fa-solid fa-circle-info opacity-70"></i><span x-text="t('max_size')"></span>: <span class="font-bold text-slate-600 dark:text-slate-300" x-text="maxUploadSizeMB"></span> MB</p>
+                                <p class="text-[11px] text-slate-400 mb-4 font-medium flex items-center gap-1.5"><i class="fa-solid fa-circle-info opacity-70"></i><span x-text="t('max_size')"></span>: <span class="font-bold text-slate-600 dark:text-slate-300" x-text="t('unlimited_split')"></span></p>
 
                                 <div x-show="uploadAPIEnabled" x-collapse>
                                     <div class="space-y-4 pt-2">
