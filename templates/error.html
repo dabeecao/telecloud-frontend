@@ -19,7 +19,13 @@
         lang: TeleCloud.lang, 
         t(key) { return TeleCloud.t(key, {}, this.lang); }, 
         async toggleLang() { this.lang = await TeleCloud.toggleLang(); },
-        async setLang(code) { this.lang = await TeleCloud.setLang(code); }
+        async setLang(code) { this.lang = await TeleCloud.setLang(code); },
+        init() {
+            window.addEventListener('tc-translations-loaded', (e) => {
+                this.lang = '';
+                this.$nextTick(() => { this.lang = e.detail.lang; });
+            });
+        }
     }">
 
     <!-- Language Dropdown -->

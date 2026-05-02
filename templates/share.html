@@ -36,9 +36,17 @@
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 relative overflow-x-hidden transition-colors duration-500" 
       x-data="{ 
         lang: TeleCloud.lang,
+        typeKey: '',
+        typeExt: '',
         t(key) { return TeleCloud.t(key, {}, this.lang); },
-        async toggleLang() { await TeleCloud.toggleLang(); window.location.reload(); },
-        async setLang(code) { await TeleCloud.setLang(code); window.location.reload(); }
+        async toggleLang() { this.lang = await TeleCloud.toggleLang(); },
+        async setLang(code) { this.lang = await TeleCloud.setLang(code); },
+        init() {
+            window.addEventListener('tc-translations-loaded', (e) => {
+                this.lang = '';
+                this.$nextTick(() => { this.lang = e.detail.lang; });
+            });
+        }
       }">
     
     <div class="blob-1"></div>
@@ -55,7 +63,7 @@
 
     <div class="min-h-screen w-full flex items-center justify-center py-12 px-4 relative z-10">
         
-        <main id="main-card" class="w-full max-w-lg glass-panel rounded-[2.5rem] p-6 sm:p-10 animate-fade-in-up transition-all duration-500">
+        <main id="main-card" class="w-full max-w-lg sm:max-w-xl lg:max-w-2xl xl:max-w-3xl glass-panel rounded-[2.5rem] lg:rounded-[3.5rem] xl:rounded-[4.5rem] p-6 sm:p-10 lg:p-16 animate-fade-in-up transition-all duration-500">
             
             <div class="flex items-center justify-between mb-8 opacity-80 relative z-[200]">
                 <div class="flex items-center gap-3">
@@ -96,7 +104,8 @@
                     </div>
 
                     <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white break-all line-clamp-3 mb-2 transition-all duration-300" id="raw-filename">{{ .filename }}</h2>
-                    <p id="file-type-name" class="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-6 uppercase tracking-wider transition-all duration-300" x-text="t('loading')"></p>
+                    <p id="file-type-name" class="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-6 uppercase tracking-wider transition-all duration-300" 
+                        x-text="t(typeKey) + (typeExt ? ' (' + typeExt + ')' : '')"></p>
 
                     <div class="w-full bg-white/40 dark:bg-slate-900/40 rounded-2xl p-4 border border-slate-200/50 dark:border-slate-700/50 space-y-3 text-sm transition-all duration-300">
                         <div class="flex justify-between items-center">
@@ -154,17 +163,21 @@
             document.getElementById('formatted-size').innerText = TeleCloud.formatBytes(rawSize);
             document.getElementById('formatted-date').innerText = TeleCloud.formatDate(rawDate);
 
-            function applyFileTypeStyling(filename) {
+            function applyFileTypeStyling(filename, scope) {
                 const container = document.getElementById('file-icon-container');
-                const typeNameEl = document.getElementById('file-type-name');
                 const result = TeleCloud.getFileTypeData(filename);
-
+                
                 container.className = 'w-24 h-24 rounded-[2rem] flex items-center justify-center shadow-inner mb-6 transition-all duration-300 ' + result.c;
                 container.innerHTML = result.i.replace('text-2xl', 'text-5xl');
-                typeNameEl.innerText = result.n;
+                
+                // Update Alpine state
+                scope.typeKey = result.n;
+                scope.typeExt = result.ext || '';
             }
 
-            applyFileTypeStyling(rawFilename);
+            // Get Alpine scope to update reactive properties
+            const alpineScope = Alpine.$data(document.body);
+            applyFileTypeStyling(rawFilename, alpineScope);
 
             const ext = rawFilename.split('.').pop().toLowerCase();
             const previewContainer = document.getElementById('media-preview-container');
@@ -263,12 +276,12 @@
                 }
                 
                 if (audioExts.includes(ext)) { 
-                    mainCard.classList.remove('max-w-lg'); 
-                    mainCard.classList.add('max-w-xl'); 
+                    mainCard.classList.remove('max-w-lg', 'sm:max-w-xl', 'lg:max-w-2xl', 'xl:max-w-3xl'); 
+                    mainCard.classList.add('max-w-lg', 'sm:max-w-xl'); 
                     contentGrid.className = "flex flex-col gap-6 w-full"; 
                 } else { 
-                    mainCard.classList.remove('max-w-lg'); 
-                    mainCard.classList.add('max-w-4xl'); 
+                    mainCard.classList.remove('max-w-lg', 'sm:max-w-xl', 'lg:max-w-2xl', 'xl:max-w-3xl'); 
+                    mainCard.classList.add('max-w-4xl', 'lg:max-w-6xl', '2xl:max-w-7xl'); 
                     contentGrid.className = "grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-8 w-full items-center"; 
                 }
 

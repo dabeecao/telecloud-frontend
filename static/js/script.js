@@ -489,16 +489,13 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         toastModal: { show: false, message: '', type: 'success' },
         toastTimeout: null,
         plyrInstance: null,
-        fileInfoModal: { show: false, file: null, typeName: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
+        fileInfoModal: { show: false, file: null, typeName: '', ext: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
         modal: { show: false, type: 'alert', title: '', message: '', input: '', resolve: null, isDanger: false, inputType: 'text' },
         contextMenu: { show: false, x: 0, y: 0, file: null },
         init() { 
             window.addEventListener('tc-translations-loaded', (e) => {
-                if (e.detail.lang === this.lang) {
-                    const l = this.lang;
-                    this.lang = '';
-                    this.$nextTick(() => { this.lang = l; });
-                }
+                this.lang = '';
+                this.$nextTick(() => { this.lang = e.detail.lang; });
             });
             if (this.isLoggedIn) {
                 this.fetchFiles(false);
@@ -1134,7 +1131,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 bg-slate-100 dark:bg-slate-800/50 shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
                 isMedia = true; playerTarget = { el: '#index-tele-player', type: 'audio' };
             } else if (textExts.includes(ext)) {
-                this.fileInfoModal = { show: true, file: file, typeName: typeData.n, svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
+                this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
                 
                 if (file.size > 10 * 1024 * 1024) {
                     this.fileInfoModal.tooLarge = true;
@@ -1144,7 +1141,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 return;
             }
             
-            this.fileInfoModal = { show: true, file: file, typeName: typeData.n, svgIcon: typeData.i, bgColor: typeData.c, isMedia: isMedia, mediaHtml: mediaHtml, isLarge: isLarge, isPreviewLoading: false };
+            this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: isMedia, mediaHtml: mediaHtml, isLarge: isLarge, isPreviewLoading: false };
             if (playerTarget) {
                 setTimeout(() => {
                     if (this.plyrInstance) this.plyrInstance.destroy();
@@ -1459,10 +1456,14 @@ function shareApp(shareToken) {
         selectedIds: [], 
 
         plyrInstance: null,
-        fileInfoModal: { show: false, file: null, typeName: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
+        fileInfoModal: { show: false, file: null, typeName: '', ext: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
         contextMenu: { show: false, x: 0, y: 0, file: null },
         
         init() { 
+            window.addEventListener('tc-translations-loaded', (e) => {
+                this.lang = '';
+                this.$nextTick(() => { this.lang = e.detail.lang; });
+            });
             this.fetchFiles(false);
         },
         openContextMenu(e, file) {
@@ -1523,7 +1524,7 @@ function shareApp(shareToken) {
                 mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 bg-slate-100 dark:bg-slate-800/50 shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
                 isMedia = true; playerTarget = { el: '#index-tele-player', type: 'audio' };
             } else if (textExts.includes(ext)) {
-                this.fileInfoModal = { show: true, file: file, typeName: typeData.n, svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
+                this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
                 
                 if (file.size > 10 * 1024 * 1024) {
                     this.fileInfoModal.tooLarge = true;
@@ -1533,7 +1534,7 @@ function shareApp(shareToken) {
                 return;
             }
             
-            this.fileInfoModal = { show: true, file: file, typeName: typeData.n, svgIcon: typeData.i, bgColor: typeData.c, isMedia: isMedia, mediaHtml: mediaHtml, isLarge: isLarge, isPreviewLoading: false };
+            this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: isMedia, mediaHtml: mediaHtml, isLarge: isLarge, isPreviewLoading: false };
             if (playerTarget) {
                 setTimeout(() => {
                     if (this.plyrInstance) this.plyrInstance.destroy();
