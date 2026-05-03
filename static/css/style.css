@@ -127,6 +127,38 @@ body {
    Variable Bridge & Theme Locking
    ========================================= */
 
+/* Theme-locked toolbar (search bar area) */
+.theme-toolbar {
+    background-color: var(--bg-body) !important;
+    opacity: 0.97;
+}
+
+.theme-border {
+    border-color: var(--border-main) !important;
+}
+
+.theme-search-input {
+    background-color: var(--bg-panel) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-main) !important;
+}
+
+.theme-search-input:focus {
+    background-color: var(--bg-surface) !important;
+    border-color: var(--accent-color) !important;
+}
+
+.theme-icon-btn {
+    color: var(--text-secondary) !important;
+    background-color: var(--bg-panel) !important;
+    border-color: var(--border-main) !important;
+}
+
+.theme-icon-btn:hover {
+    color: var(--accent-color) !important;
+    background-color: var(--bg-surface) !important;
+}
+
 /* Force variables to apply even if Tailwind classes are present */
 body[data-theme] {
     background-color: var(--bg-body) !important;
