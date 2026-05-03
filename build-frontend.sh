@@ -6,11 +6,14 @@ echo "This may take a few moments. Please wait..."
 echo "Cleaning up old build files..."
 rm -f static/css/*.min.css static/js/*.min.js static/locales/*.min.json
 
-echo "Updating repository from origin/main..."
-git pull origin main
-if [ $? -ne 0 ]; then
-  echo "Failed to pull latest changes. Please resolve any conflicts and try again."
-  exit 1
+TELECLOUD_PULL_LATEST="${1}"
+
+if [ "$TELECLOUD_PULL_LATEST" = "1" ]; then
+  echo "Updating repository from origin/main..."
+  git pull origin main || { echo "Failed to pull latest changes. Please resolve any conflicts and try again."; exit 1; }
+else
+  echo "Skipping repository update. Building from the current checkout."
+  echo "Pass '1' as first argument to explicitly pull origin/main before building."
 fi
 
 echo "Ensuring npm is installed..."

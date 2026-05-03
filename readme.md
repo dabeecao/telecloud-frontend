@@ -46,12 +46,13 @@ The main TeleCloud repository integrates this as a git submodule. During the bui
 
 ### What the build script does
 1. Cleans up old minified files.
-2. Verifies npm is installed, then runs `npm install`.
-3. Builds Tailwind CSS via `npx @tailwindcss/cli`.
-4. Downloads frontend libraries (Alpine.js, Plyr, Font Awesome, Prism.js).
-5. Minifies JS and CSS files via `esbuild`.
-6. Minifies theme CSS files.
-7. Minifies JSON locale files via `minify-locales.js`.
+2. Optionally pulls latest changes from `origin/main` (controlled by argument).
+3. Verifies npm is installed, then runs `npm install`.
+4. Builds Tailwind CSS via `npx @tailwindcss/cli`.
+5. Downloads frontend libraries (Alpine.js, Plyr, Font Awesome, Prism.js).
+6. Minifies JS and CSS files via `esbuild`.
+7. Minifies theme CSS files.
+8. Minifies JSON locale files via `minify-locales.js`.
 
 ### Local Development
 To manually build the frontend assets:
@@ -60,11 +61,20 @@ To manually build the frontend assets:
 3. Run:
    ```bash
    chmod +x build-frontend.sh
+
+   # Build from current checkout (no pull)
    ./build-frontend.sh
+
+   # Pull latest from origin/main before building
+   ./build-frontend.sh 1
    ```
    On Windows:
    ```bat
+   :: Build from current checkout (no pull)
    build-frontend.bat
+
+   :: Pull latest from origin/main before building
+   build-frontend.bat 1
    ```
 
 ## ⚠️ Note
