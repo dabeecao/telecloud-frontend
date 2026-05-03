@@ -35,6 +35,7 @@
 </head>
 
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 relative overflow-x-hidden transition-colors duration-500" 
+      data-theme="system"
       x-data="{ 
         lang: TeleCloud.lang,
         typeKey: '',
@@ -47,6 +48,16 @@
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
+            // Handle system dark mode since Tailwind is in 'class' mode
+            const applySystemTheme = () => {
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            };
+            applySystemTheme();
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
         },
         isMedia: false,
         showTextPreviewPrompt: false,
@@ -205,19 +216,22 @@
             const thumbUrl = '/s/{{ .token }}/thumb'; 
             const hasThumb = '{{ .has_thumb }}' === 'true' || '{{ .has_thumb }}' === '1';
 
-            const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
-            const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv'];
-            const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus'];
+            const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif'];
+            const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv', 'ogv', '3gp', 'flv', 'wmv'];
+            const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus', 'oga', 'aac', 'm4b'];
             const mimeTypes = { 
-                'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg', 
+                'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg', 'ogv': 'video/ogg',
                 'mov': 'video/mp4', 'mkv': 'video/webm', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 
-                'flac': 'audio/flac', 'm4a': 'audio/mp4', 'opus': 'audio/ogg' 
+                'flac': 'audio/flac', 'm4a': 'audio/mp4', 'opus': 'audio/ogg', 'oga': 'audio/ogg',
+                'aac': 'audio/aac', 'm4b': 'audio/mp4'
             };
-            const textExts = ['txt', 'md', 'log', 'json', 'js', 'py', 'go', 'html', 'css', 'yml', 'yaml', 'sql', 'sh', 'conf', 'ini'];
+            const textExts = ['txt', 'md', 'log', 'json', 'js', 'py', 'go', 'html', 'css', 'yml', 'yaml', 'sql', 'sh', 'conf', 'ini', 'c', 'cpp', 'h', 'hpp', 'cs', 'java', 'rb', 'rs', 'swift'];
             const langMap = {
                 'js': 'javascript', 'json': 'json', 'py': 'python', 'go': 'go', 
                 'html': 'markup', 'css': 'css', 'yml': 'yaml', 'yaml': 'yaml',
-                'sql': 'sql', 'sh': 'bash', 'md': 'markdown'
+                'sql': 'sql', 'sh': 'bash', 'md': 'markdown', 'c': 'clike', 'cpp': 'clike',
+                'h': 'clike', 'hpp': 'clike', 'cs': 'clike', 'java': 'java', 'rb': 'ruby',
+                'rs': 'rust', 'swift': 'swift'
             };
 
             let isMedia = false;

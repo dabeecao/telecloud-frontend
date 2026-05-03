@@ -1,0 +1,50 @@
+/* Forest Luxury Theme - Semantic Refactor */
+body[data-theme="forest"] {
+    color-scheme: dark;
+    
+    /* Core Colors */
+    --forest-gold: #fbbf24;
+    --forest-bg: #011f18;
+    --forest-surface: #064e3b;
+
+    /* Semantic Variable Overrides */
+    --accent-color: var(--forest-gold) !important;
+    --accent-glow: rgba(251, 191, 36, 0.4) !important;
+    --accent-text: #000000 !important;
+    
+    --bg-body: var(--forest-bg) !important;
+    --bg-panel: rgba(2, 44, 34, 0.85) !important;
+    --bg-menu: var(--forest-surface) !important;
+    --bg-surface: rgba(255, 255, 255, 0.05) !important;
+    
+    --text-primary: #ecfdf5 !important;
+    --text-secondary: rgba(251, 191, 36, 0.7) !important;
+    --text-muted: #065f46 !important;
+    
+    --border-main: rgba(251, 191, 36, 0.3) !important;
+    --border-light: rgba(255, 255, 255, 0.05) !important;
+    
+    --glass-border: rgba(251, 191, 36, 0.3) !important;
+
+
+    /* Selection & Scrollbar */
+    --selection-bg: var(--forest-gold);
+    --selection-text: #000000;
+    --scrollbar-thumb: rgba(251, 191, 36, 0.4);
+    --scrollbar-thumb-hover: rgba(251, 191, 36, 0.7);
+
+    /* Code & Components */
+    --code-bg: #011f18;
+    --code-text: var(--forest-gold);
+    --plyr-color-main: var(--forest-gold);
+}
+
+body[data-theme="forest"] .glass-menu {
+    border: 1px solid var(--forest-gold) !important;
+}
+
+body[data-theme="forest"] .bg-blue-600 {
+    background: linear-gradient(135deg, #059669, #047857) !important;
+    border: 1px solid var(--forest-gold) !important;
+    color: var(--forest-gold) !important;
+}

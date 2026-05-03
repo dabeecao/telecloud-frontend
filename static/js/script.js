@@ -1,4 +1,4 @@
-function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true, webauthnRPID = '', webauthnOrigins = '') {
+function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true, webauthnRPID = '', webauthnOrigins = '', initialTheme = 'system') {
     return {
         isLoggedIn: initialIsLoggedIn,
         isAdmin: isAdmin,
@@ -13,6 +13,93 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         showAPIKey: false,
         childAPIKey: '',
         showChildAPIKey: false,
+        ytdlpEnabled: false,
+        ytdlpUrl: '',
+        ytdlpLoading: false,
+        ytdlpInfo: null,
+        ytdlpSelectedFormat: '',
+        ytdlpDownloadType: 'video',
+        ytdlpHasCookie: false,
+        currentTheme: initialTheme || 'system',
+        setTheme(theme) {
+            this.currentTheme = theme;
+            this.applyTheme();
+            // Save to database
+            let fd = new FormData();
+            fd.append('theme', theme);
+            fetch('/api/settings/user/theme', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }).catch(e => console.error("Theme save failed:", e));
+        },
+        applyTheme() {
+            const theme = this.currentTheme || 'system';
+            const html = document.documentElement;
+            
+            if (theme === 'system') {
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
+            } else {
+                // For custom themes, we decide whether to add 'dark' class based on the theme style
+                const darkThemes = ['neon', 'cyberpunk', 'lavender', 'forest'];
+                if (darkThemes.includes(theme)) {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
+            }
+            
+            // Re-trigger alpine to update data-theme attribute if not reactive enough
+            // (but index.html uses :data-theme="currentTheme" so it should be fine)
+        },
+        get filteredYTDLPFormats() {
+            if (!this.ytdlpInfo || !this.ytdlpInfo.formats) return [];
+            return this.ytdlpInfo.formats.filter(f => {
+                const vcodec = String(f.vcodec || '').toLowerCase();
+                const res = String(f.resolution || '').toLowerCase();
+                const note = String(f.format_note || f.format || '').toLowerCase();
+                const ext = String(f.ext || '').toLowerCase();
+                
+                // Filter out non-media formats
+                if (ext === 'mhtml' || ext === 'jpg' || ext === 'jpeg' || note.includes('storyboard') || note.includes('images')) return false;
+
+                const isAudioOnly = vcodec === 'none' || res === 'audio only' || (f.acodec && f.acodec !== 'none' && vcodec === '');
+                if (this.ytdlpDownloadType === 'video') return !isAudioOnly || (f.height && f.height > 0) || note.includes('p');
+                return isAudioOnly && !note.includes('p') && ext !== 'webm';
+            }).sort((a, b) => (b.height || 0) - (a.height || 0) || (b.filesize || b.filesize_approx || 0) - (a.filesize || a.filesize_approx || 0));
+        },
+        formatQualityLabel(f) {
+            let label = '';
+            if (f.height && f.height > 0) {
+                label = f.height + 'p';
+            } else if (f.resolution && f.resolution !== 'audio only') {
+                label = f.resolution;
+            } else if (f.format_note) {
+                const note = f.format_note.toLowerCase();
+                if (note === 'medium') label = this.t('quality_medium');
+                else if (note === 'low') label = this.t('quality_low');
+                else if (note === 'tiny') label = this.t('quality_tiny');
+                else if (note === 'ultralow') label = this.t('quality_ultralow');
+                else label = f.format_note.charAt(0).toUpperCase() + f.format_note.slice(1);
+            } else {
+                label = f.ext.toUpperCase();
+            }
+            
+            // Standardize format display
+            let ext = f.ext.toUpperCase();
+            if (this.ytdlpDownloadType === 'video') {
+                // We force MP4 merger in backend for best compatibility
+                ext = 'MP4';
+            } else if (this.ytdlpDownloadType === 'audio') {
+                // We force MP3 conversion in backend
+                ext = 'MP3';
+            }
+
+            let size = '';
+            const totalSize = f.filesize || f.filesize_approx;
+            if (totalSize) size = ' - ' + this.formatBytes(totalSize);
+            return `${label} (${ext})${size}`;
+        },
         webauthnRPID: webauthnRPID,
         webauthnOrigins: webauthnOrigins,
         currentTab: 'files',
@@ -207,10 +294,17 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             // Don't restore finished tasks to keep UI clean
                             if (task.status === 'done' || task.status === 'error') continue;
                             
+                            let displayProgress = task.percent;
+                            if (task.status === 'telegram') {
+                                displayProgress = 50 + Math.round(task.percent / 2);
+                            } else if (task.status === 'downloading' || task.status === 'uploading_to_server') {
+                                displayProgress = Math.round(task.percent / 2);
+                            }
+
                             this.uploadQueue.push({
                                 id: id,
                                 name: task.filename || 'File',
-                                progress: task.percent,
+                                progress: displayProgress,
                                 statusText: task.status,
                                 hasError: task.status === 'error',
                                 isCancelled: false,
@@ -497,12 +591,21 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
+
+            // Always apply theme (will be 'system' for non-logged-in users)
+            this.applyTheme();
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (this.currentTheme === 'system') this.applyTheme();
+            });
+
             if (this.isLoggedIn) {
                 this.fetchFiles(false);
                 this.checkUpdate();
                 this.initWebSocket();
                 this.fetchPasskeys();
                 this.fetchActiveTasks();
+                this.fetchYTDLPStatus();
+                this.checkYTDLPCookies();
                 
                 if (!this.isAdmin) {
                     this.fetchChildAPIKey();
@@ -604,17 +707,24 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             task.hasError = false;
                         }
 
-                        if (data.status === 'uploading_to_server') {
+                        if (data.status === 'uploading_to_server' || data.status === 'downloading') {
                             if (!task.hasError) {
-                                task.statusText = data.message || task.statusText;
+                                task.statusText = this.t(data.message) || task.statusText;
+                                // Phase 1: 0-50%
+                                if (data.percent !== undefined) {
+                                    task.progress = Math.round(data.percent / 2);
+                                }
                             }
                         } else if (data.message === 'waiting_slot') {
                             task.statusText = this.t('waiting_slot');
                             task.hasError = false;
-                            task.progress = 50;
+                            // If waiting for Telegram upload, we're at 50%
+                            // If waiting for yt-dlp download, we're at 0%
+                            task.progress = (data.status === 'telegram') ? 50 : 0;
                         }
 
-                        if (data.status === 'telegram' || data.status === 'done' || data.status === 'downloading') {
+                        if (data.status === 'telegram' || data.status === 'done') {
+                            // Phase 2: 50-100%
                             task.progress = 50 + Math.round(data.percent / 2);
                             if (data.uploaded_bytes && data.uploaded_bytes > 0) {
                                 // Reset startTime when phase changes to get accurate phase speed
@@ -836,6 +946,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 }
                 const data = await res.json();
                 this.files = data.files || [];
+                if (data.storage_used !== undefined) this.storageUsed = data.storage_used;
                 this.selectedIds = this.selectedIds.filter(id => this.files.some(f => f.id === id));
                 if (!silentLoad) { this.searchQuery = ''; this.currentPage = 1; } else { if (this.currentPage > this.totalPages) this.currentPage = Math.max(1, this.totalPages); }
             } catch (e) { console.error('Fetch error', e); } finally { this.isLoading = false; this.isRefreshing = false; }
@@ -940,6 +1051,19 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 const fileIdStr = `${file.name}_${file.size}_${file.lastModified}`;
                 // Safely handle Unicode characters (like Vietnamese) for btoa
                 const taskId = 'task_' + btoa(unescape(encodeURIComponent(fileIdStr))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+                
+                // Check if a task with the same ID already exists in the queue
+                const existingTaskIndex = this.uploadQueue.findIndex(t => t.id === taskId);
+                if (existingTaskIndex !== -1) {
+                    const existingTask = this.uploadQueue[existingTaskIndex];
+                    // If it's already uploading and not cancelled/errored, don't add it again
+                    if (existingTask.progress < 100 && !existingTask.isCancelled && !existingTask.hasError) {
+                        continue;
+                    }
+                    // Otherwise, remove the old task (cancelled/errored/done) to avoid duplicate IDs in the UI
+                    this.uploadQueue.splice(existingTaskIndex, 1);
+                }
+
                 const task = { 
                     id: taskId, 
                     name: file.name, 
@@ -1164,18 +1288,25 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             if (file.is_folder) return;
             const typeData = this.getFileTypeData(file.filename);
             const ext = file.filename.split('.').pop().toLowerCase();
-            const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
-            const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv'];
-            const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus'];
-            const textExts = ['txt', 'md', 'log', 'json', 'js', 'py', 'go', 'html', 'css', 'yml', 'yaml', 'sql', 'sh', 'conf', 'ini'];
+            const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif'];
+            const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv', 'ogv', '3gp', 'flv', 'wmv'];
+            const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus', 'oga', 'aac', 'm4b'];
+            const textExts = ['txt', 'md', 'log', 'json', 'js', 'py', 'go', 'html', 'css', 'yml', 'yaml', 'sql', 'sh', 'conf', 'ini', 'c', 'cpp', 'h', 'hpp', 'cs', 'java', 'rb', 'rs', 'swift'];
             
             const langMap = {
                 'js': 'javascript', 'json': 'json', 'py': 'python', 'go': 'go', 
                 'html': 'markup', 'css': 'css', 'yml': 'yaml', 'yaml': 'yaml',
-                'sql': 'sql', 'sh': 'bash', 'md': 'markdown'
+                'sql': 'sql', 'sh': 'bash', 'md': 'markdown', 'c': 'clike', 'cpp': 'clike',
+                'h': 'clike', 'hpp': 'clike', 'cs': 'clike', 'java': 'java', 'rb': 'ruby',
+                'rs': 'rust', 'swift': 'swift'
             };
 
-            const mimeTypes = { 'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg', 'mov': 'video/mp4', 'mkv': 'video/webm', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'opus': 'audio/ogg' };
+            const mimeTypes = { 
+                'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg', 'ogv': 'video/ogg',
+                'mov': 'video/mp4', 'mkv': 'video/webm', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 
+                'flac': 'audio/flac', 'm4a': 'audio/mp4', 'opus': 'audio/ogg', 'oga': 'audio/ogg',
+                'aac': 'audio/aac', 'm4b': 'audio/mp4'
+            };
             let isMedia = false; let mediaHtml = ''; let playerTarget = null;
             let isLarge = false;
             const streamUrl = `/api/files/${file.id}/stream`;
@@ -1370,6 +1501,137 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             } catch (err) {
                 this.showToast(this.t('passkey_error'), 'error');
             }
+        },
+        async fetchYTDLPStatus() {
+            try {
+                const res = await fetch('/api/ytdlp/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.ytdlpEnabled = data.enabled;
+                }
+            } catch (e) { console.error('Failed to fetch ytdlp status', e); }
+        },
+        async checkYTDLPCookies() {
+            try {
+                const res = await fetch('/api/ytdlp/cookies/status');
+                const d = await res.json();
+                this.ytdlpHasCookie = d.has_cookie;
+            } catch (e) {
+                console.error('Failed to check cookies:', e);
+            }
+        },
+        async uploadYTDLPCookies(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            let fd = new FormData();
+            fd.append('cookie_file', file);
+            try {
+                const res = await fetch('/api/ytdlp/cookies', { 
+                    method: 'POST', 
+                    body: fd, 
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                });
+                if (res.ok) {
+                    this.ytdlpHasCookie = true;
+                    this.showToast(this.t('toast_success'), 'success');
+                } else {
+                    const d = await res.json();
+                    this.showToast(this.handleCommonError(d.error, 'upload_failed'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            } finally {
+                e.target.value = ''; // Reset input
+            }
+        },
+        async removeYTDLPCookies() {
+            try {
+                const res = await fetch('/api/ytdlp/cookies', { 
+                    method: 'DELETE', 
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                });
+                if (res.ok) {
+                    this.ytdlpHasCookie = false;
+                    this.showToast(this.t('toast_success'), 'success');
+                } else {
+                    this.showToast(this.t('status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            }
+        },
+        async fetchYTDLPFormats() {
+            if (!this.ytdlpUrl) return;
+            
+            // Basic URL validation
+            try {
+                new URL(this.ytdlpUrl);
+            } catch (e) {
+                this.showToast(this.t('invalid_url'), 'error');
+                return;
+            }
+
+            this.ytdlpLoading = true;
+            this.ytdlpInfo = null;
+            let fd = new FormData();
+            fd.append('url', this.ytdlpUrl);
+            try {
+                const res = await fetch('/api/ytdlp/formats', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                const d = await res.json();
+                if (res.ok) {
+                    this.ytdlpInfo = d;
+                    if (this.ytdlpInfo.formats && this.ytdlpInfo.formats.length > 0) {
+                        this.ytdlpSelectedFormat = ''; // Default to best
+                    }
+                } else {
+                    let errorMsg = d.error || 'ytdlp_error';
+                    // Simplify complex yt-dlp error messages for the user
+                    if (errorMsg.includes('Unsupported URL')) errorMsg = 'err_unsupported_url';
+                    else if (errorMsg.includes('Unable to download webpage')) errorMsg = 'err_network_error';
+                    else if (errorMsg.includes('Video unavailable')) errorMsg = 'err_video_unavailable';
+                    
+                    this.showToast(this.handleCommonError(errorMsg, 'ytdlp_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            } finally {
+                this.ytdlpLoading = false;
+            }
+        },
+        async submitYTDLPDownload() {
+            if (!this.ytdlpUrl) return;
+            let fd = new FormData();
+            fd.append('url', this.ytdlpUrl);
+            fd.append('format_id', this.ytdlpSelectedFormat);
+            fd.append('download_type', this.ytdlpDownloadType);
+            fd.append('path', this.currentPath);
+            try {
+                const res = await fetch('/api/ytdlp/download', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.uploadQueue.push({
+                        id: data.task_id,
+                        name: this.ytdlpInfo ? this.ytdlpInfo.title : 'Media Download',
+                        progress: 0,
+                        statusText: this.t('initiating_ytdlp'),
+                        hasError: false,
+                        isCancelled: false,
+                        size: 0,
+                        startTime: Date.now(),
+                        uploadedBytes: 0,
+                        speed: 0
+                    });
+                    this.showToast(this.t('ytdlp_started'), 'success');
+                    this.ytdlpUrl = '';
+                    this.ytdlpInfo = null;
+                } else {
+                    const d = await res.json();
+                    this.showToast(this.handleCommonError(d.error, 'ytdlp_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            }
         }
     }
 }
@@ -1563,12 +1825,17 @@ function shareApp(shareToken) {
             if (file.is_folder) return;
             const typeData = this.getFileTypeData(file.filename);
             const ext = file.filename.split('.').pop().toLowerCase();
-            const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
-            const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv'];
-            const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus'];
-            const textExts = ['txt', 'md', 'log', 'json', 'js', 'py', 'go', 'html', 'css', 'yml', 'yaml', 'sql', 'sh', 'conf', 'ini'];
+            const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif'];
+            const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv', 'ogv', '3gp', 'flv', 'wmv'];
+            const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus', 'oga', 'aac', 'm4b'];
+            const textExts = ['txt', 'md', 'log', 'json', 'js', 'py', 'go', 'html', 'css', 'yml', 'yaml', 'sql', 'sh', 'conf', 'ini', 'c', 'cpp', 'h', 'hpp', 'cs', 'java', 'rb', 'rs', 'swift'];
             
-            const mimeTypes = { 'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg', 'mov': 'video/mp4', 'mkv': 'video/webm', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'opus': 'audio/ogg' };
+            const mimeTypes = { 
+                'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg', 'ogv': 'video/ogg',
+                'mov': 'video/mp4', 'mkv': 'video/webm', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 
+                'flac': 'audio/flac', 'm4a': 'audio/mp4', 'opus': 'audio/ogg', 'oga': 'audio/ogg',
+                'aac': 'audio/aac', 'm4b': 'audio/mp4'
+            };
             let isMedia = false; let mediaHtml = ''; let playerTarget = null;
             let isLarge = false;
             const streamUrl = `/s/${this.shareToken}/file/${file.id}/stream`;

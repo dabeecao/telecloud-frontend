@@ -1,0 +1,75 @@
+/* Kawaii Anime Theme - Semantic Refactor */
+body[data-theme="anime"] {
+    color-scheme: light;
+    
+    /* Core Colors */
+    --anime-pink: #fb7185;
+    --anime-text-primary: #881337;
+    --anime-text-secondary: #be123c;
+    --anime-bg: #fff1f2;
+
+    /* Semantic Variable Overrides */
+    --accent-color: var(--anime-pink) !important;
+    --accent-glow: #fecdd3 !important;
+    --accent-text: #ffffff !important;
+    
+    --bg-body: var(--anime-bg) !important;
+    --bg-panel: #ffffff !important;
+    --bg-menu: #ffffff !important;
+    --bg-surface: #ffffff !important;
+    
+    --text-primary: var(--anime-text-primary) !important;
+    --text-secondary: var(--anime-text-secondary) !important;
+    --text-muted: #fda4af !important;
+    
+    --border-main: #fda4af !important;
+    --border-light: #ffe4e6 !important;
+    
+    --glass-border: #fda4af !important;
+
+    --glass-blur: 0px; /* Anime theme is flat and clean */
+
+    /* Selection & Scrollbar */
+    --selection-bg: #fecdd3;
+    --selection-text: var(--anime-text-primary);
+    --scrollbar-thumb: #fda4af;
+    --scrollbar-thumb-hover: #f43f5e;
+
+    /* Code & Components */
+    --code-bg: #ffffff;
+    --code-text: var(--anime-text-primary);
+    --plyr-color-main: var(--anime-pink);
+}
+
+/* Anime theme specific styling */
+body[data-theme="anime"] .glass-panel {
+    border: 2px solid #fda4af !important;
+    box-shadow: 0 10px 30px rgba(244, 63, 94, 0.08) !important;
+    backdrop-filter: none !important;
+}
+
+body[data-theme="anime"] .glass-menu {
+    border: 2px solid var(--anime-pink) !important;
+    box-shadow: 0 8px 32px rgba(244, 63, 94, 0.15) !important;
+}
+
+body[data-theme="anime"] .bg-blue-600,
+body[data-theme="anime"] .bg-indigo-600 {
+    background: var(--anime-pink) !important;
+    color: #ffffff !important;
+}
+
+body[data-theme="anime"] .bg-blue-600:hover {
+    background: #f43f5e !important;
+}
+
+body[data-theme="anime"] .text-blue-600,
+body[data-theme="anime"] .dark\:text-blue-400,
+body[data-theme="anime"] .text-blue-500 {
+    color: #f43f5e !important;
+}
+
+body[data-theme="anime"] .hover\:bg-white\/60:hover,
+body[data-theme="anime"] .dark\:hover\:bg-slate-800\/50:hover {
+    background-color: #fff1f2 !important;
+}

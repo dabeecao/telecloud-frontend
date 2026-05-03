@@ -1,0 +1,49 @@
+/* Midnight Lavender Theme - Semantic Refactor */
+body[data-theme="lavender"] {
+    color-scheme: dark;
+    
+    /* Core Colors */
+    --lav-primary: #a78bfa;
+    --lav-bg: #0f172a;
+    --lav-surface: #1e1b4b;
+
+    /* Semantic Variable Overrides */
+    --accent-color: var(--lav-primary) !important;
+    --accent-glow: rgba(167, 139, 250, 0.4) !important;
+    --accent-text: #ffffff !important;
+    
+    --bg-body: #0c0a24 !important;
+    --bg-panel: rgba(20, 15, 50, 0.8) !important;
+    --bg-menu: var(--lav-surface) !important;
+    --bg-surface: rgba(255, 255, 255, 0.05) !important;
+    
+    --text-primary: #f1f5f9 !important;
+    --text-secondary: #94a3b8 !important;
+    --text-muted: #64748b !important;
+    
+    --border-main: rgba(167, 139, 250, 0.3) !important;
+    --border-light: rgba(255, 255, 255, 0.05) !important;
+    
+    --glass-border: rgba(167, 139, 250, 0.3) !important;
+
+
+    /* Selection & Scrollbar */
+    --selection-bg: rgba(167, 139, 250, 0.4);
+    --selection-text: #ffffff;
+    --scrollbar-thumb: rgba(167, 139, 250, 0.3);
+    --scrollbar-thumb-hover: rgba(167, 139, 250, 0.5);
+
+    /* Code & Components */
+    --code-bg: #0c0a24;
+    --code-text: var(--lav-primary);
+    --plyr-color-main: var(--lav-primary);
+}
+
+body[data-theme="lavender"] .glass-menu {
+    border: 1px solid var(--lav-primary) !important;
+}
+
+body[data-theme="lavender"] .bg-blue-600 {
+    background: linear-gradient(135deg, #818cf8, #a78bfa) !important;
+    color: #fff !important;
+}

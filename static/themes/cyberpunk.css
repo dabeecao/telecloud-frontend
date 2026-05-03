@@ -1,0 +1,83 @@
+/* Cyberpunk 2077 Theme - Semantic Refactor */
+body[data-theme="cyberpunk"] {
+    color-scheme: dark;
+    
+    /* Core Colors */
+    --cp-yellow: #fcee0a;
+    --cp-blue: #00f0ff;
+    --cp-black: #050505;
+
+    /* Semantic Variable Overrides */
+    --accent-color: var(--cp-yellow) !important;
+    --accent-glow: var(--cp-yellow) !important;
+    --accent-text: #000000 !important;
+    
+    --bg-body: #000000 !important;
+    --bg-panel: rgba(10, 10, 10, 0.95) !important;
+    --bg-menu: #000000 !important;
+    --bg-surface: #000000 !important;
+    
+    --text-primary: var(--cp-yellow) !important;
+    --text-secondary: var(--cp-blue) !important;
+    --text-muted: rgba(0, 240, 255, 0.6) !important;
+    
+    --border-main: var(--cp-yellow) !important;
+    --border-light: rgba(252, 238, 10, 0.3) !important;
+    
+    --glass-border: var(--cp-yellow) !important;
+
+    --glass-blur: 0px; /* Cyberpunk is usually sharp */
+
+    /* Selection & Scrollbar */
+    --selection-bg: var(--cp-yellow);
+    --selection-text: #000000;
+    --scrollbar-thumb: rgba(252, 238, 10, 0.4);
+    --scrollbar-thumb-hover: rgba(252, 238, 10, 0.7);
+
+    /* Code & Components */
+    --code-bg: #000000;
+    --code-text: var(--cp-yellow);
+    --plyr-color-main: var(--cp-yellow);
+
+    font-family: 'Courier New', Courier, monospace !important;
+}
+
+/* Cyberpunk specific brutalist styles */
+body[data-theme="cyberpunk"] .glass-panel {
+    border-left: 4px solid var(--cp-yellow) !important;
+    border-radius: 0 !important;
+    clip-path: polygon(0 0, 95% 0, 100% 5%, 100% 100%, 5% 100%, 0 95%);
+}
+
+body[data-theme="cyberpunk"] .glass-menu {
+    border: 2px solid var(--cp-yellow) !important;
+    border-radius: 0 !important;
+}
+
+body[data-theme="cyberpunk"] h1, 
+body[data-theme="cyberpunk"] h2, 
+body[data-theme="cyberpunk"] h3 {
+    text-transform: uppercase;
+}
+
+body[data-theme="cyberpunk"] .bg-blue-600 {
+    background: var(--cp-yellow) !important;
+    color: #000 !important;
+    border-radius: 0 !important;
+    font-weight: 900 !important;
+    clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+}
+
+body[data-theme="cyberpunk"] input {
+    border-radius: 0 !important;
+}
+
+body[data-theme="cyberpunk"] .glass-button {
+    border-radius: 0 !important;
+    border: 1px solid var(--cp-blue) !important;
+}
+
+body[data-theme="cyberpunk"] .glass-button:hover {
+    background: var(--cp-blue) !important;
+    color: #000 !important;
+}

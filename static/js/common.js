@@ -117,17 +117,17 @@ const TeleCloud = {
         const ext = filename.split('.').pop().toLowerCase();
         const types = {
             'jpg': { n: 'type_image', c: 'bg-rose-100 text-rose-500 dark:bg-rose-500/20 dark:text-rose-400', i: '<i class="fa-solid fa-image text-2xl"></i>' },
-            'jpeg': 'jpg', 'png': 'jpg', 'gif': 'jpg', 'webp': 'jpg', 'svg': 'jpg',
+            'jpeg': 'jpg', 'png': 'jpg', 'gif': 'jpg', 'webp': 'jpg', 'svg': 'jpg', 'bmp': 'jpg', 'heic': 'jpg', 'heif': 'jpg',
             'mp4': { n: 'type_video', c: 'bg-purple-100 text-purple-500 dark:bg-purple-500/20 dark:text-purple-400', i: '<i class="fa-solid fa-film text-2xl"></i>' },
-            'mov': 'mp4', 'avi': 'mp4', 'mkv': 'mp4',
+            'mov': 'mp4', 'avi': 'mp4', 'mkv': 'mp4', 'webm': 'mp4', 'ogg': 'mp4', 'ogv': 'mp4', '3gp': 'mp4', 'flv': 'mp4', 'wmv': 'mp4',
             'mp3': { n: 'type_audio', c: 'bg-amber-100 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400', i: '<i class="fa-solid fa-music text-2xl"></i>' },
-            'wav': 'mp3', 'flac': 'mp3', 'opus': 'mp3',
+            'wav': 'mp3', 'flac': 'mp3', 'opus': 'mp3', 'm4a': 'mp3', 'oga': 'mp3', 'aac': 'mp3', 'm4b': 'mp3',
             'php': { n: 'type_code', c: 'bg-indigo-100 text-indigo-500 dark:bg-indigo-500/20 dark:text-indigo-400', i: '<i class="fa-solid fa-code text-2xl"></i>' },
-            'js': 'php', 'html': 'php', 'css': 'php', 'py': 'php', 'json': 'php', 'sql': 'php',
+            'js': 'php', 'html': 'php', 'css': 'php', 'py': 'php', 'json': 'php', 'sql': 'php', 'c': 'php', 'cpp': 'php', 'h': 'php', 'hpp': 'php', 'cs': 'php', 'java': 'php', 'rb': 'php', 'rs': 'php', 'swift': 'php',
             'zip': { n: 'type_archive', c: 'bg-orange-100 text-orange-500 dark:bg-orange-500/20 dark:text-orange-400', i: '<i class="fa-solid fa-file-zipper text-2xl"></i>' },
-            'rar': 'zip', 'ipa': 'zip', 'tar': 'zip', 'gz': 'zip', '7z': 'zip', 'apk': 'zip',
+            'rar': 'zip', 'ipa': 'zip', 'tar': 'zip', 'gz': 'zip', '7z': 'zip', 'apk': 'zip', 'iso': 'zip', 'bz2': 'zip',
             'pdf': { n: 'type_doc', c: 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-400', i: '<i class="fa-solid fa-file-pdf text-2xl"></i>' },
-            'doc': 'pdf', 'docx': 'pdf', 'xls': 'pdf', 'xlsx': 'pdf',
+            'doc': 'pdf', 'docx': 'pdf', 'xls': 'pdf', 'xlsx': 'pdf', 'ppt': 'pdf', 'pptx': 'pdf', 'csv': 'pdf',
             'txt': { n: 'type_text', c: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400', i: '<i class="fa-solid fa-file-lines text-2xl"></i>' },
             'md': 'txt', 'log': 'txt', 'go': 'txt', 'yml': 'txt', 'yaml': 'txt', 'sh': 'txt', 'conf': 'txt', 'ini': 'txt'
         };

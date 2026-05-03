@@ -26,6 +26,13 @@
     <link rel="stylesheet" href="/static/css/prism.min.css?v={{ .version }}">
     <script src="/static/js/prism.min.js?v={{ .version }}"></script>
 
+    <!-- Theme CSS Files -->
+    <link rel="stylesheet" href="/static/themes/neon.min.css?v={{ .version }}">
+    <link rel="stylesheet" href="/static/themes/cyberpunk.min.css?v={{ .version }}">
+    <link rel="stylesheet" href="/static/themes/anime.min.css?v={{ .version }}">
+    <link rel="stylesheet" href="/static/themes/lavender.min.css?v={{ .version }}">
+    <link rel="stylesheet" href="/static/themes/forest.min.css?v={{ .version }}">
+
     <!-- SEO & Social Meta Tags -->
     <meta name="description" content="TeleCloud OS - Cloud file management via Telegram">
     <meta property="og:title" content="TeleCloud OS">
@@ -40,7 +47,8 @@
 
 <body
     class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-full relative overflow-hidden flex flex-col transition-colors duration-500"
-    x-data="cloudApp(true, {{ if .is_admin }}true{{ else }}false{{ end }}, {{ .storage_used }}, {{ if .webdav_enabled }}true{{ else }}false{{ end }}, '{{ .webdav_user }}', '{{ .webdav_password }}', {{ if .upload_api_enabled }}true{{ else }}false{{ end }}, '{{ .upload_api_key }}', {{ if .global_webdav_enabled }}true{{ else }}false{{ end }}, {{ if .global_api_enabled }}true{{ else }}false{{ end }}, '{{ .webauthn_rpid }}', '{{ .webauthn_rporigin }}')"
+    :data-theme="currentTheme"
+    x-data="cloudApp(true, {{ if .is_admin }}true{{ else }}false{{ end }}, {{ .storage_used }}, {{ if .webdav_enabled }}true{{ else }}false{{ end }}, '{{ .webdav_user }}', '{{ .webdav_password }}', {{ if .upload_api_enabled }}true{{ else }}false{{ end }}, '{{ .upload_api_key }}', {{ if .global_webdav_enabled }}true{{ else }}false{{ end }}, {{ if .global_api_enabled }}true{{ else }}false{{ end }}, '{{ .webauthn_rpid }}', '{{ .webauthn_rporigin }}', '{{ .theme }}')"
     @dragover.prevent="dragOver = true" @dragleave.prevent="dragOver = false" @drop.prevent="handleDrop($event)">
 
     <div class="blob-1"></div>
@@ -87,7 +95,8 @@
             </div>
 
             <div class="mt-4 text-center text-[10px] text-slate-500 dark:text-slate-400">
-                <span x-text="t('max_size')"></span>: <span class="font-semibold text-slate-700 dark:text-slate-300" x-text="t('unlimited_split')"></span>
+                <span x-text="t('max_size')"></span>: <span class="font-semibold text-slate-700 dark:text-slate-300"
+                    x-text="t('unlimited_split')"></span>
                 <span class="block mt-1 opacity-75" x-text="t('large_file_support')"></span>
             </div>
         </div>
@@ -108,7 +117,8 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block" x-text="t('url_label')"></label>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block"
+                        x-text="t('url_label')"></label>
                     <input type="url" x-model="remoteUrl" @keydown.enter="submitRemoteUpload"
                         class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all"
                         placeholder="https://example.com/file.zip">
@@ -119,8 +129,10 @@
                 </div>
 
                 <div class="flex items-center gap-2 px-1">
-                    <input type="checkbox" id="remoteOverwrite" x-model="remoteOverwrite" class="w-4 h-4 rounded accent-blue-600">
-                    <label for="remoteOverwrite" class="text-sm text-slate-600 dark:text-slate-300 cursor-pointer" x-text="t('overwrite_existing')"></label>
+                    <input type="checkbox" id="remoteOverwrite" x-model="remoteOverwrite"
+                        class="w-4 h-4 rounded accent-blue-600">
+                    <label for="remoteOverwrite" class="text-sm text-slate-600 dark:text-slate-300 cursor-pointer"
+                        x-text="t('overwrite_existing')"></label>
                 </div>
 
                 <button @click="submitRemoteUpload"
@@ -146,7 +158,8 @@
             <p class="text-slate-600 dark:text-slate-300 text-sm mb-5" x-text="modal.message" x-show="modal.message">
             </p>
             <template x-if="modal.type === 'prompt'">
-                <input :type="modal.inputType || 'text'" x-model="modal.input" x-ref="modalInput" @keydown.enter="closeUIModal(modal.input)"
+                <input :type="modal.inputType || 'text'" x-model="modal.input" x-ref="modalInput"
+                    @keydown.enter="closeUIModal(modal.input)"
                     class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white mb-5 transition-all">
             </template>
 
@@ -259,7 +272,8 @@
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white truncate"
                         x-text="fileInfoModal.file?.filename" :title="fileInfoModal.file?.filename"></h3>
                     <p class="text-slate-500 dark:text-slate-400 text-sm font-medium mt-0.5"
-                        x-text="t(fileInfoModal.typeName) + (fileInfoModal.ext ? ' (' + fileInfoModal.ext + ')' : '')"></p>
+                        x-text="t(fileInfoModal.typeName) + (fileInfoModal.ext ? ' (' + fileInfoModal.ext + ')' : '')">
+                    </p>
                 </div>
 
                 <button @click="closeFileInfoModal()"
@@ -273,26 +287,32 @@
                 x-html="fileInfoModal.mediaHtml"></div>
 
             <div x-show="fileInfoModal.needsLoad" class="w-full mt-4 mb-2">
-                <div class="w-full p-6 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                <div
+                    class="w-full p-6 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
                     <i class="fa-solid fa-file-lines text-4xl text-slate-300 dark:text-slate-600 mb-3"></i>
                     <p class="text-sm text-slate-500 mb-4 text-center" x-text="t('preview_manual')"></p>
-                    <button @click="loadFilePreview()" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-blue-500/20 active:scale-95">
+                    <button @click="loadFilePreview()"
+                        class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-blue-500/20 active:scale-95">
                         <span x-text="t('load_preview')"></span>
                     </button>
                 </div>
             </div>
 
             <div x-show="fileInfoModal.tooLarge" class="w-full mt-4 mb-2">
-                <div class="w-full p-6 flex flex-col items-center justify-center bg-red-50 dark:bg-red-500/10 rounded-2xl border border-dashed border-red-200 dark:border-red-500/30">
+                <div
+                    class="w-full p-6 flex flex-col items-center justify-center bg-red-50 dark:bg-red-500/10 rounded-2xl border border-dashed border-red-200 dark:border-red-500/30">
                     <i class="fa-solid fa-file-circle-exclamation text-4xl text-red-400 mb-3"></i>
-                    <p class="text-sm text-red-600 dark:text-red-400 mb-4 text-center" x-text="t('preview_blocked')"></p>
-                    <a :href="fileInfoModal.file ? '/download/' + fileInfoModal.file.id : '#'" class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-red-500/20 active:scale-95">
+                    <p class="text-sm text-red-600 dark:text-red-400 mb-4 text-center" x-text="t('preview_blocked')">
+                    </p>
+                    <a :href="fileInfoModal.file ? '/download/' + fileInfoModal.file.id : '#'"
+                        class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-red-500/20 active:scale-95">
                         <i class="fa-solid fa-download mr-2"></i><span x-text="t('download')"></span>
                     </a>
                 </div>
             </div>
 
-            <div x-show="fileInfoModal.isPreviewLoading" class="w-full mt-6 mb-4 flex flex-col items-center justify-center py-10">
+            <div x-show="fileInfoModal.isPreviewLoading"
+                class="w-full mt-6 mb-4 flex flex-col items-center justify-center py-10">
                 <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-3"></i>
                 <p class="text-sm text-slate-500" x-text="t('loading_preview')"></p>
             </div>
@@ -389,6 +409,11 @@
                             :class="currentTab === 'files' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
                             <i class="fa-solid fa-folder-open mr-1.5"></i><span x-text="t('home')"></span>
                         </button>
+                        <button @click="currentTab = 'ytdlp'" x-show="ytdlpEnabled" x-cloak
+                            class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+                            :class="currentTab === 'ytdlp' ? 'bg-white dark:bg-slate-700 text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
+                            <i class="fa-brands fa-youtube mr-1.5"></i><span>YT-DLP</span>
+                        </button>
                         <button @click="currentTab = 'settings'"
                             class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
                             :class="currentTab === 'settings' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
@@ -405,7 +430,8 @@
                             class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all relative"
                             :class="currentTab === 'changelog' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
                             <i class="fa-solid fa-clock-rotate-left mr-1.5"></i><span x-text="t('changelog')"></span>
-                            <span class="absolute top-1 -right-0.5 w-2 h-2 bg-red-500 border-2 border-white dark:border-slate-700 rounded-full animate-pulse"></span>
+                            <span
+                                class="absolute top-1 -right-0.5 w-2 h-2 bg-red-500 border-2 border-white dark:border-slate-700 rounded-full animate-pulse"></span>
                         </button>
                     </div>
                 </div>
@@ -502,17 +528,20 @@
                             <i class="fa-solid fa-circle-xmark text-lg"></i>
                         </button>
                     </div>
-                    <button @click="toggleViewMode()" 
-                            class="p-2.5 px-3 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-white/60 hover:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/50 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 shrink-0"
-                            :title="viewMode === 'list' ? t('view_grid') : t('view_list')">
-                        <i class="fa-solid text-lg" :class="viewMode === 'list' ? 'fa-table-cells-large' : 'fa-list'"></i>
+                    <button @click="toggleViewMode()"
+                        class="p-2.5 px-3 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-white/60 hover:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/50 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 shrink-0"
+                        :title="viewMode === 'list' ? t('view_grid') : t('view_list')">
+                        <i class="fa-solid text-lg"
+                            :class="viewMode === 'list' ? 'fa-table-cells-large' : 'fa-list'"></i>
                     </button>
                 </div>
                 <!-- Unified Table Header -->
                 <div x-show="files.length > 0 && !isLoading && viewMode === 'list'"
                     class="grid grid-cols-12 gap-4 px-4 md:px-10 py-3 text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-t border-slate-200/50 dark:border-white/5">
-                    <div class="col-span-8 md:col-span-5 flex items-center gap-3 cursor-pointer select-none group" @click="toggleSort('name')">
-                        <input type="checkbox" class="w-4 h-4 accent-blue-600 cursor-pointer rounded" @click.stop @change="
+                    <div class="col-span-8 md:col-span-5 flex items-center gap-3 cursor-pointer select-none group"
+                        @click="toggleSort('name')">
+                        <input type="checkbox" class="w-4 h-4 accent-blue-600 cursor-pointer rounded" @click.stop
+                            @change="
                                 let pageIds = displayedFiles.map(f => f.id); 
                                 selectedIds = $event.target.checked 
                                     ? [...new Set([...selectedIds, ...pageIds])] 
@@ -520,15 +549,20 @@
                             "
                             :checked="displayedFiles.length > 0 && displayedFiles.every(f => selectedIds.includes(f.id))">
                         <span x-text="t('name_placeholder')"></span>
-                        <i class="fa-solid" :class="sortBy === 'name' ? (sortOrder === 'asc' ? 'fa-sort-up text-blue-500' : 'fa-sort-down text-blue-500') : 'fa-sort opacity-0 group-hover:opacity-40 transition-opacity'"></i>
+                        <i class="fa-solid"
+                            :class="sortBy === 'name' ? (sortOrder === 'asc' ? 'fa-sort-up text-blue-500' : 'fa-sort-down text-blue-500') : 'fa-sort opacity-0 group-hover:opacity-40 transition-opacity'"></i>
                     </div>
-                    <div class="col-span-3 hidden md:flex items-center gap-1.5 cursor-pointer select-none group" @click="toggleSort('date')">
+                    <div class="col-span-3 hidden md:flex items-center gap-1.5 cursor-pointer select-none group"
+                        @click="toggleSort('date')">
                         <span x-text="t('date')"></span>
-                        <i class="fa-solid" :class="sortBy === 'date' ? (sortOrder === 'asc' ? 'fa-sort-up text-blue-500' : 'fa-sort-down text-blue-500') : 'fa-sort opacity-0 group-hover:opacity-40 transition-opacity'"></i>
+                        <i class="fa-solid"
+                            :class="sortBy === 'date' ? (sortOrder === 'asc' ? 'fa-sort-up text-blue-500' : 'fa-sort-down text-blue-500') : 'fa-sort opacity-0 group-hover:opacity-40 transition-opacity'"></i>
                     </div>
-                    <div class="col-span-2 hidden md:flex items-center gap-1.5 cursor-pointer select-none group" @click="toggleSort('size')">
+                    <div class="col-span-2 hidden md:flex items-center gap-1.5 cursor-pointer select-none group"
+                        @click="toggleSort('size')">
                         <span x-text="t('size')"></span>
-                        <i class="fa-solid" :class="sortBy === 'size' ? (sortOrder === 'asc' ? 'fa-sort-up text-blue-500' : 'fa-sort-down text-blue-500') : 'fa-sort opacity-0 group-hover:opacity-40 transition-opacity'"></i>
+                        <i class="fa-solid"
+                            :class="sortBy === 'size' ? (sortOrder === 'asc' ? 'fa-sort-up text-blue-500' : 'fa-sort-down text-blue-500') : 'fa-sort opacity-0 group-hover:opacity-40 transition-opacity'"></i>
                     </div>
                     <div class="col-span-4 md:col-span-2 text-right md:text-center" x-text="t('actions')"></div>
                 </div>
@@ -551,7 +585,8 @@
 
                     <div class="mb-4 px-2">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                            <i class="fa-solid" :class="isAdmin ? 'fa-shield-halved text-amber-500' : 'fa-user-gear text-blue-500'"></i>
+                            <i class="fa-solid"
+                                :class="isAdmin ? 'fa-shield-halved text-amber-500' : 'fa-user-gear text-blue-500'"></i>
                             <span x-text="isAdmin ? t('global_settings') : t('personal_settings')"></span>
                         </h3>
                     </div>
@@ -574,11 +609,16 @@
                                             :class="webdavEnabled ? 'translate-x-5' : 'translate-x-0'"></span>
                                     </button>
                                 </div>
-                                <p class="text-[10px] font-medium mb-3 flex items-center gap-1.5" :class="(!isAdmin && !globalWebdavEnabled) ? 'text-red-500' : 'text-slate-400'" x-cloak>
-                                    <i class="fa-solid opacity-70" :class="(!isAdmin && !globalWebdavEnabled) ? 'fa-lock' : 'fa-circle-info'"></i>
-                                    <span x-text="(!isAdmin && !globalWebdavEnabled) ? t('err_admin_disabled') : (isAdmin ? t('admin_toggle_note') : t('child_toggle_note'))"></span>
+                                <p class="text-[10px] font-medium mb-3 flex items-center gap-1.5"
+                                    :class="(!isAdmin && !globalWebdavEnabled) ? 'text-red-500' : 'text-slate-400'"
+                                    x-cloak>
+                                    <i class="fa-solid opacity-70"
+                                        :class="(!isAdmin && !globalWebdavEnabled) ? 'fa-lock' : 'fa-circle-info'"></i>
+                                    <span
+                                        x-text="(!isAdmin && !globalWebdavEnabled) ? t('err_admin_disabled') : (isAdmin ? t('admin_toggle_note') : t('child_toggle_note'))"></span>
                                 </p>
-                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" x-text="t('webdav_desc')"></p>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" x-text="t('webdav_desc')">
+                                </p>
 
                                 <div x-show="webdavEnabled" x-collapse>
                                     <div class="space-y-4 pt-2">
@@ -643,26 +683,39 @@
                                             :class="uploadAPIEnabled ? 'translate-x-5' : 'translate-x-0'"></span>
                                     </button>
                                 </div>
-                                <p class="text-[10px] font-medium mb-3 flex items-center gap-1.5" :class="(!isAdmin && !globalAPIEnabled) ? 'text-red-500' : 'text-slate-400'" x-cloak>
-                                    <i class="fa-solid opacity-70" :class="(!isAdmin && !globalAPIEnabled) ? 'fa-lock' : 'fa-circle-info'"></i>
-                                    <span x-text="(!isAdmin && !globalAPIEnabled) ? t('err_admin_disabled') : (isAdmin ? t('admin_toggle_note') : t('child_toggle_note'))"></span>
+                                <p class="text-[10px] font-medium mb-3 flex items-center gap-1.5"
+                                    :class="(!isAdmin && !globalAPIEnabled) ? 'text-red-500' : 'text-slate-400'"
+                                    x-cloak>
+                                    <i class="fa-solid opacity-70"
+                                        :class="(!isAdmin && !globalAPIEnabled) ? 'fa-lock' : 'fa-circle-info'"></i>
+                                    <span
+                                        x-text="(!isAdmin && !globalAPIEnabled) ? t('err_admin_disabled') : (isAdmin ? t('admin_toggle_note') : t('child_toggle_note'))"></span>
                                 </p>
-                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-1" x-text="t('upload_api_desc')"></p>
-                                <p class="text-[11px] text-slate-400 mb-4 font-medium flex items-center gap-1.5"><i class="fa-solid fa-circle-info opacity-70"></i><span x-text="t('max_size')"></span>: <span class="font-bold text-slate-600 dark:text-slate-300" x-text="t('unlimited_split')"></span></p>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-1"
+                                    x-text="t('upload_api_desc')"></p>
+                                <p class="text-[11px] text-slate-400 mb-4 font-medium flex items-center gap-1.5"><i
+                                        class="fa-solid fa-circle-info opacity-70"></i><span
+                                        x-text="t('max_size')"></span>: <span
+                                        class="font-bold text-slate-600 dark:text-slate-300"
+                                        x-text="t('unlimited_split')"></span></p>
 
                                 <div x-show="uploadAPIEnabled" x-collapse>
                                     <div class="space-y-4 pt-2">
 
                                         <!-- Endpoint -->
                                         <div>
-                                            <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block"
+                                            <label
+                                                class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block"
                                                 x-text="t('upload_api_endpoint')"></label>
                                             <div class="flex items-center gap-2">
-                                                <div class="flex-1 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-mono text-xs break-all text-violet-700 dark:text-violet-300">
+                                                <div
+                                                    class="flex-1 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-mono text-xs break-all text-violet-700 dark:text-violet-300">
                                                     <span class="text-slate-500 dark:text-slate-400 mr-1">POST</span>
-                                                    <span x-text="window.location.origin + '/api/upload-api/upload'"></span>
+                                                    <span
+                                                        x-text="window.location.origin + '/api/upload-api/upload'"></span>
                                                 </div>
-                                                <button @click="TeleCloud.copyToClipboard(window.location.origin + '/api/upload-api/upload'); showToast(t('toast_copied', {t: 'URL'}), 'success')"
+                                                <button
+                                                    @click="TeleCloud.copyToClipboard(window.location.origin + '/api/upload-api/upload'); showToast(t('toast_copied', {t: 'URL'}), 'success')"
                                                     class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white transition-all shrink-0">
                                                     <i class="fa-solid fa-copy"></i>
                                                 </button>
@@ -671,22 +724,28 @@
 
                                         <!-- API Key -->
                                         <div>
-                                            <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block"
+                                            <label
+                                                class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block"
                                                 x-text="t('upload_api_key_label')"></label>
                                             <template x-if="isAdmin ? !uploadAPIKey : !childAPIKey">
-                                                <p class="text-sm text-slate-400 italic p-3 rounded-xl bg-slate-100 dark:bg-slate-800" x-text="t('upload_api_no_key')"></p>
+                                                <p class="text-sm text-slate-400 italic p-3 rounded-xl bg-slate-100 dark:bg-slate-800"
+                                                    x-text="t('upload_api_no_key')"></p>
                                             </template>
                                             <template x-if="isAdmin ? uploadAPIKey : childAPIKey">
                                                 <div class="flex items-center gap-2">
                                                     <div class="flex-1 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-mono text-xs break-all select-all"
-                                                        x-text="isAdmin ? (showAPIKey ? uploadAPIKey : uploadAPIKey.substring(0,8) + '••••••••••••••••••••••••••••') : (showChildAPIKey ? childAPIKey : childAPIKey.substring(0,8) + '••••••••••••••••••••••••••••')"></div>
+                                                        x-text="isAdmin ? (showAPIKey ? uploadAPIKey : uploadAPIKey.substring(0,8) + '••••••••••••••••••••••••••••') : (showChildAPIKey ? childAPIKey : childAPIKey.substring(0,8) + '••••••••••••••••••••••••••••')">
+                                                    </div>
                                                     <div class="flex flex-col gap-1.5 shrink-0">
-                                                        <button @click="isAdmin ? showAPIKey = !showAPIKey : showChildAPIKey = !showChildAPIKey"
+                                                        <button
+                                                            @click="isAdmin ? showAPIKey = !showAPIKey : showChildAPIKey = !showChildAPIKey"
                                                             class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white transition-all"
                                                             :title="(isAdmin ? showAPIKey : showChildAPIKey) ? t('upload_api_hide_key') : t('upload_api_show_key')">
-                                                            <i class="fa-solid text-sm" :class="(isAdmin ? showAPIKey : showChildAPIKey) ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                                            <i class="fa-solid text-sm"
+                                                                :class="(isAdmin ? showAPIKey : showChildAPIKey) ? 'fa-eye-slash' : 'fa-eye'"></i>
                                                         </button>
-                                                        <button @click="TeleCloud.copyToClipboard(isAdmin ? uploadAPIKey : childAPIKey); showToast(t('toast_copied', {t: t('label_api_key')}), 'success')"
+                                                        <button
+                                                            @click="TeleCloud.copyToClipboard(isAdmin ? uploadAPIKey : childAPIKey); showToast(t('toast_copied', {t: t('label_api_key')}), 'success')"
                                                             class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white transition-all"
                                                             :title="t('upload_api_copy_key')">
                                                             <i class="fa-solid fa-copy text-sm"></i>
@@ -713,27 +772,35 @@
                                         </div>
 
                                         <!-- Warning -->
-                                        <div class="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-                                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 shrink-0"></i>
-                                            <p class="text-xs text-amber-700 dark:text-amber-300" x-text="t('upload_api_warning')"></p>
+                                        <div
+                                            class="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                                            <i
+                                                class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 shrink-0"></i>
+                                            <p class="text-xs text-amber-700 dark:text-amber-300"
+                                                x-text="t('upload_api_warning')"></p>
                                         </div>
 
                                         <!-- API Docs -->
-                                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-xs text-slate-600 dark:text-slate-300 space-y-3">
-                                            <div class="font-bold flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                        <div
+                                            class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-xs text-slate-600 dark:text-slate-300 space-y-3">
+                                            <div
+                                                class="font-bold flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
                                                 <i class="fa-solid fa-book text-violet-500"></i>
                                                 <span x-text="t('upload_api_doc_title')"></span>
                                             </div>
 
                                             <!-- cURL example -->
                                             <div>
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5" x-text="t('curl_basic')"></p>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                                                    x-text="t('curl_basic')"></p>
                                                 <div class="relative group">
-                                                    <pre class="bg-slate-900 dark:bg-slate-950 text-emerald-400 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto whitespace-pre-wrap break-all"><code x-text="`curl -X POST ${window.location.origin}/api/upload-api/upload \\
+                                                    <pre
+                                                        class="bg-slate-900 dark:bg-slate-950 text-emerald-400 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto whitespace-pre-wrap break-all"><code x-text="`curl -X POST ${window.location.origin}/api/upload-api/upload \\
   -H 'Authorization: Bearer <YOUR_API_KEY>' \\
   -F 'file=@/path/to/yourfile.txt' \\
   -F 'path=/'`"></code></pre>
-                                                    <button @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${isAdmin ? uploadAPIKey : childAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
+                                                    <button
+                                                        @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${isAdmin ? uploadAPIKey : childAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
                                                         class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 bg-slate-700 hover:bg-violet-600 text-white rounded-lg transition-all text-[10px]">
                                                         <i class="fa-solid fa-copy"></i>
                                                     </button>
@@ -741,14 +808,17 @@
                                             </div>
                                             <!-- cURL example with share -->
                                             <div>
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5" x-text="t('curl_share')"></p>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                                                    x-text="t('curl_share')"></p>
                                                 <div class="relative group">
-                                                    <pre class="bg-slate-900 dark:bg-slate-950 text-emerald-400 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto whitespace-pre-wrap break-all"><code x-text="`curl -X POST ${window.location.origin}/api/upload-api/upload \\
+                                                    <pre
+                                                        class="bg-slate-900 dark:bg-slate-950 text-emerald-400 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto whitespace-pre-wrap break-all"><code x-text="`curl -X POST ${window.location.origin}/api/upload-api/upload \\
   -H 'Authorization: Bearer <YOUR_API_KEY>' \\
   -F 'file=@/path/to/yourfile.txt' \\
   -F 'path=/' \\
   -F 'share=public'`"></code></pre>
-                                                    <button @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${isAdmin ? uploadAPIKey : childAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/' -F 'share=public'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
+                                                    <button
+                                                        @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${isAdmin ? uploadAPIKey : childAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/' -F 'share=public'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
                                                         class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 bg-slate-700 hover:bg-violet-600 text-white rounded-lg transition-all text-[10px]">
                                                         <i class="fa-solid fa-copy"></i>
                                                     </button>
@@ -757,14 +827,17 @@
 
                                             <!-- cURL example with async -->
                                             <div>
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5" x-text="t('curl_async')"></p>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                                                    x-text="t('curl_async')"></p>
                                                 <div class="relative group">
-                                                    <pre class="bg-slate-900 dark:bg-slate-950 text-emerald-400 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto whitespace-pre-wrap break-all"><code x-text="`curl -X POST ${window.location.origin}/api/upload-api/upload \\
+                                                    <pre
+                                                        class="bg-slate-900 dark:bg-slate-950 text-emerald-400 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto whitespace-pre-wrap break-all"><code x-text="`curl -X POST ${window.location.origin}/api/upload-api/upload \\
   -H 'Authorization: Bearer <YOUR_API_KEY>' \\
   -F 'file=@/path/to/yourfile.txt' \\
   -F 'path=/' \\
   -F 'async=true'`"></code></pre>
-                                                    <button @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${uploadAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/' -F 'async=true'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
+                                                    <button
+                                                        @click="TeleCloud.copyToClipboard(`curl -X POST ${window.location.origin}/api/upload-api/upload -H 'Authorization: Bearer ${uploadAPIKey}' -F 'file=@/path/to/yourfile.txt' -F 'path=/' -F 'async=true'`); showToast(t('toast_copied', {t: 'cURL'}), 'success')"
                                                         class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 bg-slate-700 hover:bg-violet-600 text-white rounded-lg transition-all text-[10px]">
                                                         <i class="fa-solid fa-copy"></i>
                                                     </button>
@@ -773,38 +846,52 @@
 
                                             <!-- Parameters -->
                                             <div>
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5" x-text="t('upload_api_params')"></p>
-                                                <div class="space-y-1.5 pl-1.5 border-l-2 border-slate-200 dark:border-slate-700">
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                                                    x-text="t('upload_api_params')"></p>
+                                                <div
+                                                    class="space-y-1.5 pl-1.5 border-l-2 border-slate-200 dark:border-slate-700">
                                                     <div class="flex items-start gap-2">
-                                                        <span class="font-mono bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">file</span>
-                                                        <span class="text-slate-500 dark:text-slate-400" x-text="t('upload_api_param_file')"></span>
+                                                        <span
+                                                            class="font-mono bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">file</span>
+                                                        <span class="text-slate-500 dark:text-slate-400"
+                                                            x-text="t('upload_api_param_file')"></span>
                                                     </div>
                                                     <div class="flex items-start gap-2">
-                                                        <span class="font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">path</span>
-                                                        <span class="text-slate-500 dark:text-slate-400" x-text="t('upload_api_param_path')"></span>
+                                                        <span
+                                                            class="font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">path</span>
+                                                        <span class="text-slate-500 dark:text-slate-400"
+                                                            x-text="t('upload_api_param_path')"></span>
                                                     </div>
                                                     <div class="flex items-start gap-2">
-                                                        <span class="font-mono bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">share</span>
-                                                        <span class="text-slate-500 dark:text-slate-400" x-text="t('upload_api_param_share')"></span>
+                                                        <span
+                                                            class="font-mono bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">share</span>
+                                                        <span class="text-slate-500 dark:text-slate-400"
+                                                            x-text="t('upload_api_param_share')"></span>
                                                     </div>
                                                     <div class="flex items-start gap-2">
-                                                        <span class="font-mono bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">async</span>
-                                                        <span class="text-slate-500 dark:text-slate-400" x-text="t('upload_api_param_async')"></span>
+                                                        <span
+                                                            class="font-mono bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded text-[10px] shrink-0">async</span>
+                                                        <span class="text-slate-500 dark:text-slate-400"
+                                                            x-text="t('upload_api_param_async')"></span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <!-- Response -->
                                             <div class="space-y-2">
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider" x-text="t('upload_api_response_title')"></p>
-                                                <pre class="bg-slate-900 dark:bg-slate-950 text-blue-300 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto"><code>{
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+                                                    x-text="t('upload_api_response_title')"></p>
+                                                <pre
+                                                    class="bg-slate-900 dark:bg-slate-950 text-blue-300 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto"><code>{
   "status":   "done",
   "filename": "yourfile.txt",
   "path":     "/",
   "file_id":  42
 }</code></pre>
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1" x-text="t('response_share')"></p>
-                                                <pre class="bg-slate-900 dark:bg-slate-950 text-blue-300 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto"><code>{
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1"
+                                                    x-text="t('response_share')"></p>
+                                                <pre
+                                                    class="bg-slate-900 dark:bg-slate-950 text-blue-300 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto"><code>{
   "status":       "done",
   "filename":     "yourfile.txt",
   "path":         "/",
@@ -813,15 +900,19 @@
   "share_link":   "https://yourhost/s/&lt;token&gt;",
   "direct_link":  "https://yourhost/dl/&lt;signed-token&gt;"
 }</code></pre>
-                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1" x-text="t('response_async')"></p>
-                                                <pre class="bg-slate-900 dark:bg-slate-950 text-blue-300 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto"><code>{
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1"
+                                                    x-text="t('response_async')"></p>
+                                                <pre
+                                                    class="bg-slate-900 dark:bg-slate-950 text-blue-300 p-3 rounded-xl text-[10px] leading-relaxed overflow-x-auto"><code>{
   "status":   "processing",
   "task_id":  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "filename": "yourfile.txt",
   "path":     "/"
 }</code></pre>
-                                                <div class="flex items-start gap-2 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/30 text-emerald-200 text-[10px]">
-                                                    <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5 shrink-0"></i>
+                                                <div
+                                                    class="flex items-start gap-2 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/30 text-emerald-200 text-[10px]">
+                                                    <i
+                                                        class="fa-solid fa-circle-check text-emerald-400 mt-0.5 shrink-0"></i>
                                                     <span x-html="t('upload_api_sync_note')"></span>
                                                 </div>
                                             </div>
@@ -835,30 +926,91 @@
                             <!-- Passkey Config Card (Admin Only) -->
                             <div class="glass-panel p-6 rounded-3xl border border-white/10" x-show="isAdmin" x-cloak>
                                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                                     <i class="fa-solid fa-gear text-blue-500"></i>
-                                     <span x-text="t('passkey_settings')"></span>
-                                 </h3>
-                                 <div class="space-y-4">
-                                     <div class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50">
-                                         <div class="flex flex-col gap-1">
-                                             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('passkey_rpid')"></span>
-                                             <span class="text-sm font-mono text-slate-700 dark:text-slate-200" x-text="webauthnRPID || t('not_configured')"></span>
-                                         </div>
-                                         <div class="mt-3 flex flex-col gap-1">
-                                             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('passkey_origins')"></span>
-                                             <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400 break-all" x-text="webauthnOrigins || t('not_configured')"></span>
-                                         </div>
-                                     </div>
-                                     <button @click="autoDetectAndSaveWebAuthn"
-                                         class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
-                                         <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                         <span x-text="t('auto_detect_save')"></span>
-                                     </button>
-                                 </div>
+                                    <i class="fa-solid fa-gear text-blue-500"></i>
+                                    <span x-text="t('passkey_settings')"></span>
+                                </h3>
+                                <div class="space-y-4">
+                                    <div
+                                        class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50">
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                                                x-text="t('passkey_rpid')"></span>
+                                            <span class="text-sm font-mono text-slate-700 dark:text-slate-200"
+                                                x-text="webauthnRPID || t('not_configured')"></span>
+                                        </div>
+                                        <div class="mt-3 flex flex-col gap-1">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                                                x-text="t('passkey_origins')"></span>
+                                            <span
+                                                class="text-[11px] font-mono text-slate-500 dark:text-slate-400 break-all"
+                                                x-text="webauthnOrigins || t('not_configured')"></span>
+                                        </div>
+                                    </div>
+                                    <button @click="autoDetectAndSaveWebAuthn"
+                                        class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <span x-text="t('auto_detect_save')"></span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <div class="flex flex-col gap-6">
+                            <!-- Appearance Card -->
+                            <div class="glass-panel p-6 rounded-3xl border border-white/10">
+                                <h3 class="text-lg font-bold flex items-center gap-2 mb-4">
+                                    <i class="fa-solid fa-palette text-pink-500"></i>
+                                    <span x-text="t('appearance')"></span>
+                                </h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mb-5"
+                                    x-text="t('appearance_desc')"></p>
+
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <button @click="setTheme('system')"
+                                        class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group"
+                                        :class="currentTheme === 'system' || !currentTheme ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'">
+                                        <i class="fa-solid fa-circle-half-stroke text-2xl"
+                                            :class="currentTheme === 'system' || !currentTheme ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-600'"></i>
+                                        <span class="text-xs font-bold" x-text="t('theme_system')"></span>
+                                    </button>
+                                    <button @click="setTheme('neon')"
+                                        class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group"
+                                        :class="currentTheme === 'neon' ? 'border-fuchsia-500 bg-fuchsia-50/50 dark:bg-fuchsia-900/20' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'">
+                                        <i class="fa-solid fa-bolt-lightning text-2xl"
+                                            :class="currentTheme === 'neon' ? 'text-fuchsia-500' : 'text-slate-400 group-hover:text-fuchsia-400'"></i>
+                                        <span class="text-xs font-bold" x-text="t('theme_neon')"></span>
+                                    </button>
+                                    <button @click="setTheme('cyberpunk')"
+                                        class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group"
+                                        :class="currentTheme === 'cyberpunk' ? 'border-yellow-500 bg-yellow-50/50 dark:bg-yellow-900/20' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'">
+                                        <i class="fa-solid fa-microchip text-2xl"
+                                            :class="currentTheme === 'cyberpunk' ? 'text-yellow-500' : 'text-slate-400 group-hover:text-yellow-400'"></i>
+                                        <span class="text-xs font-bold" x-text="t('theme_cyberpunk')"></span>
+                                    </button>
+                                    <button @click="setTheme('anime')"
+                                        class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group"
+                                        :class="currentTheme === 'anime' ? 'border-rose-400 bg-rose-50/50 dark:bg-rose-900/20' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'">
+                                        <i class="fa-solid fa-heart text-2xl"
+                                            :class="currentTheme === 'anime' ? 'text-rose-400' : 'text-slate-400 group-hover:text-rose-400'"></i>
+                                        <span class="text-xs font-bold" x-text="t('theme_anime')"></span>
+                                    </button>
+                                    <button @click="setTheme('lavender')"
+                                        class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group"
+                                        :class="currentTheme === 'lavender' ? 'border-violet-400 bg-violet-50/50 dark:bg-violet-900/20' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'">
+                                        <i class="fa-solid fa-moon text-2xl"
+                                            :class="currentTheme === 'lavender' ? 'text-violet-400' : 'text-slate-400 group-hover:text-violet-400'"></i>
+                                        <span class="text-xs font-bold" x-text="t('theme_lavender')"></span>
+                                    </button>
+                                    <button @click="setTheme('forest')"
+                                        class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 group"
+                                        :class="currentTheme === 'forest' ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'">
+                                        <i class="fa-solid fa-tree text-2xl"
+                                            :class="currentTheme === 'forest' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-emerald-400'"></i>
+                                        <span class="text-xs font-bold" x-text="t('theme_forest')"></span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="glass-panel p-6 rounded-3xl border border-white/10 h-max">
                                 <h3 class="text-lg font-bold mb-4 flex items-center justify-between">
                                     <div class="flex items-center gap-2">
@@ -871,34 +1023,48 @@
                                         <span x-text="t('add_passkey')">Add</span>
                                     </button>
                                 </h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4" x-text="t('passkey_desc')">Use biometrics or security keys for faster and safer login.</p>
-                                
-                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar" x-show="passkeys.length > 0">
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4" x-text="t('passkey_desc')">
+                                    Use biometrics or security keys for faster and safer login.</p>
+
+                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar"
+                                    x-show="passkeys.length > 0">
                                     <template x-for="pk in passkeys" :key="pk.id">
-                                        <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 group">
+                                        <div
+                                            class="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 group">
                                             <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600">
+                                                <div
+                                                    class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600">
                                                     <i class="fa-solid fa-fingerprint"></i>
                                                 </div>
                                                 <div>
-                                                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200" x-text="pk.name || t('passkey_default_name', {id: pk.id})"></div>
-                                                    <div class="text-[10px] text-slate-400" x-text="formatDate(pk.created_at)"></div>
+                                                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                                                        x-text="pk.name || t('passkey_default_name', {id: pk.id})">
+                                                    </div>
+                                                    <div class="text-[10px] text-slate-400"
+                                                        x-text="formatDate(pk.created_at)"></div>
                                                 </div>
                                             </div>
-                                            <div class="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
-                                                <button @click="renamePasskey(pk.id, pk.name)" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all" :title="t('rename')">
+                                            <div
+                                                class="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
+                                                <button @click="renamePasskey(pk.id, pk.name)"
+                                                    class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"
+                                                    :title="t('rename')">
                                                     <i class="fa-solid fa-pen-to-square"></i>
                                                 </button>
-                                                <button @click="deletePasskey(pk.id)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all" :title="t('delete')">
+                                                <button @click="deletePasskey(pk.id)"
+                                                    class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                                    :title="t('delete')">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </div>
                                         </div>
                                     </template>
                                 </div>
-                                <div x-show="passkeys.length === 0" class="text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                                <div x-show="passkeys.length === 0"
+                                    class="text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
                                     <i class="fa-solid fa-key text-slate-300 dark:text-slate-700 text-2xl mb-2"></i>
-                                    <p class="text-[10px] text-slate-400 font-medium" x-text="t('no_passkeys')">No passkeys registered</p>
+                                    <p class="text-[10px] text-slate-400 font-medium" x-text="t('no_passkeys')">No
+                                        passkeys registered</p>
                                 </div>
                             </div>
 
@@ -939,10 +1105,14 @@
                                     <i class="fa-brands fa-github text-sm"></i>
                                     <span class="font-bold">GitHub</span>
                                 </a>
-                                <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/50">
+                                <div
+                                    class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/50">
                                     <i class="fa-solid fa-hard-drive text-blue-500"></i>
-                                    <span class="font-medium text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400" x-text="t('storage_used')"></span>
-                                    <span class="text-slate-700 dark:text-slate-200 font-bold text-[10px]" x-text="formatBytes(storageUsed)"></span>
+                                    <span
+                                        class="font-medium text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                                        x-text="t('storage_used')"></span>
+                                    <span class="text-slate-700 dark:text-slate-200 font-bold text-[10px]"
+                                        x-text="formatBytes(storageUsed)"></span>
                                 </div>
                                 <p class="font-medium text-center">TeleCloud <span
                                         class="font-bold text-slate-700 dark:text-slate-300"
@@ -955,7 +1125,8 @@
 
                 {{ if .is_admin }}
                 <div x-show="currentTab === 'users'" x-cloak class="max-w-3xl mx-auto py-4 md:py-6 animate-fade-in-up">
-                    <div class="bg-indigo-600 rounded-[1.5rem] p-6 text-white mb-6 shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                    <div
+                        class="bg-indigo-600 rounded-[1.5rem] p-6 text-white mb-6 shadow-xl shadow-indigo-500/20 relative overflow-hidden">
                         <div class="absolute -right-10 -top-10 opacity-10 rotate-12">
                             <i class="fa-solid fa-users text-[10rem]"></i>
                         </div>
@@ -972,11 +1143,13 @@
                                 </h3>
                                 <form @submit.prevent="createUser" class="space-y-4">
                                     <div>
-                                        <input type="text" x-model="userForm.username" :placeholder="t('username')" required
+                                        <input type="text" x-model="userForm.username" :placeholder="t('username')"
+                                            required
                                             class="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                                     </div>
                                     <button type="submit"
-                                        class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors flex justify-center items-center gap-2" :disabled="isCreatingUser">
+                                        class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors flex justify-center items-center gap-2"
+                                        :disabled="isCreatingUser">
                                         <i class="fa-solid fa-plus" x-show="!isCreatingUser"></i>
                                         <i class="fa-solid fa-spinner fa-spin" x-show="isCreatingUser" x-cloak></i>
                                         <span x-text="t('create_account')"></span>
@@ -993,30 +1166,38 @@
                                 </h3>
                                 <div class="space-y-3">
                                     <template x-for="user in users" :key="user.id">
-                                        <div class="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                                        <div
+                                            class="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-xl">
                                             <div class="flex flex-col">
                                                 <div class="flex items-center gap-2">
                                                     <span class="font-bold text-sm" x-text="user.username"></span>
-                                                    <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 font-medium" x-text="t('files_count', {n: user.file_count})"></span>
+                                                    <span
+                                                        class="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 font-medium"
+                                                        x-text="t('files_count', {n: user.file_count})"></span>
                                                 </div>
-                                                <div class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                                                <div
+                                                    class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
                                                     <span x-text="formatBytes(user.total_size)"></span>
                                                     <span>&bull;</span>
                                                     <span x-text="formatDate(user.created_at)"></span>
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-1">
-                                                <button @click="resetUserPassword(user.username)" class="text-blue-500 hover:text-blue-600 p-2 transition-colors" :title="t('reset_password')">
+                                                <button @click="resetUserPassword(user.username)"
+                                                    class="text-blue-500 hover:text-blue-600 p-2 transition-colors"
+                                                    :title="t('reset_password')">
                                                     <i class="fa-solid fa-key"></i>
                                                 </button>
-                                                <button @click="deleteUser(user.username)" class="text-red-500 hover:text-red-600 p-2 transition-colors">
+                                                <button @click="deleteUser(user.username)"
+                                                    class="text-red-500 hover:text-red-600 p-2 transition-colors">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
                                     </template>
                                     <template x-if="users.length === 0">
-                                        <div class="text-center text-sm text-slate-500 dark:text-slate-400 py-4 italic" x-text="t('no_child_accounts')"></div>
+                                        <div class="text-center text-sm text-slate-500 dark:text-slate-400 py-4 italic"
+                                            x-text="t('no_child_accounts')"></div>
                                     </template>
                                 </div>
                             </div>
@@ -1025,13 +1206,230 @@
                 </div>
                 {{ end }}
 
-                <div x-show="currentTab === 'changelog'" x-cloak class="max-w-3xl mx-auto py-4 md:py-6 animate-fade-in-up">
-                    <div class="bg-indigo-600 rounded-[1.5rem] p-6 text-white mb-6 shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                <div x-show="currentTab === 'ytdlp'" x-cloak class="max-w-3xl mx-auto py-4 md:py-6 animate-fade-in-up">
+                    <div
+                        class="bg-red-600 rounded-[1.5rem] p-6 text-white mb-6 shadow-xl shadow-red-500/20 relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 opacity-10 rotate-12">
+                            <i class="fa-brands fa-youtube text-[10rem]"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2 relative z-10">YT-DLP</h2>
+                        <p class="text-sm text-red-100 relative z-10 max-w-lg" x-text="t('ytdlp_desc')"></p>
+                    </div>
+
+                    <!-- Cookie Management -->
+                    <div
+                        class="glass-panel p-4 mb-6 rounded-3xl border border-white/10 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500">
+                                <i class="fa-solid fa-cookie-bite text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200"
+                                    x-text="t('ytdlp_cookies')"></h3>
+                                <p class="text-[10px] text-slate-500 font-medium"
+                                    x-text="ytdlpHasCookie ? t('ytdlp_cookie_active') : t('ytdlp_no_cookie')"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="file" x-ref="cookieInput" class="hidden" @change="uploadYTDLPCookies"
+                                accept=".txt">
+                            <button @click="$refs.cookieInput.click()"
+                                class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 hover:text-white rounded-xl text-[11px] font-bold transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-upload"></i>
+                                <span x-text="ytdlpHasCookie ? t('change_cookie') : t('add_cookie')"></span>
+                            </button>
+                            <button x-show="ytdlpHasCookie" @click="removeYTDLPCookies"
+                                class="p-2 bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                                :title="t('remove_cookie')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-3xl border border-white/10 mb-6">
+                        <div class="space-y-6">
+                            <!-- URL Input (Always Visible) -->
+                            <div>
+                                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 block"
+                                    x-text="t('url_label_ytdlp')"></label>
+                                <div class="relative group">
+                                    <input type="url" x-model="ytdlpUrl"
+                                        @keydown.enter="!ytdlpInfo && fetchYTDLPFormats()"
+                                        class="w-full pl-4 pr-12 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all text-sm"
+                                        placeholder="https://www.youtube.com/watch?v=...">
+
+                                    <!-- Clear Button (Visible when info exists) -->
+                                    <button x-show="ytdlpInfo"
+                                        @click="ytdlpInfo = null; ytdlpUrl = ''; ytdlpSelectedFormat = ''"
+                                        class="absolute right-2 top-2 bottom-2 px-3 text-slate-400 hover:text-red-500 transition-colors">
+                                        <i class="fa-solid fa-circle-xmark text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Fetch Button (Visible only when NO info) -->
+                            <div x-show="!ytdlpInfo" x-collapse>
+                                <button @click="fetchYTDLPFormats" :disabled="ytdlpLoading || !ytdlpUrl"
+                                    class="w-full py-4 bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 text-white rounded-2xl transition-all shadow-xl flex items-center justify-center gap-3">
+                                    <i class="fa-solid fa-magnifying-glass" x-show="!ytdlpLoading"></i>
+                                    <i class="fa-solid fa-spinner fa-spin" x-show="ytdlpLoading" x-cloak></i>
+                                    <span class="text-sm font-bold"
+                                        x-text="ytdlpLoading ? t('initiating_ytdlp') : t('fetch')"></span>
+                                </button>
+                            </div>
+
+                            <!-- Options & Info (Visible only after fetch) -->
+                            <div x-show="ytdlpInfo" x-cloak x-collapse class="animate-fade-in">
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-200 dark:border-slate-700/50">
+                                    <!-- Left: Media Preview -->
+                                    <div class="space-y-4">
+                                        <div
+                                            class="relative group aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/5">
+                                            <template x-if="ytdlpInfo?.thumbnail">
+                                                <img :src="ytdlpInfo.thumbnail" class="w-full h-full object-cover">
+                                            </template>
+                                            <div
+                                                class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
+                                                <h4 class="font-bold text-white line-clamp-2 text-sm"
+                                                    x-text="ytdlpInfo?.title"></h4>
+                                                <div class="flex items-center gap-2 mt-2">
+                                                    <div
+                                                        class="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center text-[8px]">
+                                                        <i class="fa-solid fa-play"></i>
+                                                    </div>
+                                                    <p class="text-[10px] text-slate-300 font-medium truncate"
+                                                        x-text="ytdlpInfo?.uploader"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div
+                                                class="p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50">
+                                                <p class="text-[9px] font-bold text-slate-400 uppercase"
+                                                    x-text="t('duration')"></p>
+                                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200"
+                                                    x-text="ytdlpInfo?.duration ? Math.floor(ytdlpInfo.duration/60) + ':' + (Math.floor(ytdlpInfo.duration%60)).toString().padStart(2,'0') : 'N/A'">
+                                                </p>
+                                            </div>
+                                            <div
+                                                class="p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50">
+                                                <p class="text-[9px] font-bold text-slate-400 uppercase"
+                                                    x-text="t('upload_date')"></p>
+                                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase"
+                                                    x-text="ytdlpInfo?.upload_date ? ytdlpInfo.upload_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') : 'N/A'">
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right: Selection Area -->
+                                    <div class="space-y-6">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label
+                                                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 block"
+                                                    x-text="t('download_type')"></label>
+                                                <div class="flex gap-2">
+                                                    <button
+                                                        @click="ytdlpDownloadType = 'video'; ytdlpSelectedFormat = ''"
+                                                        class="flex-1 py-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-bold text-xs"
+                                                        :class="ytdlpDownloadType === 'video' ? 'bg-red-600/10 border-red-600 text-red-600' : 'bg-slate-100 dark:bg-slate-800 border-transparent text-slate-500'">
+                                                        <i class="fa-solid fa-video"></i>
+                                                        <span x-text="t('video_only')"></span>
+                                                    </button>
+                                                    <button
+                                                        @click="ytdlpDownloadType = 'audio'; ytdlpSelectedFormat = ''"
+                                                        class="flex-1 py-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-bold text-xs"
+                                                        :class="ytdlpDownloadType === 'audio' ? 'bg-blue-600/10 border-blue-600 text-blue-600' : 'bg-slate-100 dark:bg-slate-800 border-transparent text-slate-500'">
+                                                        <i class="fa-solid fa-music"></i>
+                                                        <span x-text="t('audio_only')"></span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Custom Quality Dropdown -->
+                                            <div class="relative" x-data="{ open: false }">
+                                                <label
+                                                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 block"
+                                                    x-text="t('select_quality')"></label>
+                                                <button @click="open = !open"
+                                                    class="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-xs font-medium flex items-center justify-between transition-all">
+                                                    <span
+                                                        x-text="ytdlpSelectedFormat ? formatQualityLabel(filteredYTDLPFormats.find(f => f.format_id === ytdlpSelectedFormat)) : t('best_quality')"></span>
+                                                    <i class="fa-solid fa-chevron-down transition-transform"
+                                                        :class="open ? 'rotate-180' : ''"></i>
+                                                </button>
+
+                                                <div x-show="open" @click.away="open = false" x-cloak x-collapse
+                                                    class="absolute z-50 mt-2 w-full max-h-60 overflow-y-auto rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl custom-scrollbar">
+                                                    <div class="p-2 space-y-1">
+                                                        <button @click="ytdlpSelectedFormat = ''; open = false"
+                                                            class="w-full text-left p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-xs font-bold flex items-center justify-between"
+                                                            :class="ytdlpSelectedFormat === '' ? 'text-red-600 bg-red-600/5' : 'text-slate-600 dark:text-slate-300'">
+                                                            <span x-text="t('best_quality')"></span>
+                                                            <i class="fa-solid fa-check"
+                                                                x-show="ytdlpSelectedFormat === ''"></i>
+                                                        </button>
+                                                        <template x-for="f in filteredYTDLPFormats" :key="f.format_id">
+                                                            <button
+                                                                @click="ytdlpSelectedFormat = f.format_id; open = false"
+                                                                class="w-full text-left p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-xs flex items-center justify-between group"
+                                                                :class="ytdlpSelectedFormat === f.format_id ? 'text-red-600 bg-red-600/5 font-bold' : 'text-slate-600 dark:text-slate-300'">
+                                                                <div class="flex flex-col">
+                                                                    <span class="font-bold"
+                                                                        x-text="formatQualityLabel(f).split(' - ')[0]"></span>
+                                                                    <span class="text-[10px] opacity-60"
+                                                                        x-text="formatQualityLabel(f).split(' - ')[1] ? formatQualityLabel(f).split(' - ')[1] : ''"></span>
+                                                                </div>
+                                                                <i class="fa-solid fa-check"
+                                                                    x-show="ytdlpSelectedFormat === f.format_id"></i>
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button @click="submitYTDLPDownload"
+                                            class="w-full py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-2xl font-bold shadow-xl shadow-red-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                                            <i class="fa-solid fa-cloud-arrow-down text-lg"></i>
+                                            <span x-text="t('start_download')"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Placeholder when no info -->
+                            <div x-show="!ytdlpInfo && !ytdlpLoading"
+                                class="py-12 flex flex-col items-center justify-center opacity-30">
+                                <div
+                                    class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                                    <i class="fa-solid fa-link text-2xl"></i>
+                                </div>
+                                <p class="text-xs font-medium text-center max-w-[250px]" x-text="t('ytdlp_desc')"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-700/30 flex gap-3">
+                        <i class="fa-solid fa-circle-info text-amber-500 mt-0.5"></i>
+                        <p class="text-xs text-amber-800 dark:text-amber-200 leading-relaxed" x-text="t('ytdlp_note')">
+                        </p>
+                    </div>
+                </div>
+
+                <div x-show="currentTab === 'changelog'" x-cloak
+                    class="max-w-3xl mx-auto py-4 md:py-6 animate-fade-in-up">
+                    <div
+                        class="bg-indigo-600 rounded-[1.5rem] p-6 text-white mb-6 shadow-xl shadow-indigo-500/20 relative overflow-hidden">
                         <div class="absolute -right-10 -top-10 opacity-10 rotate-12">
                             <i class="fa-solid fa-clock-rotate-left text-[10rem]"></i>
                         </div>
                         <h2 class="text-2xl font-bold mb-2 relative z-10" x-text="t('changelog')">Changelog</h2>
-                        <p class="text-sm text-indigo-100 relative z-10 max-w-lg" x-text="t('latest_release') + ': ' + (changelog[0]?.tag || '...')"></p>
+                        <p class="text-sm text-indigo-100 relative z-10 max-w-lg"
+                            x-text="t('latest_release') + ': ' + (changelog[0]?.tag || '...')"></p>
                     </div>
 
                     <div class="space-y-6">
@@ -1039,7 +1437,8 @@
                             <div class="glass-panel p-6 rounded-3xl border border-white/10 overflow-hidden">
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <div
+                                            class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                                             <i class="fa-solid fa-tag text-xl"></i>
                                         </div>
                                         <div>
@@ -1047,11 +1446,13 @@
                                             <p class="text-xs text-slate-500" x-text="formatDate(rel.date)"></p>
                                         </div>
                                     </div>
-                                    <a :href="rel.url" target="_blank" class="px-4 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold">
+                                    <a :href="rel.url" target="_blank"
+                                        class="px-4 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold">
                                         GitHub <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i>
                                     </a>
                                 </div>
-                                <div class="changelog-body text-slate-600 dark:text-slate-300 text-sm overflow-x-auto break-words" x-html="parseMarkdown(rel.body)"></div>
+                                <div class="changelog-body text-slate-600 dark:text-slate-300 text-sm overflow-x-auto break-words"
+                                    x-html="parseMarkdown(rel.body)"></div>
                             </div>
                         </template>
                     </div>
@@ -1089,7 +1490,8 @@
                         </div>
 
                         <div class="w-full text-left border-collapse relative">
-                            <div class="mt-2 pb-10" :class="viewMode === 'list' ? 'space-y-1.5' : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 px-1'">
+                            <div class="mt-2 pb-10"
+                                :class="viewMode === 'list' ? 'space-y-1.5' : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 px-1'">
                                 <template x-for="file in displayedFiles" :key="file.id">
                                     <div class="contents">
                                         <!-- List View Template -->
@@ -1098,69 +1500,114 @@
                                                 :class="selectedIds.includes(file.id) ? 'bg-blue-50/80 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30' : ''"
                                                 @contextmenu.prevent="openContextMenu($event, file)"
                                                 x-transition.opacity.duration.300ms>
-                                                
-                                                <div class="col-span-8 md:col-span-5 flex items-center gap-3 w-full truncate">
+
+                                                <div
+                                                    class="col-span-8 md:col-span-5 flex items-center gap-3 w-full truncate">
                                                     <input type="checkbox" :value="file.id" x-model.number="selectedIds"
                                                         class="w-4 h-4 accent-blue-600 cursor-pointer rounded">
-                                                        
+
                                                     <div class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-sm shrink-0 cursor-pointer group-hover:scale-105 transition-transform"
                                                         @click="if(file.is_folder) { navigateToFolder(file.filename) } else { showFileInfo(file) }">
                                                         <template x-if="file.is_folder">
-                                                            <i class="fa-solid fa-folder text-amber-400 text-xl md:text-2xl drop-shadow-sm"></i>
+                                                            <i
+                                                                class="fa-solid fa-folder text-amber-400 text-xl md:text-2xl drop-shadow-sm"></i>
                                                         </template>
                                                         <template x-if="!file.is_folder">
-                                                            <div class="w-full h-full relative flex items-center justify-center">
+                                                            <div
+                                                                class="w-full h-full relative flex items-center justify-center">
                                                                 <template x-if="file.has_thumb">
-                                                                    <img :src="`/api/files/${file.id}/thumb`" loading="lazy" alt="thumb" class="w-full h-full object-cover rounded-xl shadow-sm">
+                                                                    <img :src="`/api/files/${file.id}/thumb`"
+                                                                        loading="lazy" alt="thumb"
+                                                                        class="w-full h-full object-cover rounded-xl shadow-sm">
                                                                 </template>
                                                                 <template x-if="!file.has_thumb">
-                                                                    <div x-html="getFileTypeData(file.filename).i" class="scale-75 opacity-80" :class="getFileTypeData(file.filename).c.split(' ')[1]"></div>
+                                                                    <div x-html="getFileTypeData(file.filename).i"
+                                                                        class="scale-75 opacity-80"
+                                                                        :class="getFileTypeData(file.filename).c.split(' ')[1]">
+                                                                    </div>
                                                                 </template>
                                                             </div>
                                                         </template>
                                                     </div>
-                                                    <div class="truncate flex-1 cursor-pointer flex flex-col" @click="if(file.is_folder) { navigateToFolder(file.filename) } else { showFileInfo(file) }">
+                                                    <div class="truncate flex-1 cursor-pointer flex flex-col"
+                                                        @click="if(file.is_folder) { navigateToFolder(file.filename) } else { showFileInfo(file) }">
                                                         <div class="flex items-center gap-2">
-                                                            <p class="text-sm md:text-base font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" x-text="file.filename"></p>
+                                                            <p class="text-sm md:text-base font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                                                                x-text="file.filename"></p>
                                                             <template x-if="file.share_token">
-                                                                <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[9px] font-bold tracking-wider uppercase" x-text="t('public')">Public</span>
+                                                                <span
+                                                                    class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[9px] font-bold tracking-wider uppercase"
+                                                                    x-text="t('public')">Public</span>
                                                             </template>
                                                         </div>
-                                                        <p class="text-xs text-slate-400 md:hidden mt-0.5" x-text="file.is_folder ? t('folder') : formatBytes(file.size)"></p>
+                                                        <p class="text-xs text-slate-400 md:hidden mt-0.5"
+                                                            x-text="file.is_folder ? t('folder') : formatBytes(file.size)">
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                
-                                                <div class="hidden md:block col-span-3 text-sm font-medium text-slate-500 dark:text-slate-400" x-text="formatDate(file.created_at)"></div>
-                                                <div class="hidden md:block col-span-2 text-sm font-medium text-slate-500 dark:text-slate-400" x-text="file.is_folder ? t('folder') : formatBytes(file.size)"></div>
-                                                
-                                                <div class="col-span-4 md:col-span-2 flex justify-end md:justify-center relative" @click.outside="if (openMenuId === file.id) openMenuId = null">
-                                                    <button @click.stop="openMenuId = openMenuId === file.id ? null : file.id" class="px-3 py-2 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:outline-none">
+
+                                                <div class="hidden md:block col-span-3 text-sm font-medium text-slate-500 dark:text-slate-400"
+                                                    x-text="formatDate(file.created_at)"></div>
+                                                <div class="hidden md:block col-span-2 text-sm font-medium text-slate-500 dark:text-slate-400"
+                                                    x-text="file.is_folder ? t('folder') : formatBytes(file.size)">
+                                                </div>
+
+                                                <div class="col-span-4 md:col-span-2 flex justify-end md:justify-center relative"
+                                                    @click.outside="if (openMenuId === file.id) openMenuId = null">
+                                                    <button
+                                                        @click.stop="openMenuId = openMenuId === file.id ? null : file.id"
+                                                        class="px-3 py-2 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:outline-none">
                                                         <i class="fa-solid fa-ellipsis-vertical text-lg"></i>
                                                     </button>
-                                                    <div x-show="openMenuId === file.id" x-cloak x-transition.origin.top.right class="glass-menu absolute right-0 top-10 mt-1 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
+                                                    <div x-show="openMenuId === file.id" x-cloak
+                                                        x-transition.origin.top.right
+                                                        class="glass-menu absolute right-0 top-10 mt-1 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
                                                         <template x-if="file.share_token">
                                                             <div class="space-y-1 mb-1">
-                                                                <button @click="copyShareLink(file, 'regular'); openMenuId = null" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium transition-colors text-xs">
-                                                                    <i class="fa-solid fa-share-nodes fa-fw"></i> <span x-text="t('copy_share_link')"></span>
+                                                                <button
+                                                                    @click="copyShareLink(file, 'regular'); openMenuId = null"
+                                                                    class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium transition-colors text-xs">
+                                                                    <i class="fa-solid fa-share-nodes fa-fw"></i> <span
+                                                                        x-text="t('copy_share_link')"></span>
                                                                 </button>
                                                                 <template x-if="!file.is_folder">
-                                                                    <button @click="copyShareLink(file, 'direct'); openMenuId = null" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium transition-colors text-xs">
-                                                                        <i class="fa-solid fa-copy fa-fw"></i> <span x-text="t('copy_direct_link')"></span>
+                                                                    <button
+                                                                        @click="copyShareLink(file, 'direct'); openMenuId = null"
+                                                                        class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium transition-colors text-xs">
+                                                                        <i class="fa-solid fa-copy fa-fw"></i> <span
+                                                                            x-text="t('copy_direct_link')"></span>
                                                                     </button>
                                                                 </template>
                                                             </div>
                                                         </template>
-                                                        
-                                                        <button @click="toggleShare(file); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors">
+
+                                                        <button @click="toggleShare(file); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors">
                                                             <i class="fa-solid fa-link fa-fw text-emerald-500"></i>
-                                                            <span x-text="file.share_token ? t('revoke_link') : t('share_link')"></span>
+                                                            <span
+                                                                x-text="file.share_token ? t('revoke_link') : t('share_link')"></span>
                                                         </button>
-                                                        
-                                                        <div class="h-px bg-slate-200 dark:bg-slate-700/50 my-1 mx-2"></div>
-                                                        <button @click="renameFile(file); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i class="fa-solid fa-pen fa-fw text-slate-400"></i> <span x-text="t('rename')"></span></button>
-                                                        <button @click="copyToClipboard('move', [file.id]); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i class="fa-solid fa-folder-tree fa-fw text-slate-400"></i> <span x-text="t('move')"></span></button>
-                                                        <button @click="copyToClipboard('copy', [file.id]); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i class="fa-solid fa-copy fa-fw text-slate-400"></i> <span x-text="t('copy')"></span></button>
-                                                        <button @click="deleteFile(file.id); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-medium transition-colors"><i class="fa-solid fa-trash fa-fw"></i> <span x-text="t('delete')"></span></button>
+
+                                                        <div class="h-px bg-slate-200 dark:bg-slate-700/50 my-1 mx-2">
+                                                        </div>
+                                                        <button @click="renameFile(file); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i
+                                                                class="fa-solid fa-pen fa-fw text-slate-400"></i> <span
+                                                                x-text="t('rename')"></span></button>
+                                                        <button
+                                                            @click="copyToClipboard('move', [file.id]); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i
+                                                                class="fa-solid fa-folder-tree fa-fw text-slate-400"></i>
+                                                            <span x-text="t('move')"></span></button>
+                                                        <button
+                                                            @click="copyToClipboard('copy', [file.id]); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i
+                                                                class="fa-solid fa-copy fa-fw text-slate-400"></i> <span
+                                                                x-text="t('copy')"></span></button>
+                                                        <button @click="deleteFile(file.id); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-medium transition-colors"><i
+                                                                class="fa-solid fa-trash fa-fw"></i> <span
+                                                                x-text="t('delete')"></span></button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1172,67 +1619,108 @@
                                                 :class="selectedIds.includes(file.id) ? 'bg-blue-50/80 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 shadow-md scale-[1.02]' : 'shadow-sm bg-white/40 dark:bg-slate-800/30 border-slate-200/50 dark:border-slate-700/50'"
                                                 @contextmenu.prevent="openContextMenu($event, file)"
                                                 x-transition.opacity.duration.300ms>
-                                        
-                                                <div class="absolute top-2 left-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" :class="selectedIds.includes(file.id) ? '!opacity-100' : ''">
-                                                    <input type="checkbox" :value="file.id" x-model.number="selectedIds" class="w-4 h-4 accent-blue-600 cursor-pointer rounded">
+
+                                                <div class="absolute top-2 left-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                                    :class="selectedIds.includes(file.id) ? '!opacity-100' : ''">
+                                                    <input type="checkbox" :value="file.id" x-model.number="selectedIds"
+                                                        class="w-4 h-4 accent-blue-600 cursor-pointer rounded">
                                                 </div>
-                                                
-                                                <div class="absolute top-1.5 right-1.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" :class="openMenuId === file.id ? '!opacity-100' : ''"
+
+                                                <div class="absolute top-1.5 right-1.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                                    :class="openMenuId === file.id ? '!opacity-100' : ''"
                                                     @click.outside="if (openMenuId === file.id) openMenuId = null">
-                                                    <button @click.stop="openMenuId = openMenuId === file.id ? null : file.id"
+                                                    <button
+                                                        @click.stop="openMenuId = openMenuId === file.id ? null : file.id"
                                                         class="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors focus:outline-none">
                                                         <i class="fa-solid fa-ellipsis-vertical text-lg"></i>
                                                     </button>
-                                                    <div x-show="openMenuId === file.id" x-cloak x-transition.origin.top.right class="glass-menu absolute right-0 top-8 mt-1 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
+                                                    <div x-show="openMenuId === file.id" x-cloak
+                                                        x-transition.origin.top.right
+                                                        class="glass-menu absolute right-0 top-8 mt-1 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
                                                         <template x-if="file.share_token">
                                                             <div class="space-y-1 mb-1">
-                                                                <button @click="copyShareLink(file, 'regular'); openMenuId = null" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium transition-colors text-xs">
-                                                                    <i class="fa-solid fa-share-nodes fa-fw"></i> <span x-text="t('copy_share_link')"></span>
+                                                                <button
+                                                                    @click="copyShareLink(file, 'regular'); openMenuId = null"
+                                                                    class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium transition-colors text-xs">
+                                                                    <i class="fa-solid fa-share-nodes fa-fw"></i> <span
+                                                                        x-text="t('copy_share_link')"></span>
                                                                 </button>
                                                                 <template x-if="!file.is_folder">
-                                                                    <button @click="copyShareLink(file, 'direct'); openMenuId = null" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium transition-colors text-xs">
-                                                                        <i class="fa-solid fa-copy fa-fw"></i> <span x-text="t('copy_direct_link')"></span>
+                                                                    <button
+                                                                        @click="copyShareLink(file, 'direct'); openMenuId = null"
+                                                                        class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium transition-colors text-xs">
+                                                                        <i class="fa-solid fa-copy fa-fw"></i> <span
+                                                                            x-text="t('copy_direct_link')"></span>
                                                                     </button>
                                                                 </template>
                                                             </div>
                                                         </template>
-                                                        <button @click="toggleShare(file); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors">
+                                                        <button @click="toggleShare(file); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors">
                                                             <i class="fa-solid fa-link fa-fw text-emerald-500"></i>
-                                                            <span x-text="file.share_token ? t('revoke_link') : t('share_link')"></span>
+                                                            <span
+                                                                x-text="file.share_token ? t('revoke_link') : t('share_link')"></span>
                                                         </button>
-                                                        <div class="h-px bg-slate-200 dark:bg-slate-700/50 my-1 mx-2"></div>
-                                                        <button @click="renameFile(file); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i class="fa-solid fa-pen fa-fw text-slate-400"></i> <span x-text="t('rename')"></span></button>
-                                                        <button @click="copyToClipboard('move', [file.id]); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i class="fa-solid fa-folder-tree fa-fw text-slate-400"></i> <span x-text="t('move')"></span></button>
-                                                        <button @click="copyToClipboard('copy', [file.id]); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i class="fa-solid fa-copy fa-fw text-slate-400"></i> <span x-text="t('copy')"></span></button>
-                                                        <button @click="deleteFile(file.id); openMenuId = null" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-medium transition-colors"><i class="fa-solid fa-trash fa-fw"></i> <span x-text="t('delete')"></span></button>
+                                                        <div class="h-px bg-slate-200 dark:bg-slate-700/50 my-1 mx-2">
+                                                        </div>
+                                                        <button @click="renameFile(file); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i
+                                                                class="fa-solid fa-pen fa-fw text-slate-400"></i> <span
+                                                                x-text="t('rename')"></span></button>
+                                                        <button
+                                                            @click="copyToClipboard('move', [file.id]); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i
+                                                                class="fa-solid fa-folder-tree fa-fw text-slate-400"></i>
+                                                            <span x-text="t('move')"></span></button>
+                                                        <button
+                                                            @click="copyToClipboard('copy', [file.id]); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-medium transition-colors"><i
+                                                                class="fa-solid fa-copy fa-fw text-slate-400"></i> <span
+                                                                x-text="t('copy')"></span></button>
+                                                        <button @click="deleteFile(file.id); openMenuId = null"
+                                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 font-medium transition-colors"><i
+                                                                class="fa-solid fa-trash fa-fw"></i> <span
+                                                                x-text="t('delete')"></span></button>
                                                     </div>
                                                 </div>
-                                        
+
                                                 <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm shrink-0 cursor-pointer group-hover:scale-105 transition-transform mt-3"
                                                     @click="if(file.is_folder) { navigateToFolder(file.filename) } else { showFileInfo(file) }">
                                                     <template x-if="file.is_folder">
-                                                        <i class="fa-solid fa-folder text-amber-400 text-4xl md:text-5xl drop-shadow-sm"></i>
+                                                        <i
+                                                            class="fa-solid fa-folder text-amber-400 text-4xl md:text-5xl drop-shadow-sm"></i>
                                                     </template>
                                                     <template x-if="!file.is_folder">
-                                                        <div class="w-full h-full relative flex items-center justify-center">
+                                                        <div
+                                                            class="w-full h-full relative flex items-center justify-center">
                                                             <template x-if="file.has_thumb">
-                                                                <img :src="`/api/files/${file.id}/thumb`" loading="lazy" alt="thumb" class="w-full h-full object-cover rounded-2xl shadow-sm">
+                                                                <img :src="`/api/files/${file.id}/thumb`" loading="lazy"
+                                                                    alt="thumb"
+                                                                    class="w-full h-full object-cover rounded-2xl shadow-sm">
                                                             </template>
                                                             <template x-if="!file.has_thumb">
-                                                                <div x-html="getFileTypeData(file.filename).i" class="scale-[1.5] md:scale-[2] opacity-80" :class="getFileTypeData(file.filename).c.split(' ')[1]"></div>
+                                                                <div x-html="getFileTypeData(file.filename).i"
+                                                                    class="scale-[1.5] md:scale-[2] opacity-80"
+                                                                    :class="getFileTypeData(file.filename).c.split(' ')[1]">
+                                                                </div>
                                                             </template>
                                                         </div>
                                                     </template>
                                                 </div>
-                                        
+
                                                 <div class="w-full flex flex-col items-center gap-1 px-1 cursor-pointer"
                                                     @click="if(file.is_folder) { navigateToFolder(file.filename) } else { showFileInfo(file) }">
-                                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate w-full group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" x-text="file.filename" :title="file.filename"></p>
-                                                    <p class="text-[10px] md:text-xs text-slate-400 font-medium" x-text="file.is_folder ? t('folder') : formatBytes(file.size)"></p>
+                                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate w-full group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                                                        x-text="file.filename" :title="file.filename"></p>
+                                                    <p class="text-[10px] md:text-xs text-slate-400 font-medium"
+                                                        x-text="file.is_folder ? t('folder') : formatBytes(file.size)">
+                                                    </p>
                                                 </div>
-                                                
+
                                                 <template x-if="file.share_token">
-                                                    <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 text-[8px] font-bold uppercase tracking-wider" x-text="t('public')">Public</span>
+                                                    <span
+                                                        class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 text-[8px] font-bold uppercase tracking-wider"
+                                                        x-text="t('public')">Public</span>
                                                 </template>
                                             </div>
                                         </template>
@@ -1273,7 +1761,8 @@
                             class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 backdrop-blur-md"
                             x-cloak>
                             <div class="text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                                <span x-text="t('showing')"></span> <span class="font-bold text-slate-700 dark:text-slate-200"
+                                <span x-text="t('showing')"></span> <span
+                                    class="font-bold text-slate-700 dark:text-slate-200"
                                     x-text="(currentPage - 1) * itemsPerPage + 1"></span> -
                                 <span class="font-bold text-slate-700 dark:text-slate-200"
                                     x-text="Math.min(currentPage * itemsPerPage, filteredFiles.length)"></span>
@@ -1325,10 +1814,14 @@
                 </div>
 
                 <div class="flex items-center gap-6">
-                    <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/50">
+                    <div
+                        class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/50">
                         <i class="fa-solid fa-hard-drive text-blue-500"></i>
-                        <span class="font-medium text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400" x-text="t('storage_used')"></span>
-                        <span class="text-slate-700 dark:text-slate-200 font-bold" x-text="formatBytes(storageUsed)"></span>
+                        <span
+                            class="font-medium text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                            x-text="t('storage_used')"></span>
+                        <span class="text-slate-700 dark:text-slate-200 font-bold"
+                            x-text="formatBytes(storageUsed)"></span>
                     </div>
                     <div class="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
                         <a href="https://github.com/dabeecao/telecloud-go" target="_blank"
@@ -1356,14 +1849,11 @@
                     x-text="t('home')"></span>
             </button>
 
-            {{ if .is_admin }}
-            <button @click="currentTab = 'users'; fetchUsers()"
+            <button @click="currentTab = 'ytdlp'" x-show="ytdlpEnabled" x-cloak
                 class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors"
-                :class="currentTab === 'users' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
-                <i class="fa-solid fa-users text-xl"></i><span class="text-[10px] font-semibold"
-                    x-text="t('users')"></span>
+                :class="currentTab === 'ytdlp' ? 'text-red-600' : 'text-slate-500 dark:text-slate-400'">
+                <i class="fa-brands fa-youtube text-xl"></i><span class="text-[10px] font-semibold">YT-DLP</span>
             </button>
-            {{ end }}
 
             <div class="flex-1 flex justify-center relative -top-6" x-data="{ showMobileAdd: false }"
                 @click.outside="showMobileAdd = false">
@@ -1418,12 +1908,22 @@
                     x-text="t('settings')"></span>
             </button>
 
+            {{ if .is_admin }}
+            <button @click="currentTab = 'users'; fetchUsers()"
+                class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors"
+                :class="currentTab === 'users' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
+                <i class="fa-solid fa-users text-xl"></i><span class="text-[10px] font-semibold"
+                    x-text="t('users')"></span>
+            </button>
+            {{ end }}
+
             <button @click="currentTab = 'changelog'" x-show="updateAvailable" x-cloak
                 class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors relative"
                 :class="currentTab === 'changelog' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
                 <i class="fa-solid fa-clock-rotate-left text-xl"></i>
                 <span class="text-[10px] font-semibold" x-text="t('changelog')"></span>
-                <span class="absolute top-2 right-[calc(50%-1.25rem)] w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>
+                <span
+                    class="absolute top-2 right-[calc(50%-1.25rem)] w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>
             </button>
 
         </div>
@@ -1511,7 +2011,7 @@
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 scale-90 translate-y-10"
         x-transition:enter-end="opacity-100 scale-100 translate-y-0">
-        
+
         <!-- Bubble State -->
         <div x-show="isQueueMinimized" x-transition.opacity.duration.300ms
             class="w-full h-full flex items-center justify-center cursor-pointer relative"
@@ -1520,7 +2020,7 @@
                 :class="isAllUploadsDone ? 'fa-check-circle' : 'fa-circle-notch fa-spin'"></i>
             <div x-show="!isAllUploadsDone"
                 class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800 animate-bounce"
-                x-text="uploadQueue.filter(f => f.progress < 100).length"></div>
+                x-text="uploadQueue.filter(f => f.progress < 100 && !f.isCancelled && !f.hasError).length"></div>
         </div>
 
         <!-- List State -->
@@ -1534,15 +2034,17 @@
                 </span>
                 <div class="flex items-center gap-3">
                     <span class="bg-blue-700 px-2 py-0.5 rounded-md text-xs"
-                        x-text="uploadQueue.filter(f => f.progress === 100).length + '/' + uploadQueue.length"></span>
+                        x-text="uploadQueue.filter(f => f.progress === 100).length + '/' + uploadQueue.filter(f => !f.isCancelled && !f.hasError).length"></span>
 
                     <button x-show="!isAllUploadsDone" @click.stop="isQueueMinimized = true"
                         class="hover:text-blue-200 transition-colors w-6 h-6 flex items-center justify-center">
                         <i class="fa-solid fa-compress text-xs"></i>
                     </button>
 
-                    <button x-show="!isAllUploadsDone && uploadQueue.some(f => f.progress === 100)" @click.stop="uploadQueue = uploadQueue.filter(f => f.progress < 100)"
-                        class="hover:text-emerald-200 transition-colors w-6 h-6 flex items-center justify-center mr-1" :title="t('clear_finished')">
+                    <button x-show="!isAllUploadsDone && uploadQueue.some(f => f.progress === 100)"
+                        @click.stop="uploadQueue = uploadQueue.filter(f => f.progress < 100)"
+                        class="hover:text-emerald-200 transition-colors w-6 h-6 flex items-center justify-center mr-1"
+                        :title="t('clear_finished')">
                         <i class="fa-solid fa-broom text-xs"></i>
                     </button>
 
@@ -1561,7 +2063,8 @@
                             <div class="truncate w-[70%] flex flex-col">
                                 <span class="font-medium text-slate-700 dark:text-slate-300 truncate" x-text="task.name"
                                     :class="task.isCancelled ? 'line-through' : ''"></span>
-                                <span x-show="task.size > 0" class="text-[10px] text-slate-400 mt-0.5" x-text="formatBytes(task.size)"></span>
+                                <span x-show="task.size > 0" class="text-[10px] text-slate-400 mt-0.5"
+                                    x-text="formatBytes(task.size)"></span>
                             </div>
                             <span class="font-bold"
                                 :class="task.isCancelled ? 'text-red-500' : (task.progress === 100 ? 'text-emerald-500' : 'text-blue-600 dark:text-blue-400')"
@@ -1576,14 +2079,16 @@
                             <div class="flex flex-col">
                                 <div class="text-[10px] text-slate-400" x-text="task.statusText"
                                     :class="task.hasError || task.isCancelled ? 'text-red-400' : ''"></div>
-                                <div x-show="task.speed > 0 && task.progress < 100 && !task.isCancelled" class="text-[9px] text-blue-500 font-bold mt-0.5">
+                                <div x-show="task.speed > 0 && task.progress < 100 && !task.isCancelled"
+                                    class="text-[9px] text-blue-500 font-bold mt-0.5">
                                     <i class="fa-solid fa-bolt-lightning mr-1"></i>
                                     <span x-text="formatBytes(task.speed) + '/s'"></span>
                                 </div>
                             </div>
 
                             <div class="flex items-center gap-2">
-                                <button x-show="(task.hasError || task.isCancelled) && task.progress < 100" @click="retryUpload(task.id)"
+                                <button x-show="(task.hasError || task.isCancelled) && task.progress < 100"
+                                    @click="retryUpload(task.id)"
                                     class="text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1 text-[10px] font-bold">
                                     <i class="fa-solid fa-rotate-right"></i> <span x-text="t('retry')"></span>
                                 </button>
@@ -1602,7 +2107,8 @@
 
 </body>
 
-    <script>
-        // Use the passkey methods already defined in script.js
-    </script>
+<script>
+    // Use the passkey methods already defined in script.js
+</script>
+
 </html>

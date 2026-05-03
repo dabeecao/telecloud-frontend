@@ -8,6 +8,59 @@
     --plyr-video-background: rgba(0, 0, 0, 0.2);
     --plyr-menu-background: rgba(15, 23, 42, 0.9);
     --plyr-menu-color: #ffffff;
+
+    /* Semantic Theme Variables - Defaults */
+    --accent-color: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.3);
+    --accent-text: #ffffff;
+    
+    --bg-body: #f8fafc;
+    --bg-panel: rgba(255, 255, 255, 0.6);
+    --bg-menu: rgba(255, 255, 255, 0.85);
+    --bg-surface: #ffffff;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    
+    --border-main: rgba(226, 232, 240, 0.8);
+    --border-light: rgba(226, 232, 240, 0.4);
+    
+    --glass-blur: 24px;
+    --glass-border: rgba(255, 255, 255, 0.6);
+
+    /* Selection & Scrollbar */
+    --selection-bg: rgba(59, 130, 246, 0.3);
+    --selection-text: inherit;
+    --scrollbar-thumb: rgba(156, 163, 175, 0.3);
+    --scrollbar-thumb-hover: rgba(156, 163, 175, 0.5);
+
+    /* Code Preview */
+    --code-bg: #0f172a;
+    --code-text: #e2e8f0;
+}
+
+.dark {
+    --bg-body: #020617;
+    --bg-panel: rgba(15, 23, 42, 0.65);
+    --bg-menu: rgba(30, 41, 59, 0.85);
+    --bg-surface: #0f172a;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    
+    --border-main: rgba(255, 255, 255, 0.1);
+    --border-light: rgba(255, 255, 255, 0.05);
+    
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+
+
+::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-text);
 }
 
 /* =========================================
@@ -25,33 +78,30 @@ body {
    3. GLASSMORPHISM COMPONENTS
    ========================================= */
 .glass-panel { 
-    background: rgba(255, 255, 255, 0.6); 
-    backdrop-filter: blur(24px); 
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.6); 
+    background: var(--bg-panel); 
+    backdrop-filter: blur(var(--glass-blur)); 
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border); 
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); 
 }
 
 .glass-menu { 
-    background: rgba(255, 255, 255, 0.85); 
-    backdrop-filter: blur(24px); 
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.8); 
+    background: var(--bg-menu); 
+    backdrop-filter: blur(var(--glass-blur)); 
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border); 
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); 
 }
 
-@media (prefers-color-scheme: dark) {
-    .glass-panel { 
-        background: rgba(15, 23, 42, 0.65); 
-        border: 1px solid rgba(255, 255, 255, 0.1); 
-        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5); 
-    }
-    .glass-menu { 
-        background: rgba(30, 41, 59, 0.85); 
-        border: 1px solid rgba(255, 255, 255, 0.15); 
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); 
-    }
+.dark .glass-panel { 
+    background: var(--bg-panel); 
+    border: 1px solid var(--glass-border); 
 }
+.dark .glass-menu { 
+    background: var(--bg-menu); 
+    border: 1px solid var(--glass-border); 
+}
+
 
 /* =========================================
    4. BACKGROUND BLOBS & ANIMATIONS
@@ -59,22 +109,97 @@ body {
 .blob-1 { 
     position: fixed; top: -10%; left: -10%; 
     width: 50vw; height: 50vw; 
-    background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%); 
+    background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%); 
     z-index: -1; filter: blur(40px); 
+    opacity: 0.15;
     animation: float 10s infinite alternate ease-in-out; 
 }
 .blob-2 { 
     position: fixed; bottom: -10%; right: -10%; 
     width: 60vw; height: 60vw; 
-    background: radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%); 
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); 
     z-index: -1; filter: blur(40px); 
+    opacity: 0.15;
     animation: float 12s infinite alternate-reverse ease-in-out; 
 }
 
-@media (prefers-color-scheme: dark) {
-    .blob-1 { background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); }
-    .blob-2 { background: radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%); }
+/* =========================================
+   Variable Bridge & Theme Locking
+   ========================================= */
+
+/* Force variables to apply even if Tailwind classes are present */
+body[data-theme] {
+    background-color: var(--bg-body) !important;
+    color: var(--text-primary) !important;
 }
+
+/* Neutralize common Tailwind background classes */
+body[data-theme] .bg-white,
+body[data-theme] .bg-slate-50,
+body[data-theme] .bg-slate-100,
+body[data-theme] .bg-slate-200,
+body[data-theme] .bg-slate-800,
+body[data-theme] .bg-slate-900,
+body[data-theme] .bg-slate-950,
+body[data-theme] .dark\:bg-slate-950,
+body[data-theme] .dark\:bg-slate-900,
+body[data-theme] .dark\:bg-slate-800,
+body[data-theme] .bg-white\/10,
+body[data-theme] .bg-white\/20,
+body[data-theme] .bg-white\/30,
+body[data-theme] .bg-white\/50,
+body[data-theme] .bg-white\/60,
+body[data-theme] .bg-slate-200\/50,
+body[data-theme] .dark\:bg-slate-900\/30,
+body[data-theme] .dark\:bg-slate-900\/60,
+body[data-theme] .dark\:bg-slate-800\/50 {
+    background-color: var(--bg-body) !important;
+}
+
+/* Neutralize common Tailwind text classes */
+body[data-theme] .text-slate-950,
+body[data-theme] .text-slate-900,
+body[data-theme] .text-slate-800,
+body[data-theme] .text-slate-700,
+body[data-theme] .text-slate-600,
+body[data-theme] .dark\:text-white,
+body[data-theme] .dark\:text-slate-200,
+body[data-theme] .dark\:text-slate-100 {
+    color: var(--text-primary) !important;
+}
+
+body[data-theme] .text-slate-500,
+body[data-theme] .text-slate-400,
+body[data-theme] .dark\:text-slate-400,
+body[data-theme] .dark\:text-slate-500 {
+    color: var(--text-secondary) !important;
+}
+
+/* Neutralize borders */
+body[data-theme] .border-slate-100,
+body[data-theme] .border-slate-200,
+body[data-theme] .border-slate-300,
+body[data-theme] .dark\:border-white\/5,
+body[data-theme] .dark\:border-slate-800,
+body[data-theme] .dark\:border-slate-700 {
+    border-color: var(--border-main) !important;
+}
+
+/* Specific component locking */
+body[data-theme] input, 
+body[data-theme] select, 
+body[data-theme] textarea {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-main) !important;
+}
+
+body[data-theme] .bg-blue-600,
+body[data-theme] .bg-indigo-600 {
+    background-color: var(--accent-color) !important;
+    color: var(--accent-text) !important;
+}
+
 
 @keyframes float { 
     0% { transform: translate(0, 0) scale(1); } 
@@ -92,8 +217,14 @@ body {
    ========================================= */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.5); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+/* Global Focus Ring Override */
+input:focus, select:focus, textarea:focus, button:focus-visible {
+    --tw-ring-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+}
 
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 
@@ -152,11 +283,9 @@ body {
     height: 100% !important;
 }
 
-@media (prefers-color-scheme: light) {
-    .plyr--audio .plyr__controls { 
-        background: rgba(255, 255, 255, 0.8) !important; 
-        color: #1e293b !important; 
-    }
+html:not(.dark) .plyr--audio .plyr__controls { 
+    background: rgba(255, 255, 255, 0.8) !important; 
+    color: #1e293b !important; 
 }
 
 /* =========================================
@@ -188,10 +317,8 @@ body {
     border-radius: 0.375rem;
     background-color: rgba(0, 0, 0, 0.05);
 }
-@media (prefers-color-scheme: dark) {
-    .changelog-body code {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
+.dark .changelog-body code {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* =========================================
@@ -205,12 +332,12 @@ body {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.85rem;
     line-height: 1.5;
-    background: #0f172a;
+    background: var(--code-bg);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 1rem;
     white-space: pre-wrap;
     word-break: break-all;
-    color: #e2e8f0;
+    color: var(--code-text);
 }
 
 /* Prism Overrides */
@@ -223,6 +350,22 @@ pre[class*="language-"] {
 code[class*="language-"] {
     text-shadow: none !important;
     font-size: 0.85rem !important;
+    color: inherit !important;
+}
+
+.text-preview-container .token.punctuation,
+.text-preview-container .token.operator,
+.text-preview-container .token.namespace {
+    color: var(--code-text) !important;
+    opacity: 0.7;
+}
+
+.text-preview-container .token.comment,
+.text-preview-container .token.prolog,
+.text-preview-container .token.doctype,
+.text-preview-container .token.cdata {
+    color: var(--code-text) !important;
+    opacity: 0.4;
 }
 
 .markdown-preview {

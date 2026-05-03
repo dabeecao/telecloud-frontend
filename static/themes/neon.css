@@ -1,0 +1,68 @@
+/* Neon Glow Theme - Semantic Refactor */
+body[data-theme="neon"] {
+    color-scheme: dark;
+    
+    /* Core Colors */
+    --neon-pink: #ff00ff;
+    --neon-blue: #00f2ff;
+    --neon-bg: #0a0a12;
+
+    /* Semantic Variable Overrides */
+    --accent-color: var(--neon-blue) !important;
+    --accent-glow: rgba(255, 0, 255, 0.4) !important;
+    --accent-text: #000000 !important;
+    
+    --bg-body: var(--neon-bg) !important;
+    --bg-panel: rgba(15, 15, 25, 0.75) !important;
+    --bg-menu: rgba(10, 10, 20, 0.95) !important;
+    --bg-surface: rgba(255, 255, 255, 0.05) !important;
+    
+    --text-primary: #ffffff !important;
+    --text-secondary: #a1a1aa !important;
+    --text-muted: #71717a !important;
+    
+    --border-main: rgba(255, 0, 255, 0.3) !important;
+    --border-light: rgba(255, 255, 255, 0.05) !important;
+    
+    --glass-border: rgba(255, 0, 255, 0.3) !important;
+
+
+    /* Selection & Scrollbar */
+    --selection-bg: rgba(255, 0, 255, 0.4);
+    --selection-text: #ffffff;
+    --scrollbar-thumb: rgba(0, 242, 255, 0.3);
+    --scrollbar-thumb-hover: rgba(0, 242, 255, 0.5);
+
+    /* Code & Components */
+    --code-bg: #05050a;
+    --code-text: var(--neon-blue);
+    --plyr-color-main: var(--neon-blue);
+}
+
+/* Specific component tweaks that can't be handled by variables alone */
+body[data-theme="neon"] .glass-menu {
+    border: 1px solid var(--neon-blue) !important;
+}
+
+body[data-theme="neon"] h1, 
+body[data-theme="neon"] h2, 
+body[data-theme="neon"] h3 {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3) !important;
+}
+
+body[data-theme="neon"] .text-blue-600, 
+body[data-theme="neon"] .text-blue-500 {
+    color: var(--neon-blue) !important;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5) !important;
+}
+
+body[data-theme="neon"] .bg-blue-600 {
+    background: linear-gradient(135deg, var(--neon-blue), #00a2ff) !important;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4) !important;
+    color: #000 !important;
+}
+
+body[data-theme="neon"] .glass-button:hover {
+    border-color: var(--neon-pink) !important;
+    box-shadow: 0 0 15px rgba(255, 0, 255, 0.3) !important;
+}

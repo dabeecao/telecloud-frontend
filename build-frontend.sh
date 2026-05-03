@@ -45,6 +45,14 @@ npx -y esbuild static/css/nunito.css --minify --outfile=static/css/nunito.min.cs
 npx -y esbuild static/css/prism.css --minify --outfile=static/css/prism.min.css
 npx -y esbuild static/css/plyr.css --minify --outfile=static/css/plyr.min.css
 
+echo "Minifying Themes..."
+mkdir -p static/themes
+for f in static/themes/*.css; do
+  if [[ $f != *".min.css" ]]; then
+    npx -y esbuild "$f" --minify --outfile="${f%.css}.min.css"
+  fi
+done
+
 echo "Minifying JSON locales..."
 node -e "const fs = require('fs'); const path = require('path'); const localesDir = './static/locales'; fs.readdirSync(localesDir).forEach(file => { if (file.endsWith('.json') && !file.endsWith('.min.json')) { const filePath = path.join(localesDir, file); const minPath = path.join(localesDir, file.replace('.json', '.min.json')); try { const content = JSON.parse(fs.readFileSync(filePath, 'utf8')); fs.writeFileSync(minPath, JSON.stringify(content)); console.log('Minified ' + file + ' -> ' + path.basename(minPath)); } catch (e) { console.error('Error minifying ' + file + ':', e.message); } } });"
 

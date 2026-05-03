@@ -1,10 +1,17 @@
 @echo off
+setlocal enabledelayedexpansion
+
 echo Building Tailwind CSS...
+if not exist "tailwindcss.exe" (
+    echo Error: tailwindcss.exe not found!
+    exit /b 1
+)
 tailwindcss.exe -i static/css/input.css -o static/css/tailwind.css --minify
 
 echo Downloading frontend libraries...
 if not exist "static\js" mkdir "static\js"
 if not exist "static\css" mkdir "static\css"
+
 curl -sSL https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js -o static/js/alpine.min.js
 curl -sSL https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js -o static/js/alpine-collapse.min.js
 curl -sSL https://cdn.plyr.io/3.7.8/plyr.css -o static/css/plyr.css
@@ -29,6 +36,15 @@ call npx -y esbuild static/css/style.css --bundle --minify --external:/static/* 
 call npx -y esbuild static/css/nunito.css --minify --outfile=static/css/nunito.min.css
 call npx -y esbuild static/css/prism.css --minify --outfile=static/css/prism.min.css
 call npx -y esbuild static/css/plyr.css --minify --outfile=static/css/plyr.min.css
+
+echo Minifying Themes...
+if not exist "static\themes" mkdir "static\themes"
+for %%f in (static\themes\*.css) do (
+    set "filename=%%~nxf"
+    if "!filename!"=="!filename:.min.css=!" (
+        call npx -y esbuild "%%f" --minify --outfile="static\themes\%%~nf.min.css"
+    )
+)
 
 echo Minifying JSON locales...
 node -e "const fs = require('fs'); const path = require('path'); const localesDir = './static/locales'; fs.readdirSync(localesDir).forEach(file => { if (file.endsWith('.json') && !file.endsWith('.min.json')) { const filePath = path.join(localesDir, file); const minPath = path.join(localesDir, file.replace('.json', '.min.json')); try { const content = JSON.parse(fs.readFileSync(filePath, 'utf8')); fs.writeFileSync(minPath, JSON.stringify(content)); console.log('Minified ' + file + ' -> ' + path.basename(minPath)); } catch (e) { console.error('Error minifying ' + file + ':', e.message); } } });"
