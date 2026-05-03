@@ -1,18 +1,41 @@
 #!/bin/bash
 set -e
 
-echo "Building Tailwind CSS..."
-if [ ! -f "./tailwindcss" ]; then
-    echo "Error: tailwindcss binary not found!"
-    exit 1
+echo "Building frontend assets for Telecloud..."
+echo "This may take a few moments. Please wait..."
+
+echo "Cleaning up old build files..."
+rm -f static/css/*.min.css
+rm -f static/js/*.min.js
+rm -f static/locales/*.min.json
+
+echo "Checking update status of git repository..."
+git fetch origin main > /dev/null 2>&1
+ahead=$(git rev-list --left-right --count origin/main...HEAD | awk '{print $1}')
+behind=$(git rev-list --left-right --count origin/main...HEAD | awk '{print $2}')
+
+if [ "$ahead" = "0" ] && [ "$behind" = "0" ]; then
+  echo "Repository is up to date with origin/main."
+else
+  echo "Repository is not up to date with origin/main. Please pull the latest changes and try again."
+  exit 1
 fi
 
-./tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+echo "Ensuring npm is installed..."
+if ! command -v npm > /dev/null 2>&1; then
+  echo "npm is not installed. Please install Node.js and npm from https://nodejs.org/ and try again."
+  exit 1
+fi
+
+echo "Installing npm dependencies..."
+npm install
+
+echo "Building Tailwind CSS..."
+npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/tailwind.css --minify
 
 echo "Downloading frontend libraries..."
 mkdir -p static/js static/css
 
-# Helper function for downloading with retry/error check
 download_lib() {
     local url=$1
     local out=$2
@@ -30,7 +53,7 @@ echo "Building Prism.js locally..."
 download_lib "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" "static/css/prism.css"
 download_lib "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" "static/js/prism.js"
 for lang in json javascript python go bash yaml sql; do
-  echo "Adding Prism language: $lang..."
+  echo "Adding Prism language: $lang"
   echo "" >> static/js/prism.js
   curl -sSL "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-$lang.min.js" >> static/js/prism.js
 done
