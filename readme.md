@@ -7,6 +7,7 @@ This repository contains the source code for the [TeleCloud](https://github.com/
 - `static/`: Frontend assets (CSS, JS, Fonts).
 - `static/locales/`: JSON translation files.
 - `build-frontend.sh/bat`: Build scripts for minification and bundling.
+- `minify-locales.js`: Node.js script for minifying JSON locale files.
 - `tailwind.config.js`: Tailwind CSS configuration.
 
 ## 🌍 Contributing Translations (Localization)
@@ -40,8 +41,18 @@ Nếu bạn muốn đóng góp bản dịch cho một ngôn ngữ mới hoặc c
 ## 🛠️ Build Process
 The main TeleCloud repository integrates this as a git submodule. During the build process (Docker or GitHub Actions), the following steps are performed:
 1. Fetch this submodule into the `web/` directory.
-2. Run `build-frontend.sh` to generate minified assets (`*.min.js`, `*.min.css`).
+2. Run `build-frontend.sh` to generate minified assets (`*.min.js`, `*.min.css`, `*.min.json`).
 3. Compile the Go binary with embedded assets.
+
+### What the build script does
+1. Cleans up old minified files.
+2. Pulls latest changes from `origin/main`.
+3. Verifies npm is installed, then runs `npm install`.
+4. Builds Tailwind CSS via `npx @tailwindcss/cli`.
+5. Downloads frontend libraries (Alpine.js, Plyr, Font Awesome, Prism.js).
+6. Minifies JS and CSS files via `esbuild`.
+7. Minifies theme CSS files.
+8. Minifies JSON locale files via `minify-locales.js`.
 
 ### Local Development
 To manually build the frontend assets:
@@ -51,6 +62,10 @@ To manually build the frontend assets:
    ```bash
    chmod +x build-frontend.sh
    ./build-frontend.sh
+   ```
+   On Windows:
+   ```bat
+   build-frontend.bat
    ```
 
 ## ⚠️ Note
