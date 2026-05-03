@@ -48,16 +48,7 @@
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
-            // Handle system dark mode since Tailwind is in 'class' mode
-            const applySystemTheme = () => {
-                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            };
-            applySystemTheme();
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+            TeleCloud.initTheme('system');
         },
         isMedia: false,
         showTextPreviewPrompt: false,

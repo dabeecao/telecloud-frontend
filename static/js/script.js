@@ -23,34 +23,14 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         currentTheme: initialTheme || 'system',
         setTheme(theme) {
             this.currentTheme = theme;
-            this.applyTheme();
+            TeleCloud.applyTheme(theme);
             // Save to database
             let fd = new FormData();
             fd.append('theme', theme);
             fetch('/api/settings/user/theme', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }).catch(e => console.error("Theme save failed:", e));
         },
         applyTheme() {
-            const theme = this.currentTheme || 'system';
-            const html = document.documentElement;
-            
-            if (theme === 'system') {
-                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    html.classList.add('dark');
-                } else {
-                    html.classList.remove('dark');
-                }
-            } else {
-                // For custom themes, we decide whether to add 'dark' class based on the theme style
-                const darkThemes = ['neon', 'cyberpunk', 'lavender', 'forest'];
-                if (darkThemes.includes(theme)) {
-                    html.classList.add('dark');
-                } else {
-                    html.classList.remove('dark');
-                }
-            }
-            
-            // Re-trigger alpine to update data-theme attribute if not reactive enough
-            // (but index.html uses :data-theme="currentTheme" so it should be fine)
+            TeleCloud.applyTheme(this.currentTheme);
         },
         get filteredYTDLPFormats() {
             if (!this.ytdlpInfo || !this.ytdlpInfo.formats) return [];
@@ -86,6 +66,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             });
         },
         formatQualityLabel(f) {
+            if (!f) return '';
             let label = '';
             if (f.height && f.height > 0) {
                 label = f.height + 'p';
@@ -98,12 +79,14 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 else if (note === 'tiny') label = this.t('quality_tiny');
                 else if (note === 'ultralow') label = this.t('quality_ultralow');
                 else label = f.format_note.charAt(0).toUpperCase() + f.format_note.slice(1);
-            } else {
+            } else if (f.ext) {
                 label = f.ext.toUpperCase();
+            } else {
+                label = 'Unknown';
             }
             
             // Standardize format display
-            let ext = f.ext.toUpperCase();
+            let ext = (f.ext || '').toUpperCase();
             if (this.ytdlpDownloadType === 'video') {
                 // We force MP4 merger in backend for best compatibility
                 ext = 'MP4';
@@ -115,7 +98,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             let size = '';
             const totalSize = f.filesize || f.filesize_approx;
             if (totalSize) size = ' - ' + this.formatBytes(totalSize);
-            return `${label} (${ext})${size}`;
+            return `${label}${ext ? ' (' + ext + ')' : ''}${size}`;
         },
         webauthnRPID: webauthnRPID,
         webauthnOrigins: webauthnOrigins,
@@ -610,10 +593,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             });
 
             // Always apply theme (will be 'system' for non-logged-in users)
-            this.applyTheme();
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-                if (this.currentTheme === 'system') this.applyTheme();
-            });
+            TeleCloud.initTheme(this.currentTheme);
 
             if (this.isLoggedIn) {
                 this.fetchFiles(false);
@@ -974,18 +954,29 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const tempId = 'temp_' + Date.now();
             this.files.unshift({ id: tempId, filename: name.trim(), is_folder: true, size: 0, created_at: new Date().toISOString() });
             const fd = new FormData(); fd.append('name', name.trim()); fd.append('path', this.currentPath);
-            await fetch('/api/folders', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
-            this.fetchFiles(true); 
-            this.showToast(this.t('toast_created', {n: name.trim()}));
+            const response = await fetch('/api/folders', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+            if (response.ok) {
+                this.fetchFiles(true); 
+                this.showToast(this.t('toast_created', {n: name.trim()}));
+            } else {
+                const data = await response.json();
+                this.showToast(this.handleCommonError(data.error, 'status_error'), 'error');
+            }
         },
         copyToClipboard(action, idsArray) { this.clipboard = { action: action, ids: [...idsArray] }; this.selectedIds = []; },
         async executePaste() {
             if (this.clipboard.ids.length === 0) return;
             if (this.clipboard.action === 'move') this.files = this.files.filter(f => !this.clipboard.ids.includes(f.id));
-            await fetch('/api/actions/paste', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': TeleCloud.getCsrfToken() }, body: JSON.stringify({ action: this.clipboard.action, item_ids: this.clipboard.ids, destination: this.currentPath }) });
-            this.clipboard = { action: null, ids: [] }; 
-            this.fetchFiles(true);
-            this.showToast(this.t('toast_pasted'));
+            const response = await fetch('/api/actions/paste', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': TeleCloud.getCsrfToken() }, body: JSON.stringify({ action: this.clipboard.action, item_ids: this.clipboard.ids, destination: this.currentPath }) });
+            if (response.ok) {
+                this.clipboard = { action: null, ids: [] }; 
+                this.fetchFiles(true);
+                this.showToast(this.t('toast_pasted'));
+            } else {
+                const data = await response.json();
+                this.showToast(this.handleCommonError(data.error, 'status_error'), 'error');
+                this.fetchFiles(true);
+            }
         },
         async deleteBatch() {
             const confirmed = await this.customConfirm(this.t('delete_confirm_title'), this.t('delete_batch_msg', {n: this.selectedIds.length}), true);
@@ -993,9 +984,19 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const idsToDelete = [...this.selectedIds];
             this.files = this.files.filter(f => !idsToDelete.includes(f.id));
             this.selectedIds = [];
-            for (let id of idsToDelete) await fetch(`/api/files/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+            let successCount = 0;
+            let errorOccurred = false;
+            for (let id of idsToDelete) {
+                const response = await fetch(`/api/files/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (response.ok) successCount++;
+                else errorOccurred = true;
+            }
             this.fetchFiles(true);
-            this.showToast(this.t('toast_deleted', {n: idsToDelete.length}), 'success');
+            if (errorOccurred) {
+                this.showToast(this.t('status_error'), 'error');
+            } else {
+                this.showToast(this.t('toast_deleted', {n: successCount}), 'success');
+            }
         },
         remoteUploadModal: false,
         remoteUrl: '',
@@ -1055,10 +1056,61 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             }
         },
 
-        handleDrop(e) { this.dragOver = false; this.uploadFiles(Array.from(e.dataTransfer.files)); },
+        async handleDrop(e) { 
+            this.dragOver = false; 
+            const files = await this.scanFiles(e.dataTransfer.items);
+            this.uploadFiles(files); 
+        },
+        handleUploadModalSelect(e) { 
+            this.uploadFiles(Array.from(e.target.files)); 
+            e.target.value = ''; 
+            this.uploadModal = false; 
+        },
+        async handleUploadModalDrop(e) { 
+            this.uploadDragOver = false; 
+            this.uploadModal = false; 
+            const files = await this.scanFiles(e.dataTransfer.items);
+            this.uploadFiles(files); 
+        },
+        async scanFiles(items) {
+            const files = [];
+            const scan = async (entry, path = '') => {
+                if (entry.isFile) {
+                    const file = await new Promise((resolve) => entry.file(resolve));
+                    if (path) file.relativeDir = path.endsWith('/') ? path.slice(0, -1) : path;
+                    files.push(file);
+                } else if (entry.isDirectory) {
+                    const reader = entry.createReader();
+                    const entries = await new Promise((resolve) => {
+                        let allEntries = [];
+                        const read = () => {
+                            reader.readEntries((results) => {
+                                if (results.length) {
+                                    allEntries = allEntries.concat(results);
+                                    read();
+                                } else {
+                                    resolve(allEntries);
+                                }
+                            });
+                        };
+                        read();
+                    });
+                    for (const child of entries) {
+                        await scan(child, path + entry.name + '/');
+                    }
+                }
+            };
 
-        handleUploadModalSelect(e) { this.uploadFiles(Array.from(e.target.files)); e.target.value = ''; this.uploadModal = false; },
-        handleUploadModalDrop(e) { this.uploadDragOver = false; this.uploadModal = false; this.uploadFiles(Array.from(e.dataTransfer.files)); },
+            for (const item of items) {
+                if (item.webkitGetAsEntry) {
+                    const entry = item.webkitGetAsEntry();
+                    if (entry) await scan(entry);
+                } else if (item.kind === 'file') {
+                    files.push(item.getAsFile());
+                }
+            }
+            return files;
+        },
         async uploadFiles(fileList) {
             const newTasks = [];
             
@@ -1089,7 +1141,17 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     isCancelled: false,
                     file: file,
                     hasError: false,
-                    targetPath: this.currentPath,
+                    targetPath: (function(app, f) {
+                        let rel = f.relativeDir;
+                        if (!rel && f.webkitRelativePath) {
+                            const parts = f.webkitRelativePath.split('/');
+                            if (parts.length > 1) rel = parts.slice(0, -1).join('/');
+                        }
+                        if (rel) {
+                            return app.currentPath === '/' ? '/' + rel : app.currentPath + '/' + rel;
+                        }
+                        return app.currentPath;
+                    })(this, file),
                     size: file.size,
                     speed: 0,
                     uploadedBytes: 0,
@@ -1250,16 +1312,27 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const targetFile = this.files.find(f => f.id === file.id);
             if (targetFile) {
                 if (targetFile.share_token) {
-                    targetFile.share_token = null;
-                    await fetch(`/api/files/${file.id}/share`, { method: 'DELETE', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
-                    this.showToast(this.t('toast_revoked'), 'success');
+                    const response = await fetch(`/api/files/${file.id}/share`, { method: 'DELETE', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                    if (response.ok) {
+                        targetFile.share_token = null;
+                        this.showToast(this.t('toast_revoked'), 'success');
+                    } else {
+                        const data = await response.json();
+                        this.showToast(this.handleCommonError(data.error, 'status_error'), 'error');
+                    }
                 } else {
                     targetFile.share_token = 'loading...';
-                    const res = await fetch(`/api/files/${file.id}/share`, { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
-                    const data = await res.json();
-                    targetFile.share_token = data.share_token;
-                    targetFile.direct_token = data.direct_token; 
-                    this.copyShareLink(targetFile, 'regular');
+                    const response = await fetch(`/api/files/${file.id}/share`, { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                    if (response.ok) {
+                        const data = await response.json();
+                        targetFile.share_token = data.share_token;
+                        targetFile.direct_token = data.direct_token; 
+                        this.copyShareLink(targetFile, 'regular');
+                    } else {
+                        targetFile.share_token = null;
+                        const data = await response.json();
+                        this.showToast(this.handleCommonError(data.error, 'status_error'), 'error');
+                    }
                 }
             }
         },
@@ -1282,9 +1355,15 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const confirmed = await this.customConfirm(this.t('delete_confirm_title'), this.t('delete_confirm_msg'), true); 
             if (!confirmed) return; 
             this.files = this.files.filter(f => f.id !== id);
-            await fetch(`/api/files/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }); 
-            this.fetchFiles(true);
-            this.showToast(this.t('delete'), 'success'); 
+            const response = await fetch(`/api/files/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }); 
+            if (response.ok) {
+                this.fetchFiles(true);
+                this.showToast(this.t('toast_deleted', {n: 1}), 'success'); 
+            } else {
+                const data = await response.json();
+                this.showToast(this.handleCommonError(data.error, 'status_error'), 'error');
+                this.fetchFiles(true);
+            }
         },
         async renameFile(file) { 
             const newName = await this.customPrompt(this.t('rename_title'), file.filename); 
@@ -1292,9 +1371,15 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const targetFile = this.files.find(f => f.id === file.id);
             if(targetFile) targetFile.filename = newName;
             const fd = new FormData(); fd.append('new_name', newName); 
-            await fetch(`/api/files/${file.id}/rename`, { method: 'PUT', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }); 
-            this.fetchFiles(true); 
-            this.showToast(this.t('toast_renamed')); 
+            const response = await fetch(`/api/files/${file.id}/rename`, { method: 'PUT', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }); 
+            if (response.ok) {
+                this.fetchFiles(true); 
+                this.showToast(this.t('toast_renamed')); 
+            } else {
+                const data = await response.json();
+                this.showToast(this.handleCommonError(data.error, 'status_error'), 'error');
+                this.fetchFiles(true);
+            }
         },
         closeFileInfoModal() {
             this.fileInfoModal.show = false;
@@ -1805,18 +1890,7 @@ function shareApp(shareToken) {
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
-
-            // Handle system dark mode since Tailwind is in 'class' mode
-            const applySystemTheme = () => {
-                const html = document.documentElement;
-                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    html.classList.add('dark');
-                } else {
-                    html.classList.remove('dark');
-                }
-            };
-            applySystemTheme();
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+            TeleCloud.initTheme('system');
 
             this.fetchFiles(false);
         },

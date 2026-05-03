@@ -88,10 +88,18 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mb-5" x-text="t('or_click')"></p>
 
                 <input type="file" multiple class="hidden" x-ref="modalFileInput" @change="handleUploadModalSelect">
-                <button @click="$refs.modalFileInput.click()"
-                    class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 transition-transform active:scale-95 z-10 relative"
-                    x-text="t('select_files')">
-                </button>
+                <input type="file" multiple webkitdirectory class="hidden" x-ref="modalFolderInput" @change="handleUploadModalSelect">
+                <div class="flex gap-3 z-10 relative">
+                    <button @click="$refs.modalFileInput.click()"
+                        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 transition-transform active:scale-95 flex items-center gap-2"
+                        x-text="t('select_files')">
+                    </button>
+                    <button @click="$refs.modalFolderInput.click()"
+                        class="px-6 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-xl font-semibold transition-transform active:scale-95 flex items-center gap-2">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span x-text="t('select_folder')"></span>
+                    </button>
+                </div>
             </div>
 
             <div class="mt-4 text-center text-[10px] text-slate-500 dark:text-slate-400">
@@ -1288,7 +1296,10 @@
                                         <div
                                             class="relative group aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/5">
                                             <template x-if="ytdlpInfo?.thumbnail">
-                                                <img :src="'/api/proxy/image?url=' + encodeURIComponent(ytdlpInfo.thumbnail)" class="w-full h-full object-cover">
+                                                <img :src="ytdlpInfo.thumbnail" 
+                                                     referrerpolicy="no-referrer"
+                                                     @error="$el.src = '/api/proxy/image?url=' + encodeURIComponent(ytdlpInfo.thumbnail)"
+                                                     class="w-full h-full object-cover">
                                             </template>
                                             <div
                                                 class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
@@ -1357,7 +1368,7 @@
                                                 <button @click="open = !open"
                                                     class="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-xs font-medium flex items-center justify-between transition-all">
                                                     <span
-                                                        x-text="ytdlpSelectedFormat ? formatQualityLabel(filteredYTDLPFormats.find(f => f.format_id === ytdlpSelectedFormat)) : t('best_quality')"></span>
+                                                        x-text="ytdlpSelectedFormat && filteredYTDLPFormats.find(f => f.format_id === ytdlpSelectedFormat) ? formatQualityLabel(filteredYTDLPFormats.find(f => f.format_id === ytdlpSelectedFormat)) : t('best_quality')"></span>
                                                     <i class="fa-solid fa-chevron-down transition-transform"
                                                         :class="open ? 'rotate-180' : ''"></i>
                                                 </button>

@@ -38,6 +38,17 @@
     /* Code Preview */
     --code-bg: #0f172a;
     --code-text: #e2e8f0;
+
+    /* Status Colors */
+    --warning-bg: #fffbeb;
+    --warning-border: #fde68a;
+    --warning-text: #92400e;
+    --warning-icon: #f59e0b;
+
+    --success-bg: #ecfdf5;
+    --success-border: #a7f3d0;
+    --success-text: #065f46;
+    --success-icon: #10b981;
 }
 
 .dark {
@@ -54,6 +65,17 @@
     --border-light: rgba(255, 255, 255, 0.05);
     
     --glass-border: rgba(255, 255, 255, 0.1);
+
+    /* Status Colors - Dark */
+    --warning-bg: rgba(245, 158, 11, 0.1);
+    --warning-border: rgba(245, 158, 11, 0.2);
+    --warning-text: #fde68a;
+    --warning-icon: #f59e0b;
+
+    --success-bg: rgba(16, 185, 129, 0.1);
+    --success-border: rgba(16, 185, 129, 0.2);
+    --success-text: #a7f3d0;
+    --success-icon: #10b981;
 }
 
 
@@ -138,25 +160,37 @@ body[data-theme] .bg-white,
 body[data-theme] .bg-slate-50,
 body[data-theme] .bg-slate-100,
 body[data-theme] .bg-slate-200,
-body[data-theme] .bg-slate-800,
-body[data-theme] .bg-slate-900,
-body[data-theme] .bg-slate-950,
-body[data-theme] .dark\:bg-slate-950,
-body[data-theme] .dark\:bg-slate-900,
-body[data-theme] .dark\:bg-slate-800,
+body[data-theme] .focus\:bg-white {
+    background-color: var(--bg-body) !important;
+}
+
+/* Translucent backgrounds */
 body[data-theme] .bg-white\/10,
 body[data-theme] .bg-white\/20,
 body[data-theme] .bg-white\/30,
 body[data-theme] .bg-white\/40,
 body[data-theme] .bg-white\/50,
 body[data-theme] .bg-white\/60,
-body[data-theme] .bg-slate-200\/50,
-body[data-theme] .dark\:bg-slate-900\/30,
-body[data-theme] .dark\:bg-slate-900\/60,
-body[data-theme] .dark\:bg-slate-800\/50,
-body[data-theme] .dark\:focus\:bg-slate-800,
-body[data-theme] .focus\:bg-white {
+body[data-theme] .bg-slate-50\/90,
+body[data-theme] .bg-slate-50\/95,
+body[data-theme] .bg-slate-200\/50 {
+    background-color: var(--bg-panel) !important;
+}
+
+/* Dark-specific neutralizations (only active when .dark class is present) */
+.dark body[data-theme] .dark\:bg-slate-950,
+.dark body[data-theme] .dark\:bg-slate-900,
+.dark body[data-theme] .dark\:bg-slate-800,
+.dark body[data-theme] .dark\:focus\:bg-slate-800 {
     background-color: var(--bg-body) !important;
+}
+
+.dark body[data-theme] .dark\:bg-slate-900\/30,
+.dark body[data-theme] .dark\:bg-slate-900\/60,
+.dark body[data-theme] .dark\:bg-slate-900\/90,
+.dark body[data-theme] .dark\:bg-slate-900\/95,
+.dark body[data-theme] .dark\:bg-slate-800\/50 {
+    background-color: var(--bg-panel) !important;
 }
 
 /* Neutralize common Tailwind text classes */
@@ -164,28 +198,37 @@ body[data-theme] .text-slate-950,
 body[data-theme] .text-slate-900,
 body[data-theme] .text-slate-800,
 body[data-theme] .text-slate-700,
-body[data-theme] .text-slate-600,
-body[data-theme] .dark\:text-white,
-body[data-theme] .dark\:text-slate-200,
-body[data-theme] .dark\:text-slate-100 {
+body[data-theme] .text-slate-600 {
+    color: var(--text-primary) !important;
+}
+
+.dark body[data-theme] .dark\:text-white,
+.dark body[data-theme] .dark\:text-slate-200,
+.dark body[data-theme] .dark\:text-slate-100 {
     color: var(--text-primary) !important;
 }
 
 body[data-theme] .text-slate-500,
-body[data-theme] .text-slate-400,
-body[data-theme] .dark\:text-slate-400,
-body[data-theme] .dark\:text-slate-500 {
+body[data-theme] .text-slate-400 {
+    color: var(--text-secondary) !important;
+}
+
+.dark body[data-theme] .dark\:text-slate-400,
+.dark body[data-theme] .dark\:text-slate-500 {
     color: var(--text-secondary) !important;
 }
 
 /* Neutralize borders */
 body[data-theme] .border-slate-100,
 body[data-theme] .border-slate-200,
-body[data-theme] .border-slate-300,
-body[data-theme] .dark\:border-white\/5,
-body[data-theme] .dark\:border-slate-800,
-body[data-theme] .dark\:border-slate-700,
-body[data-theme] .dark\:border-slate-700\/50 {
+body[data-theme] .border-slate-300 {
+    border-color: var(--border-main) !important;
+}
+
+.dark body[data-theme] .dark\:border-white\/5,
+.dark body[data-theme] .dark\:border-slate-800,
+.dark body[data-theme] .dark\:border-slate-700,
+.dark body[data-theme] .dark\:border-slate-700\/50 {
     border-color: var(--border-main) !important;
 }
 
@@ -196,6 +239,40 @@ body[data-theme] textarea {
     background-color: var(--bg-surface) !important;
     color: var(--text-primary) !important;
     border-color: var(--border-main) !important;
+}
+
+/* Status Component Neutralization */
+body[data-theme] .bg-amber-50,
+.dark body[data-theme] .dark\:bg-amber-900\/20 {
+    background-color: var(--warning-bg) !important;
+}
+body[data-theme] .border-amber-200,
+.dark body[data-theme] .dark\:border-amber-700\/30 {
+    border-color: var(--warning-border) !important;
+}
+body[data-theme] .text-amber-800,
+.dark body[data-theme] .dark\:text-amber-200 {
+    color: var(--warning-text) !important;
+}
+body[data-theme] .text-amber-500 {
+    color: var(--warning-icon) !important;
+}
+
+body[data-theme] .bg-emerald-50,
+.dark body[data-theme] .dark\:bg-emerald-950\/30 {
+    background-color: var(--success-bg) !important;
+}
+body[data-theme] .border-emerald-200,
+.dark body[data-theme] .dark\:border-emerald-800\/30 {
+    border-color: var(--success-border) !important;
+}
+body[data-theme] .text-emerald-800,
+.dark body[data-theme] .dark\:text-emerald-200 {
+    color: var(--success-text) !important;
+}
+body[data-theme] .text-emerald-500,
+.dark body[data-theme] .dark\:text-emerald-400 {
+    color: var(--success-icon) !important;
 }
 
 body[data-theme] .bg-blue-600,

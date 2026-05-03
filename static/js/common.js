@@ -179,6 +179,44 @@ const TeleCloud = {
         document.body.removeChild(textArea);
         if (!success) throw new Error('Copy failed');
         return true;
+    },
+
+    /**
+     * Theme management logic
+     */
+    applyTheme(theme = 'system') {
+        const html = document.documentElement;
+        const body = document.body;
+        
+        // Update data-theme attribute
+        if (body) body.setAttribute('data-theme', theme);
+        
+        if (theme === 'system') {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+        } else {
+            // Locked themes: Neon, Cyberpunk, Lavender, Forest are dark. Others are light.
+            const darkThemes = ['neon', 'cyberpunk', 'lavender', 'forest'];
+            if (darkThemes.includes(theme)) {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+        }
+    },
+
+    initTheme(theme = 'system') {
+        this.applyTheme(theme);
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            // Re-apply if it's currently system
+            const currentTheme = document.body.getAttribute('data-theme') || theme;
+            if (currentTheme === 'system') {
+                this.applyTheme('system');
+            }
+        });
     }
 };
 
