@@ -46,17 +46,12 @@ The main TeleCloud repository integrates this as a git submodule. During the bui
 ### Local Development
 To manually build the frontend assets:
 1. Ensure you have **Node.js** and **npm** installed.
-2. Ensure your local branch is up to date with `origin/main`.
+2. Download the **Tailwind CLI** binary for your OS and place it in this directory.
 3. Run:
-   - **Linux/macOS:**
-     ```bash
-     chmod +x build-frontend.sh
-     ./build-frontend.sh
-     ```
-   - **Windows:**
-     ```bat
-     build-frontend.bat
-     ```
+   ```bash
+   chmod +x build-frontend.sh
+   ./build-frontend.sh
+   ```
 
 ## ⚠️ Note
 Minified files are ignored by git to keep the repository clean. They are generated only during the build process.

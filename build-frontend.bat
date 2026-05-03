@@ -1,37 +1,6 @@
 @echo off
-echo Building frontend assets for Telecloud...
-echo This may take a few moments. Please wait...
-echo Cleaning up old build files...
-del /q static\css\*.min.css 2>nul
-del /q static\js\*.min.js 2>nul
-del /q static\locales\*.min.json 2>nul
-
-echo Checking update status of git repository...
-git fetch origin main >nul 2>&1
-for /f "tokens=1,2 delims= " %%a in ('git rev-list --left-right --count origin/main...HEAD') do (
-  set "ahead=%%a"
-  set "behind=%%b"
-)
-
-if "%ahead%"=="0" if "%behind%"=="0" (
-  echo Repository is up to date with origin/main.
-) else (
-  echo Repository is not up to date with origin/main. Please pull the latest changes and try again.
-  exit /b 1
-)
-
-echo Ensuring npm is installed...
-where npm >nul 2>&1
-if errorlevel 1 (
-  echo npm is not installed. Please install Node.js and npm from https://nodejs.org/ and try again.
-  exit /b 1
-)
-
-echo Installing npm dependencies...
-call npm install
-
 echo Building Tailwind CSS...
-call npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+tailwindcss.exe -i static/css/input.css -o static/css/tailwind.css --minify
 
 echo Downloading frontend libraries...
 if not exist "static\js" mkdir "static\js"
