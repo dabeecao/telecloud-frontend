@@ -1,13 +1,28 @@
 #!/bin/bash
 set -e
 
-echo "Building Tailwind CSS..."
-if [ ! -f "./tailwindcss" ]; then
-    echo "Error: tailwindcss binary not found!"
-    exit 1
+echo "Building frontend assets for Telecloud..."
+echo "This may take a few moments. Please wait..."
+echo "Cleaning up old build files..."
+rm -f static/css/*.min.css static/js/*.min.js static/locales/*.min.json
+
+echo "Updating repository from origin/main..."
+git pull origin main
+if [ $? -ne 0 ]; then
+  echo "Failed to pull latest changes. Please resolve any conflicts and try again."
+  exit 1
 fi
 
-./tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+echo "Ensuring npm is installed..."
+if ! command -v npm > /dev/null 2>&1; then
+  echo "npm is not installed. Please install Node.js and npm from https://nodejs.org/ and try again."
+  exit 1
+fi
+
+echo "Installing npm dependencies..."
+npm install
+
+npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/tailwind.css --minify
 
 echo "Downloading frontend libraries..."
 mkdir -p static/js static/css
