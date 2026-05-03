@@ -180,6 +180,14 @@
     "api_toggle_error": "فشل تغيير حالة واجهة برمجة تطبيقات الرفع!",
     "global_settings": "إعدادات النظام (العالمية)",
     "personal_settings": "الإعدادات الشخصية",
+    "appearance": "المظهر",
+    "appearance_desc": "تخصيص نمط عرض TeleCloud حسب تفضيلك.",
+    "theme_system": "النظام الافتراضي",
+    "theme_neon": "إضاءة نيون",
+    "theme_cyberpunk": "Cyberpunk 2077",
+    "theme_anime": "أسلوب أنمي",
+    "theme_lavender": "ضباب اللافندر",
+    "theme_forest": "الغابة الكلاسيكية",
     "admin_toggle_note": "أنت تدير الإعدادات للنظام بأكمله.",
     "child_toggle_note": "هذا الإعداد ينطبق فقط على حسابك الخاص.",
     "upload_api_doc_title": "وثائق واجهة برمجة التطبيقات",
@@ -274,7 +282,6 @@
     "audio_only": "تحميل صوت",
     "duration": "المدة",
     "upload_date": "تاريخ الرفع",
-    "invalid_url": "رابط غير صالح",
     "err_unsupported_url": "هذا الموقع غير مدعوم",
     "err_network_error": "خطأ في الشبكة",
     "err_video_unavailable": "الفيديو غير متاح أو محجوب",
@@ -296,14 +303,4 @@
     "quality_low": "منخفض",
     "quality_tiny": "ضئيل",
     "quality_ultralow": "منخفض جداً"
-,
-    "appearance": "Appearance",
-    "appearance_desc": "Customize the look and feel of your TeleCloud.",
-    "theme_system": "System Default",
-    "theme_neon": "Neon Glow",
-    "theme_cyberpunk": "Cyberpunk 2077",
-    "theme_anime": "Kawaii Anime"
-,
-    "theme_lavender": "Midnight Lavender",
-    "theme_forest": "Forest Luxury"
 }

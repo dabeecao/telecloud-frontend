@@ -180,6 +180,14 @@
     "api_toggle_error": "无法更改上传 API 状态！",
     "global_settings": "系统设置 (全局)",
     "personal_settings": "个人设置",
+    "appearance": "外观",
+    "appearance_desc": "根据您的偏好自定义 TeleCloud 显示样式。",
+    "theme_system": "系统默认",
+    "theme_neon": "霓虹光彩",
+    "theme_cyberpunk": "Cyberpunk 2077",
+    "theme_anime": "动漫风格",
+    "theme_lavender": "薰衣草雾",
+    "theme_forest": "经典森林",
     "admin_toggle_note": "您正在管理整个系统的设置。",
     "child_toggle_note": "此设置仅适用于您自己的账户。",
     "upload_api_doc_title": "API 文档",
@@ -274,7 +282,6 @@
     "audio_only": "下载音频",
     "duration": "时长",
     "upload_date": "上传日期",
-    "invalid_url": "无效的 URL",
     "err_unsupported_url": "不支持此网站",
     "err_network_error": "网络错误",
     "err_video_unavailable": "视频不可用或已被屏蔽",
@@ -296,14 +303,4 @@
     "quality_low": "低",
     "quality_tiny": "极低",
     "quality_ultralow": "极低清晰度"
-,
-    "appearance": "Appearance",
-    "appearance_desc": "Customize the look and feel of your TeleCloud.",
-    "theme_system": "System Default",
-    "theme_neon": "Neon Glow",
-    "theme_cyberpunk": "Cyberpunk 2077",
-    "theme_anime": "Kawaii Anime"
-,
-    "theme_lavender": "Midnight Lavender",
-    "theme_forest": "Forest Luxury"
 }

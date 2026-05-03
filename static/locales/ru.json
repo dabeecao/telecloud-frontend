@@ -180,6 +180,14 @@
     "api_toggle_error": "Не удалось изменить статус API загрузки!",
     "global_settings": "Системные настройки (Глобальные)",
     "personal_settings": "Личные настройки",
+    "appearance": "Оформление",
+    "appearance_desc": "Настройте стиль отображения TeleCloud по своим предпочтениям.",
+    "theme_system": "Системное значение по умолчанию",
+    "theme_neon": "Неоновое сияние",
+    "theme_cyberpunk": "Cyberpunk 2077",
+    "theme_anime": "Стиль аниме",
+    "theme_lavender": "Лавандовый туман",
+    "theme_forest": "Классический лес",
     "admin_toggle_note": "Вы управляете настройками для всей системы.",
     "child_toggle_note": "Эта настройка применяется только к вашему аккаунту.",
     "upload_api_doc_title": "Документация API",
@@ -274,7 +282,6 @@
     "audio_only": "Скачать аудио",
     "duration": "Длительность",
     "upload_date": "Дата загрузки",
-    "invalid_url": "Неверный URL",
     "err_unsupported_url": "Этот сайт не поддерживается",
     "err_network_error": "Ошибка сети",
     "err_video_unavailable": "Видео недоступно или заблокировано",
@@ -296,14 +303,4 @@
     "quality_low": "Низкое",
     "quality_tiny": "Крошечное",
     "quality_ultralow": "Сверхнизкое"
-,
-    "appearance": "Appearance",
-    "appearance_desc": "Customize the look and feel of your TeleCloud.",
-    "theme_system": "System Default",
-    "theme_neon": "Neon Glow",
-    "theme_cyberpunk": "Cyberpunk 2077",
-    "theme_anime": "Kawaii Anime"
-,
-    "theme_lavender": "Midnight Lavender",
-    "theme_forest": "Forest Luxury"
 }

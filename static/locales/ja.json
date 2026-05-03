@@ -180,6 +180,14 @@
     "api_toggle_error": "アップロードAPIステータスの変更に失敗しました！",
     "global_settings": "システム設定 (グローバル)",
     "personal_settings": "個人設定",
+    "appearance": "外観",
+    "appearance_desc": "TeleCloud の表示スタイルを好みに合わせてカスタマイズします。",
+    "theme_system": "システムデフォルト",
+    "theme_neon": "ネオングロー",
+    "theme_cyberpunk": "Cyberpunk 2077",
+    "theme_anime": "アニメスタイル",
+    "theme_lavender": "ラベンダーミスト",
+    "theme_forest": "クラシックフォレスト",
     "admin_toggle_note": "システム全体の設定を管理しています。",
     "child_toggle_note": "この設定はあなたのアカウントのみに適用されます。",
     "upload_api_doc_title": "API ドキュメント",
@@ -274,7 +282,6 @@
     "audio_only": "音声をダウンロード",
     "duration": "再生時間",
     "upload_date": "アップロード日",
-    "invalid_url": "無効なURL",
     "err_unsupported_url": "このウェブサイトはサポートされていません",
     "err_network_error": "ネットワークエラー",
     "err_video_unavailable": "動画が利用できないか、ブロックされています",
@@ -296,14 +303,4 @@
     "quality_low": "低",
     "quality_tiny": "極小",
     "quality_ultralow": "最低画質"
-,
-    "appearance": "Appearance",
-    "appearance_desc": "Customize the look and feel of your TeleCloud.",
-    "theme_system": "System Default",
-    "theme_neon": "Neon Glow",
-    "theme_cyberpunk": "Cyberpunk 2077",
-    "theme_anime": "Kawaii Anime"
-,
-    "theme_lavender": "Midnight Lavender",
-    "theme_forest": "Forest Luxury"
 }

@@ -180,6 +180,14 @@
     "api_toggle_error": "បរាជ័យក្នុងការផ្លាស់ប្តូរស្ថានភាព Upload API!",
     "global_settings": "ការកំណត់ប្រព័ន្ធ (សកល)",
     "personal_settings": "ការកំណត់ផ្ទាល់ខ្លួន",
+    "appearance": "រូបរាង",
+    "appearance_desc": "ប្ដូរលក្ខណៈរូបរាងរបស់ TeleCloud ឱ្យស្ថិតនឹងចូលចិត្តរបស់អ្នក។",
+    "theme_system": "លំនាំដ្ឋានរបស់ប្រព័ន្ធ",
+    "theme_neon": "ពន្លឺនេអូន",
+    "theme_cyberpunk": "Cyberpunk 2077",
+    "theme_anime": "រូបរាងសមរភូមិ",
+    "theme_lavender": "ក្រុមលាវិន្ដឺ",
+    "theme_forest": "ឈើព្រៃបុរាណ",
     "admin_toggle_note": "អ្នកកំពុងគ្រប់គ្រងការកំណត់សម្រាប់ប្រព័ន្ធទាំងមូល។",
     "child_toggle_note": "ការកំណត់នេះអនុវត្តចំពោះតែគណនីផ្ទាល់ខ្លួនរបស់អ្នកប៉ុណ្ណោះ។",
     "upload_api_doc_title": "ឯកសារ API",
@@ -274,7 +282,6 @@
     "audio_only": "ទាញយកសំឡេង",
     "duration": "រយៈពេល",
     "upload_date": "ថ្ងៃផ្ទុកឡើង",
-    "invalid_url": "URL មិនត្រឹមត្រូវ",
     "err_unsupported_url": "គេហទំព័រនេះមិនត្រូវបានគាំទ្រទេ",
     "err_network_error": "កំហុសបណ្តាញ",
     "err_video_unavailable": "វីដេអូមិនអាចប្រើបាន ឬត្រូវបានរារាំង",
@@ -296,14 +303,4 @@
     "quality_low": "ទាប",
     "quality_tiny": "តូចបំផុត",
     "quality_ultralow": "ទាបបំផុត"
-,
-    "appearance": "Appearance",
-    "appearance_desc": "Customize the look and feel of your TeleCloud.",
-    "theme_system": "System Default",
-    "theme_neon": "Neon Glow",
-    "theme_cyberpunk": "Cyberpunk 2077",
-    "theme_anime": "Kawaii Anime"
-,
-    "theme_lavender": "Midnight Lavender",
-    "theme_forest": "Forest Luxury"
 }

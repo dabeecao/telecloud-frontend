@@ -180,6 +180,14 @@
     "api_toggle_error": "अपलोड API स्थिति बदलने में विफल!",
     "global_settings": "सिस्टम सेटिंग्स (ग्लोबल)",
     "personal_settings": "व्यक्तिगत सेटिंग्स",
+    "appearance": "दिखावट",
+    "appearance_desc": "अपनी पसंद के अनुसार TeleCloud प्रदर्शन शैली को अनुकूलित करें।",
+    "theme_system": "सिस्टम डिफ़ॉल्ट",
+    "theme_neon": "नीऑन ग्लो",
+    "theme_cyberpunk": "Cyberpunk 2077",
+    "theme_anime": "एनिमे शैली",
+    "theme_lavender": "लैवेंडर धुंध",
+    "theme_forest": "क्लासिक वन",
     "admin_toggle_note": "आप पूरे सिस्टम के लिए सेटिंग्स प्रबंधित कर रहे हैं।",
     "child_toggle_note": "यह सेटिंग केवल आपके अपने खाते पर लागू होती है।",
     "upload_api_doc_title": "API दस्तावेज़ीकरण",
@@ -274,7 +282,6 @@
     "audio_only": "ऑडियो डाउनलोड करें",
     "duration": "अवधि",
     "upload_date": "अपलोड की तारीख",
-    "invalid_url": "अमान्य URL",
     "err_unsupported_url": "यह वेबसाइट समर्थित नहीं है",
     "err_network_error": "नेटवर्क त्रुटि",
     "err_video_unavailable": "वीडियो अनुपलब्ध या अवरुद्ध है",
@@ -296,14 +303,4 @@
     "quality_low": "कम",
     "quality_tiny": "बहुत छोटा",
     "quality_ultralow": "अति निम्न"
-,
-    "appearance": "Appearance",
-    "appearance_desc": "Customize the look and feel of your TeleCloud.",
-    "theme_system": "System Default",
-    "theme_neon": "Neon Glow",
-    "theme_cyberpunk": "Cyberpunk 2077",
-    "theme_anime": "Kawaii Anime"
-,
-    "theme_lavender": "Midnight Lavender",
-    "theme_forest": "Forest Luxury"
 }
