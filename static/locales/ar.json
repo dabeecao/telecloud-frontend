@@ -302,5 +302,7 @@
     "quality_medium": "متوسط",
     "quality_low": "منخفض",
     "quality_tiny": "ضئيل",
-    "quality_ultralow": "منخفض جداً"
+    "quality_ultralow": "منخفض جداً",
+    "view_count": "المشاهدات",
+    "description": "الوصف"
 }

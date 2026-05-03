@@ -302,5 +302,7 @@
     "quality_medium": "Среднее",
     "quality_low": "Низкое",
     "quality_tiny": "Крошечное",
-    "quality_ultralow": "Сверхнизкое"
+    "quality_ultralow": "Сверхнизкое",
+    "view_count": "Просмотры",
+    "description": "Описание"
 }

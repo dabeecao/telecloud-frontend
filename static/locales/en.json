@@ -302,5 +302,7 @@
     "quality_medium": "Medium",
     "quality_low": "Low",
     "quality_tiny": "Tiny",
-    "quality_ultralow": "Ultra Low"
+    "quality_ultralow": "Ultra Low",
+    "view_count": "Views",
+    "description": "Description"
 }

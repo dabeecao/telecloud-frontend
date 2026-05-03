@@ -127,38 +127,6 @@ body {
    Variable Bridge & Theme Locking
    ========================================= */
 
-/* Theme-locked toolbar (search bar area) */
-.theme-toolbar {
-    background-color: var(--bg-body) !important;
-    opacity: 0.97;
-}
-
-.theme-border {
-    border-color: var(--border-main) !important;
-}
-
-.theme-search-input {
-    background-color: var(--bg-panel) !important;
-    color: var(--text-primary) !important;
-    border: 1px solid var(--border-main) !important;
-}
-
-.theme-search-input:focus {
-    background-color: var(--bg-surface) !important;
-    border-color: var(--accent-color) !important;
-}
-
-.theme-icon-btn {
-    color: var(--text-secondary) !important;
-    background-color: var(--bg-panel) !important;
-    border-color: var(--border-main) !important;
-}
-
-.theme-icon-btn:hover {
-    color: var(--accent-color) !important;
-    background-color: var(--bg-surface) !important;
-}
-
 /* Force variables to apply even if Tailwind classes are present */
 body[data-theme] {
     background-color: var(--bg-body) !important;
@@ -179,12 +147,15 @@ body[data-theme] .dark\:bg-slate-800,
 body[data-theme] .bg-white\/10,
 body[data-theme] .bg-white\/20,
 body[data-theme] .bg-white\/30,
+body[data-theme] .bg-white\/40,
 body[data-theme] .bg-white\/50,
 body[data-theme] .bg-white\/60,
 body[data-theme] .bg-slate-200\/50,
 body[data-theme] .dark\:bg-slate-900\/30,
 body[data-theme] .dark\:bg-slate-900\/60,
-body[data-theme] .dark\:bg-slate-800\/50 {
+body[data-theme] .dark\:bg-slate-800\/50,
+body[data-theme] .dark\:focus\:bg-slate-800,
+body[data-theme] .focus\:bg-white {
     background-color: var(--bg-body) !important;
 }
 
@@ -213,7 +184,8 @@ body[data-theme] .border-slate-200,
 body[data-theme] .border-slate-300,
 body[data-theme] .dark\:border-white\/5,
 body[data-theme] .dark\:border-slate-800,
-body[data-theme] .dark\:border-slate-700 {
+body[data-theme] .dark\:border-slate-700,
+body[data-theme] .dark\:border-slate-700\/50 {
     border-color: var(--border-main) !important;
 }
 

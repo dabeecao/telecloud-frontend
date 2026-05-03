@@ -302,5 +302,7 @@
     "quality_medium": "Trung bình",
     "quality_low": "Thấp",
     "quality_tiny": "Rất thấp",
-    "quality_ultralow": "Cực thấp"
+    "quality_ultralow": "Cực thấp",
+    "view_count": "Lượt xem",
+    "description": "Mô tả"
 }

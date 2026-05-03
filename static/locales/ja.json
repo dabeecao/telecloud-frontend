@@ -302,5 +302,7 @@
     "quality_medium": "中",
     "quality_low": "低",
     "quality_tiny": "極小",
-    "quality_ultralow": "最低画質"
+    "quality_ultralow": "最低画質",
+    "view_count": "再生回数",
+    "description": "説明"
 }

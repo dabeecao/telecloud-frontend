@@ -302,5 +302,7 @@
     "quality_medium": "मध्यम",
     "quality_low": "कम",
     "quality_tiny": "बहुत छोटा",
-    "quality_ultralow": "अति निम्न"
+    "quality_ultralow": "अति निम्न",
+    "view_count": "व्यूज",
+    "description": "विवरण"
 }

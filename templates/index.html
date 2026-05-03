@@ -511,7 +511,7 @@
             </div>
 
             <div x-show="currentTab === 'files'"
-                class="flex flex-col shrink-0 theme-toolbar backdrop-blur-md border-b theme-border z-30">
+                class="flex flex-col shrink-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-white/5 z-30">
                 <!-- Search Bar -->
                 <div class="px-3 md:px-6 py-3 flex items-center gap-2">
                     <div class="relative group flex-1">
@@ -521,15 +521,15 @@
                         </div>
                         <input type="text" x-model="searchQuery" @input="currentPage = 1"
                             :placeholder="t('search_placeholder')"
-                            class="theme-search-input w-full pl-11 pr-10 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-sm text-sm">
+                            class="w-full pl-11 pr-10 py-2.5 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 text-slate-800 dark:text-slate-200 transition-all shadow-sm text-sm">
                         <button x-show="searchQuery" @click="searchQuery = ''; currentPage = 1"
-                            class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-[color:var(--text-primary)] transition-colors"
+                            class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                             x-cloak>
                             <i class="fa-solid fa-circle-xmark text-lg"></i>
                         </button>
                     </div>
                     <button @click="toggleViewMode()"
-                        class="theme-icon-btn p-2.5 px-3 rounded-xl border transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 shrink-0"
+                        class="p-2.5 px-3 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-white/60 hover:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/50 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 shrink-0"
                         :title="viewMode === 'list' ? t('view_grid') : t('view_list')">
                         <i class="fa-solid text-lg"
                             :class="viewMode === 'list' ? 'fa-table-cells-large' : 'fa-list'"></i>
@@ -910,9 +910,9 @@
   "path":     "/"
 }</code></pre>
                                                 <div
-                                                    class="flex items-start gap-2 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/30 text-emerald-200 text-[10px]">
+                                                    class="flex items-start gap-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-200 text-[10px]">
                                                     <i
-                                                        class="fa-solid fa-circle-check text-emerald-400 mt-0.5 shrink-0"></i>
+                                                        class="fa-solid fa-circle-check text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0"></i>
                                                     <span x-html="t('upload_api_sync_note')"></span>
                                                 </div>
                                             </div>
@@ -1271,7 +1271,7 @@
                             <!-- Fetch Button (Visible only when NO info) -->
                             <div x-show="!ytdlpInfo" x-collapse>
                                 <button @click="fetchYTDLPFormats" :disabled="ytdlpLoading || !ytdlpUrl"
-                                    class="w-full py-4 bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 text-white rounded-2xl transition-all shadow-xl flex items-center justify-center gap-3">
+                                    class="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 flex items-center justify-center gap-3">
                                     <i class="fa-solid fa-magnifying-glass" x-show="!ytdlpLoading"></i>
                                     <i class="fa-solid fa-spinner fa-spin" x-show="ytdlpLoading" x-cloak></i>
                                     <span class="text-sm font-bold"

@@ -56,17 +56,34 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             if (!this.ytdlpInfo || !this.ytdlpInfo.formats) return [];
             return this.ytdlpInfo.formats.filter(f => {
                 const vcodec = String(f.vcodec || '').toLowerCase();
+                const acodec = String(f.acodec || '').toLowerCase();
                 const res = String(f.resolution || '').toLowerCase();
                 const note = String(f.format_note || f.format || '').toLowerCase();
                 const ext = String(f.ext || '').toLowerCase();
-                
-                // Filter out non-media formats
-                if (ext === 'mhtml' || ext === 'jpg' || ext === 'jpeg' || note.includes('storyboard') || note.includes('images')) return false;
 
-                const isAudioOnly = vcodec === 'none' || res === 'audio only' || (f.acodec && f.acodec !== 'none' && vcodec === '');
-                if (this.ytdlpDownloadType === 'video') return !isAudioOnly || (f.height && f.height > 0) || note.includes('p');
-                return isAudioOnly && !note.includes('p') && ext !== 'webm';
-            }).sort((a, b) => (b.height || 0) - (a.height || 0) || (b.filesize || b.filesize_approx || 0) - (a.filesize || a.filesize_approx || 0));
+                // Filter out non-media formats (thumbnails, storyboards)
+                if (ext === 'mhtml' || ext === 'jpg' || ext === 'jpeg' || ext === 'png' ||
+                    note.includes('storyboard') || note.includes('images')) return false;
+
+                // isAudioOnly: vcodec is "none" OR resolution is "audio only"
+                const isAudioOnly = vcodec === 'none' || res === 'audio only';
+
+                if (this.ytdlpDownloadType === 'video') {
+                    // For video: include formats that have video (not audio-only)
+                    return !isAudioOnly;
+                } else {
+                    // For audio: include audio-only formats, prefer non-webm for better MP3 conversion
+                    return isAudioOnly && acodec !== 'none' && acodec !== '';
+                }
+            }).sort((a, b) => {
+                // Sort video by height desc, then filesize desc
+                if (this.ytdlpDownloadType === 'video') {
+                    return (b.height || 0) - (a.height || 0) ||
+                        (b.filesize || b.filesize_approx || 0) - (a.filesize || a.filesize_approx || 0);
+                }
+                // Sort audio by filesize desc (higher bitrate usually = larger)
+                return (b.filesize || b.filesize_approx || 0) - (a.filesize || a.filesize_approx || 0);
+            });
         },
         formatQualityLabel(f) {
             let label = '';
@@ -1788,6 +1805,19 @@ function shareApp(shareToken) {
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
+
+            // Handle system dark mode since Tailwind is in 'class' mode
+            const applySystemTheme = () => {
+                const html = document.documentElement;
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
+            };
+            applySystemTheme();
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+
             this.fetchFiles(false);
         },
         openContextMenu(e, file) {
