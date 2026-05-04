@@ -32,8 +32,6 @@ if errorlevel 1 (
 echo Installing npm dependencies...
 call npm install
 
-call npx @tailwindcss/cli -i static/css/input.css -o static/css/tailwind.css --minify
-
 echo Downloading frontend libraries...
 if not exist "static\js" mkdir "static\js"
 if not exist "static\css" mkdir "static\css"
@@ -53,26 +51,11 @@ for %%l in (json javascript python go bash yaml sql) do (
   curl -sSL https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-%%l.min.js >> static/js/prism.js
 )
 
-echo Minifying JS and CSS files...
-call npx -y esbuild static/js/common.js --minify --outfile=static/js/common.min.js
-call npx -y esbuild static/js/script.js --minify --outfile=static/js/script.min.js
-call npx -y esbuild static/js/prism.js --minify --outfile=static/js/prism.min.js
-
-call npx -y esbuild static/css/style.css --bundle --minify --external:/static/* --outfile=static/css/style.min.css
-call npx -y esbuild static/css/nunito.css --minify --outfile=static/css/nunito.min.css
-call npx -y esbuild static/css/prism.css --minify --outfile=static/css/prism.min.css
-call npx -y esbuild static/css/plyr.css --minify --outfile=static/css/plyr.min.css
-
-echo Minifying Themes...
-if not exist "static\themes" mkdir "static\themes"
-for %%f in (static\themes\*.css) do (
-    set "filename=%%~nxf"
-    if "!filename!"=="!filename:.min.css=!" (
-        call npx -y esbuild "%%f" --minify --outfile="static\themes\%%~nf.min.css"
-    )
+echo Minifying JS, CSS, locales, and themes...
+call node build.js
+if errorlevel 1 (
+    echo Build failed. See errors above.
+    exit /b 1
 )
-
-echo Minifying JSON locales...
-node minify-locales.js
 
 echo Frontend build complete!

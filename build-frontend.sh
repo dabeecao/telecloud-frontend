@@ -25,8 +25,6 @@ fi
 echo "Installing npm dependencies..."
 npm install
 
-npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/tailwind.css --minify
-
 echo "Downloading frontend libraries..."
 mkdir -p static/js static/css
 
@@ -53,25 +51,7 @@ for lang in json javascript python go bash yaml sql; do
   curl -sSL "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-$lang.min.js" >> static/js/prism.js
 done
 
-echo "Minifying JS and CSS files..."
-npx -y esbuild static/js/common.js --minify --outfile=static/js/common.min.js
-npx -y esbuild static/js/script.js --minify --outfile=static/js/script.min.js
-npx -y esbuild static/js/prism.js --minify --outfile=static/js/prism.min.js
-
-npx -y esbuild static/css/style.css --bundle --minify --external:/static/* --outfile=static/css/style.min.css
-npx -y esbuild static/css/nunito.css --minify --outfile=static/css/nunito.min.css
-npx -y esbuild static/css/prism.css --minify --outfile=static/css/prism.min.css
-npx -y esbuild static/css/plyr.css --minify --outfile=static/css/plyr.min.css
-
-echo "Minifying Themes..."
-mkdir -p static/themes
-for f in static/themes/*.css; do
-  if [[ $f != *".min.css" ]]; then
-    npx -y esbuild "$f" --minify --outfile="${f%.css}.min.css"
-  fi
-done
-
-echo "Minifying JSON locales..."
-node minify-locales.js
+echo "Minifying JS, CSS, locales, and themes..."
+node build.js
 
 echo "Frontend build complete!"
