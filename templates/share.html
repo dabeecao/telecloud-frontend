@@ -10,15 +10,14 @@
     <link rel="stylesheet" href="/static/css/tailwind.css?v={{ .version }}">
     <link rel="stylesheet" href="/static/css/fontawesome.min.css?v={{ .version }}">
     
-    <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
-    <script>window.TELECLOUD_VERSION = '{{ .version }}';</script>
-    <script src="/static/js/common.min.js?v={{ .version }}"></script>
-    
-    <script defer src="/static/js/alpine.min.js?v={{ .version }}"></script>
     <link rel="stylesheet" href="/static/css/plyr.min.css?v={{ .version }}" />
     <script src="/static/js/plyr.polyfilled.js?v={{ .version }}"></script>
     <link rel="stylesheet" href="/static/css/prism.min.css?v={{ .version }}" />
     <script src="/static/js/prism.min.js?v={{ .version }}"></script>
+    <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
+    <script>window.TELECLOUD_VERSION = '{{ .version }}';</script>
+    <script src="/static/js/common.min.js?v={{ .version }}"></script>
+    <script defer src="/static/js/alpine.min.js?v={{ .version }}"></script>
 
     <!-- SEO & Social Meta Tags -->
     <meta name="description" content="Download file {{ .filename }} from TeleCloud OS">
@@ -129,7 +128,7 @@
 
                 <div class="flex flex-col gap-4 w-full justify-center">
                     
-                    <div id="media-preview-container" x-show="isMedia" x-cloak class="w-full mb-2 flex-col items-center justify-center rounded-[1.5rem] p-1.5 glass-button shadow-sm transition-all">
+                    <div id="media-preview-container" x-show="isMedia" x-cloak class="w-full mb-2 flex-col items-center justify-center rounded-[1.5rem] p-1.5 glass-panel shadow-md transition-all">
                         <!-- Image/Video/Audio injected here -->
                         <div id="media-injected-content"></div>
 
@@ -243,8 +242,8 @@
                 playerTarget = '#tele-player';
             } else if (audioExts.includes(ext)) {
                 const typeAttr = mimeTypes[ext] || 'audio/mpeg';
-                const coverHtml = hasThumb ? '<img src="' + thumbUrl + '" class="w-48 h-48 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '';
-                injectedHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4">' + coverHtml + '<audio id="tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
+                const coverHtml = hasThumb ? '<img src="' + thumbUrl + '" class="w-48 h-48 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-48 h-48 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm"><i class="fa-solid fa-music text-6xl text-slate-300 dark:text-slate-500"></i></div>';
+                injectedHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 glass-panel shadow-inner">' + coverHtml + '<audio id="tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
                 isMedia = true;
                 alpineScope.isMedia = true;
                 playerTarget = '#tele-player';

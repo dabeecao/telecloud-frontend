@@ -1,4 +1,4 @@
-function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true, webauthnRPID = '', webauthnOrigins = '', initialTheme = 'system') {
+function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true, webauthnRPID = '', webauthnOrigins = '', initialTheme = 'system', s3Enabled = false, s3AccessKey = '', s3SecretKey = '', globalS3Enabled = true) {
     return {
         isLoggedIn: initialIsLoggedIn,
         isAdmin: isAdmin,
@@ -10,9 +10,13 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         uploadAPIKey: uploadAPIKey,
         globalWebdavEnabled: globalWebdavEnabled,
         globalAPIEnabled: globalAPIEnabled,
+        globalS3Enabled: globalS3Enabled,
         showAPIKey: false,
         childAPIKey: '',
         showChildAPIKey: false,
+        s3Enabled: s3Enabled,
+        s3AccessKey: s3AccessKey,
+        s3SecretKey: s3SecretKey,
         ytdlpEnabled: false,
         ytdlpUrl: '',
         ytdlpLoading: false,
@@ -239,6 +243,68 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     } else {
                         this.showToast(this.t('api_toggle_error'), 'error');
                     }
+                }
+            } catch(e) {
+                this.showToast(this.t('status_error'), 'error');
+            }
+        },
+        async toggleS3() {
+            let newState = !this.s3Enabled;
+            let endpoint = this.isAdmin ? '/api/settings/s3' : '/api/settings/child-s3';
+            let fd = new FormData();
+            fd.append('enabled', newState);
+            try {
+                let res = await fetch(endpoint, { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    this.s3Enabled = newState;
+                    this.showToast(this.t('toast_settings_saved'), 'success');
+                } else {
+                    let d = await res.json();
+                    if (d.error === 'ADMIN_DISABLED') {
+                        this.showToast(this.t('err_admin_disabled'), 'error');
+                    } else {
+                        this.showToast(this.t('status_error'), 'error');
+                    }
+                }
+            } catch(e) {
+                this.showToast(this.t('status_error'), 'error');
+            }
+        },
+        async saveS3Credentials() {
+            let fd = new FormData();
+            fd.append('access_key', this.s3AccessKey);
+            fd.append('secret_key', this.s3SecretKey);
+            try {
+                let res = await fetch('/api/settings/s3/credentials', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    this.showToast(this.t('toast_settings_saved'), 'success');
+                } else {
+                    this.showToast(this.t('status_error'), 'error');
+                }
+            } catch(e) {
+                this.showToast(this.t('status_error'), 'error');
+            }
+        },
+        async generateS3Keys() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let ak = '';
+            for (let i = 0; i < 20; i++) ak += chars.charAt(Math.floor(Math.random() * chars.length));
+            
+            const secretChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let sk = '';
+            for (let i = 0; i < 40; i++) sk += secretChars.charAt(Math.floor(Math.random() * secretChars.length));
+            
+            let fd = new FormData();
+            fd.append('access_key', ak);
+            fd.append('secret_key', sk);
+            try {
+                let res = await fetch('/api/settings/s3/credentials', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    this.s3AccessKey = ak;
+                    this.s3SecretKey = sk;
+                    this.showToast(this.t('toast_settings_saved'), 'success');
+                } else {
+                    this.showToast(this.t('status_error'), 'error');
                 }
             } catch(e) {
                 this.showToast(this.t('status_error'), 'error');
@@ -721,22 +787,39 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         }
 
                         if (data.status === 'telegram' || data.status === 'done') {
-                            // Phase 2: 50-100%
-                            task.progress = 50 + Math.round(data.percent / 2);
+                            // Phase 2: 50-100% for normal, 0-100% for singlePhase (Remote Upload)
+                            if (task.singlePhase) {
+                                task.progress = data.percent;
+                            } else {
+                                task.progress = 50 + Math.round(data.percent / 2);
+                            }
                             if (data.uploaded_bytes && data.uploaded_bytes > 0) {
                                 // Reset startTime when phase changes to get accurate phase speed
-                                if (data.status === 'telegram' && task.statusText === this.t('pushing_to_tg')) {
-                                     task.startTime = Date.now();
-                                     task.uploadedBytes = 0;
+                                // Reset speed metrics when phase changes to telegram or if not yet initialized
+                                if (data.status === 'telegram' && (!task.lastUpdateTime || task.statusText === this.t('pushing_to_tg'))) {
+                                     if (!task.lastUpdateTime || task.statusText === this.t('pushing_to_tg')) {
+                                         task.startTime = Date.now();
+                                         task.uploadedBytes = 0;
+                                         task.lastUploadedBytes = 0;
+                                         task.lastUpdateTime = Date.now();
+                                         task.speed = 0;
+                                     }
                                 }
                                 
                                 task.uploadedBytes = data.uploaded_bytes;
-                                if (task.startTime) {
-                                    const elapsed = (Date.now() - task.startTime) / 1000;
-                                    if (elapsed > 0) {
-                                        task.speed = task.uploadedBytes / elapsed;
+                                const now = Date.now();
+                                if (task.lastUpdateTime && task.lastUpdateTime < now) {
+                                    const elapsed = (now - task.lastUpdateTime) / 1000;
+                                    const bytesSent = task.uploadedBytes - task.lastUploadedBytes;
+                                    if (elapsed > 0 && bytesSent >= 0) {
+                                        const instantSpeed = bytesSent / elapsed;
+                                        // EMA Smoothing: 70% old, 30% new
+                                        if (task.speed === 0) task.speed = instantSpeed;
+                                        else task.speed = (task.speed * 0.7) + (instantSpeed * 0.3);
                                     }
                                 }
+                                task.lastUpdateTime = now;
+                                task.lastUploadedBytes = task.uploadedBytes;
                             }
                         }
 
@@ -923,9 +1006,9 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
 
         async logout() { await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }); window.location.href = '/login'; },
         getBreadcrumbs() { return this.currentPath === '/' ? [] : this.currentPath.split('/').filter(Boolean); },
-        navigateToFolder(folderName) { this.currentPath = this.currentPath === '/' ? '/' + folderName : this.currentPath + '/' + folderName; this.fetchFiles(); },
-        navigateToIndex(index) { this.currentPath = '/' + this.getBreadcrumbs().slice(0, index + 1).join('/'); this.fetchFiles(); },
-        navigateTo(path) { this.currentPath = path; this.fetchFiles(); },
+        navigateToFolder(folderName) { if (this.isLoading || this.isRefreshing) return; this.currentPath = this.currentPath === '/' ? '/' + folderName : this.currentPath + '/' + folderName; this.fetchFiles(); },
+        navigateToIndex(index) { if (this.isLoading || this.isRefreshing) return; this.currentPath = '/' + this.getBreadcrumbs().slice(0, index + 1).join('/'); this.fetchFiles(); },
+        navigateTo(path) { if (this.isLoading || this.isRefreshing) return; this.currentPath = path; this.fetchFiles(); },
         async fetchFiles(silentLoad = false) {
             if (!silentLoad && (!this.files || this.files.length === 0)) { this.isLoading = true; } else { this.isRefreshing = true; }
             try {
@@ -1023,7 +1106,8 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 statusText: this.t('preparing_upload'),
                 isCancelled: false,
                 hasError: false,
-                size: 0
+                size: 0,
+                singlePhase: true
             });
 
             let fd = new FormData();
@@ -1155,7 +1239,9 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     size: file.size,
                     speed: 0,
                     uploadedBytes: 0,
-                    startTime: null
+                    startTime: null,
+                    lastUpdateTime: null,
+                    lastUploadedBytes: 0
                 };
                 
                 newTasks.push(task);
@@ -1220,7 +1306,10 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             }
 
             const task = this.uploadQueue.find(t => t.id === taskId);
-            if (task) task.startTime = Date.now();
+            if (task) {
+                task.startTime = Date.now();
+                task.lastUpdateTime = task.startTime;
+            }
 
             // Worker pool for parallel chunks
             const CHUNK_CONCURRENCY = 3;
@@ -1271,12 +1360,19 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             uploadedChunks++;
                             if (task) {
                                 task.uploadedBytes += chunk.size;
-                                const elapsed = (Date.now() - task.startTime) / 1000;
-                                if (elapsed > 0) {
-                                    // Use a bit of weighted average for smoother speed
-                                    const currentSpeed = (task.uploadedBytes - (existingChunks.length * CHUNK_SIZE)) / elapsed;
-                                    task.speed = currentSpeed;
+                                const now = Date.now();
+                                if (task.lastUpdateTime && task.lastUpdateTime < now) {
+                                    const elapsed = (now - task.lastUpdateTime) / 1000;
+                                    const bytesSent = chunk.size; // We just finished this chunk
+                                    if (elapsed > 0) {
+                                        const instantSpeed = bytesSent / elapsed;
+                                        // EMA Smoothing
+                                        if (task.speed === 0) task.speed = instantSpeed;
+                                        else task.speed = (task.speed * 0.7) + (instantSpeed * 0.3);
+                                    }
                                 }
+                                task.lastUpdateTime = now;
+                                task.lastUploadedBytes = task.uploadedBytes;
                                 task.progress = Math.round((uploadedChunks / totalChunks) * 50);
                             }
                             
@@ -1423,7 +1519,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 isMedia = true; playerTarget = { el: '#index-tele-player', type: 'video' };
             } else if (audioExts.includes(ext)) {
                 const typeAttr = mimeTypes[ext] || 'audio/mpeg';
-                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 bg-slate-100 dark:bg-slate-800/50 shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
+                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 glass-panel shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
                 isMedia = true; playerTarget = { el: '#index-tele-player', type: 'audio' };
             } else if (textExts.includes(ext)) {
                 this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
@@ -1906,9 +2002,9 @@ function shareApp(shareToken) {
         },
         closeContextMenu() { this.contextMenu.show = false; },
         getBreadcrumbs() { return this.currentPath === '/' ? [] : this.currentPath.split('/').filter(Boolean); },
-        navigateToFolder(folderName) { this.currentPath = this.currentPath === '/' ? '/' + folderName : this.currentPath + '/' + folderName; this.fetchFiles(); },
-        navigateToIndex(index) { this.currentPath = '/' + this.getBreadcrumbs().slice(0, index + 1).join('/'); this.fetchFiles(); },
-        navigateTo(path) { this.currentPath = path; this.fetchFiles(); },
+        navigateToFolder(folderName) { if (this.isLoading || this.isRefreshing) return; this.currentPath = this.currentPath === '/' ? '/' + folderName : this.currentPath + '/' + folderName; this.fetchFiles(); },
+        navigateToIndex(index) { if (this.isLoading || this.isRefreshing) return; this.currentPath = '/' + this.getBreadcrumbs().slice(0, index + 1).join('/'); this.fetchFiles(); },
+        navigateTo(path) { if (this.isLoading || this.isRefreshing) return; this.currentPath = path; this.fetchFiles(); },
         async fetchFiles(silentLoad = false) {
             if (!silentLoad && (!this.files || this.files.length === 0)) { this.isLoading = true; } else { this.isRefreshing = true; }
             try {
@@ -1954,7 +2050,7 @@ function shareApp(shareToken) {
                 isMedia = true; playerTarget = { el: '#index-tele-player', type: 'video' };
             } else if (audioExts.includes(ext)) {
                 const typeAttr = mimeTypes[ext] || 'audio/mpeg';
-                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 bg-slate-100 dark:bg-slate-800/50 shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
+                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 glass-panel shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
                 isMedia = true; playerTarget = { el: '#index-tele-player', type: 'audio' };
             } else if (textExts.includes(ext)) {
                 this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };

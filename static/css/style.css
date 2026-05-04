@@ -4,10 +4,12 @@
 @import './nunito.css';
 
 :root {
-    --plyr-color-main: #3b82f6; 
-    --plyr-video-background: rgba(0, 0, 0, 0.2);
-    --plyr-menu-background: rgba(15, 23, 42, 0.9);
-    --plyr-menu-color: #ffffff;
+    --plyr-color-main: var(--accent-color); 
+    --plyr-video-background: rgba(0, 0, 0, 0.4);
+    --plyr-menu-background: var(--bg-menu);
+    --plyr-menu-color: var(--text-primary);
+    --plyr-audio-controls-background: var(--bg-panel);
+    --plyr-audio-control-color: var(--text-primary);
 
     /* Semantic Theme Variables - Defaults */
     --accent-color: #3b82f6;
@@ -345,13 +347,15 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
     height: 100%;
 }
 .plyr__controls { 
-    backdrop-filter: blur(10px) !important; 
-    background: rgba(15, 23, 42, 0.6) !important; 
+    backdrop-filter: blur(var(--glass-blur)) !important; 
+    background: var(--bg-menu) !important; 
     padding: 10px !important; 
+    color: var(--text-primary) !important;
 }
 .plyr--audio .plyr__controls { 
     border-radius: 1rem; 
-    background: rgba(15, 23, 42, 0.7) !important; 
+    background: var(--plyr-audio-controls-background) !important; 
+    color: var(--plyr-audio-control-color) !important;
 }
 
 /* Fullscreen fix for Plyr when inside modals/containers */
@@ -364,9 +368,25 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
     height: 100% !important;
 }
 
-html:not(.dark) .plyr--audio .plyr__controls { 
-    background: rgba(255, 255, 255, 0.8) !important; 
-    color: #1e293b !important; 
+.plyr--audio .plyr__control.plyr__control--overlaid {
+    background: var(--accent-color) !important;
+}
+
+.plyr--video .plyr__control.plyr__control--overlaid {
+    background: var(--accent-color) !important;
+    opacity: 0.8;
+}
+
+.plyr__control:hover {
+    background: var(--accent-color) !important;
+    color: var(--accent-text) !important;
+}
+
+.plyr__menu__container {
+    backdrop-filter: blur(var(--glass-blur)) !important;
+    background: var(--bg-menu) !important;
+    border: 1px solid var(--border-main) !important;
+    border-radius: 0.75rem !important;
 }
 
 /* =========================================
