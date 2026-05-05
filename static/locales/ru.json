@@ -314,5 +314,7 @@
     "quality_tiny": "Крошечное",
     "quality_ultralow": "Сверхнизкое",
     "view_count": "Просмотры",
-    "description": "Описание"
+    "description": "Описание",
+    "you_are_offline": "Вы не в сети",
+    "you_are_online": "Вы снова в сети"
 }

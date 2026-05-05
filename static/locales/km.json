@@ -314,5 +314,7 @@
     "quality_tiny": "តូចបំផុត",
     "quality_ultralow": "ទាបបំផុត",
     "view_count": "ការចាក់ផ្សាយ",
-    "description": "ការពិពណ៌នា"
+    "description": "ការពិពណ៌នា",
+    "you_are_offline": "អ្នកក្រៅបណ្តាញ",
+    "you_are_online": "អ្នកបានត្រឡប់មកលើបណ្តាញ"
 }
