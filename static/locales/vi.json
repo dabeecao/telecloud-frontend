@@ -318,5 +318,7 @@
     "quality_tiny": "Rất thấp",
     "quality_ultralow": "Cực thấp",
     "view_count": "Lượt xem",
-    "description": "Mô tả"
+    "description": "Mô tả",
+    "you_are_offline": "Bạn đang offline",
+    "you_are_online": "Bạn đã trực tuyến trở lại"
 }

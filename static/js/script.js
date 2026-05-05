@@ -646,7 +646,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 fetch('/api/cancel_upload', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }).catch(e => console.error("Cancel failed:", e));
             }
         },
-        toastModal: { show: false, message: '', type: 'success' },
+        toastModal: { show: false, message: '', type: 'success', persistent: false },
         toastTimeout: null,
         plyrInstance: null,
         fileInfoModal: { show: false, file: null, typeName: '', ext: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
@@ -657,6 +657,9 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
+
+            window.addEventListener('online', () => this.showToast(this.t('you_are_online'), 'success'));
+            window.addEventListener('offline', () => this.showToast(this.t('you_are_offline'), 'error', 0));
 
             // Always apply theme (will be 'system' for non-logged-in users)
             TeleCloud.initTheme(this.currentTheme);
@@ -828,6 +831,10 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             task.statusText = this.t('done');
                             task.hasError = false;
                             this.fetchFiles(true);
+                            // Auto-remove task after 3 seconds
+                            setTimeout(() => {
+                                this.uploadQueue = this.uploadQueue.filter(t => t.id !== task.id);
+                            }, 3000);
                         } else if (data.status === 'error') {
                             const errorMsg = data.message;
                             const translated = this.t(errorMsg);
@@ -1442,10 +1449,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 console.error('Failed to copy link:', err);
             }
         },
-        showToast(msg, type = 'success') {
-            this.toastModal = { show: true, message: msg, type: type };
+        showToast(msg, type = 'success', duration = 3500) {
             if (this.toastTimeout) clearTimeout(this.toastTimeout);
-            this.toastTimeout = setTimeout(() => { this.toastModal.show = false; }, 3500);
+            this.toastModal = { show: true, message: msg, type: type, persistent: duration === 0 };
+            if (duration > 0) {
+                this.toastTimeout = setTimeout(() => { this.toastModal.show = false; }, duration);
+            }
         },
         async deleteFile(id) { 
             const confirmed = await this.customConfirm(this.t('delete_confirm_title'), this.t('delete_confirm_msg'), true); 
@@ -1849,11 +1858,13 @@ function shareApp(shareToken) {
         isRefreshing: false,
         isPreparingDownload: false,
         lang: TeleCloud.lang,
-        toastModal: { show: false, message: '', type: 'success' },
-        showToast(msg, type = 'success') {
+        toastModal: { show: false, message: '', type: 'success', persistent: false },
+        showToast(msg, type = 'success', duration = 3500) {
             if (this.toastTimeout) clearTimeout(this.toastTimeout);
-            this.toastModal = { show: true, message: msg, type: type };
-            this.toastTimeout = setTimeout(() => { this.toastModal.show = false; }, 3500);
+            this.toastModal = { show: true, message: msg, type: type, persistent: duration === 0 };
+            if (duration > 0) {
+                this.toastTimeout = setTimeout(() => { this.toastModal.show = false; }, duration);
+            }
         },
         t(key, params) { return TeleCloud.t(key, params, this.lang); },
         formatBytes(b, d) { return TeleCloud.formatBytes(b, d); },
@@ -1986,6 +1997,10 @@ function shareApp(shareToken) {
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
             });
+
+            window.addEventListener('online', () => this.showToast(this.t('you_are_online'), 'success'));
+            window.addEventListener('offline', () => this.showToast(this.t('you_are_offline'), 'error', 0));
+
             TeleCloud.initTheme('system');
 
             this.fetchFiles(false);

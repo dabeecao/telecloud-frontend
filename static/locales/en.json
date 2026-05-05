@@ -318,5 +318,7 @@
     "quality_tiny": "Tiny",
     "quality_ultralow": "Ultra Low",
     "view_count": "Views",
-    "description": "Description"
+    "description": "Description",
+    "you_are_offline": "You are offline",
+    "you_are_online": "You are back online"
 }
