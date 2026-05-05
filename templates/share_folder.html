@@ -546,7 +546,7 @@
                             class="font-medium text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400"
                             x-text="t('storage_used_here')"></span>
                         <span class="text-slate-700 dark:text-slate-200 font-bold"
-                            x-text="formatBytes(files.reduce((acc, f) => acc + (f.size || 0), 0))"></span>
+                            x-text="formatBytes(totalSize)"></span>
                     </div>
                     <div class="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
                         <a href="https://github.com/dabeecao/telecloud-go" target="_blank"

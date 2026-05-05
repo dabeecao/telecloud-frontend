@@ -1937,6 +1937,7 @@ function shareApp(shareToken) {
         },
 
         files: [], 
+        totalSize: 0,
         searchQuery: '',
         currentPage: 1,
         itemsPerPage: 15,
@@ -2026,6 +2027,7 @@ function shareApp(shareToken) {
                 const res = await fetch(`/s/${this.shareToken}/api/files?path=${encodeURIComponent(this.currentPath)}`);
                 const data = await res.json();
                 this.files = data.files || [];
+                this.totalSize = data.total_size || 0;
                 this.selectedIds = this.selectedIds.filter(id => this.files.some(f => f.id === id));
                 if (!silentLoad) { this.searchQuery = ''; this.currentPage = 1; } else { if (this.currentPage > this.totalPages) this.currentPage = Math.max(1, this.totalPages); }
             } catch (e) { console.error('Fetch error', e); } finally { this.isLoading = false; this.isRefreshing = false; }
