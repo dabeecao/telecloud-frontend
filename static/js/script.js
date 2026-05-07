@@ -766,7 +766,8 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         if (data.size && data.size > 0 && (!task.size || task.size === 0)) {
                             task.size = data.size;
                         }
-                        if (data.status === 'downloading' || data.status === 'telegram' || data.status === 'done') {
+                        if (data.status === 'downloading' || data.status === 'telegram' || data.status === 'done' || data.status === 'error') {
+                            task.status = data.status;
                             let msg = data.message;
                             if (msg && msg.startsWith('uploading_part_')) {
                                 const matchOf = msg.match(/uploading_part_(\d+)_of_(\d+)/);
@@ -786,6 +787,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         }
 
                         if (data.status === 'uploading_to_server' || data.status === 'downloading') {
+                            task.status = data.status;
                             if (!task.hasError) {
                                 task.statusText = this.t(data.message) || task.statusText;
                                 // Phase 1: 0-50%
@@ -1164,6 +1166,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         statusText: this.t('preparing_upload'),
                         isCancelled: false,
                         hasError: false,
+                        status: 'preparing',
                         size: 0,
                         singlePhase: false
                     });
@@ -1225,6 +1228,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             statusText: this.t('preparing_upload'),
                             isCancelled: false,
                             hasError: false,
+                            status: 'preparing',
                             size: meta.content_length || 0,
                             singlePhase: true
                         });
@@ -1379,6 +1383,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     file: file,
                     overwrite: overwrite,
                     hasError: false,
+                    status: 'waiting_slot',
                     targetPath: (function(app, f) {
                         let rel = f.relativeDir;
                         if (!rel && f.webkitRelativePath) {
@@ -1972,6 +1977,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         statusText: this.t('initiating_ytdlp'),
                         hasError: false,
                         isCancelled: false,
+                        status: 'preparing',
                         size: 0,
                         startTime: Date.now(),
                         uploadedBytes: 0,

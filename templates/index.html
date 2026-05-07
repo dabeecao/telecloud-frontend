@@ -2301,7 +2301,7 @@
                                     <i class="fa-solid fa-rotate-right"></i> <span x-text="t('retry')"></span>
                                 </button>
 
-                                <button x-show="task.progress < 100 && !task.isCancelled" @click="cancelUpload(task.id)"
+                                <button x-show="task.status !== 'done' && task.status !== 'error' && !task.isCancelled" @click="cancelUpload(task.id)"
                                     class="text-slate-400 hover:text-red-500 transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 -mr-1 -mb-1">
                                     <i class="fa-solid fa-circle-xmark text-sm"></i>
                                 </button>
