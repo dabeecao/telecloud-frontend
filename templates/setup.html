@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title x-text="t('setup_wizard_title')">TeleCloud - Setup Wizard</title>
+    <title>TeleCloud - Setup Wizard</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 
@@ -367,7 +367,6 @@
                     this.loading = true;
                     await TeleCloud.setLang(code);
                     this.lang = code;
-                    document.title = this.t('setup_wizard_title');
                     this.loading = false;
                 },
 
@@ -402,9 +401,6 @@
                     if (TeleCloud.translationsLoaded) {
                         this.translationsLoaded = true;
                     }
-
-                    // Update document title manually since Alpine is on body
-                    document.title = this.t('setup_wizard_title');
 
                     // Check if env had API config
                     if (this.api_id && this.api_hash) {
