@@ -20,6 +20,7 @@ const TeleCloud = {
         return supported.includes(browserLang) ? browserLang : 'en';
     })(),
     translations: {},
+    translationsLoaded: false,
 
     async loadTranslations(lang) {
         if (this.translations[lang]) return;
@@ -27,6 +28,7 @@ const TeleCloud = {
             const response = await fetch(`/static/locales/${lang}.min.json?v=${this.version}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             this.translations[lang] = await response.json();
+            this.translationsLoaded = true;
             window.dispatchEvent(new CustomEvent('tc-translations-loaded', { detail: { lang } }));
         } catch (e) {
             console.error('Failed to load translations for', lang, e);

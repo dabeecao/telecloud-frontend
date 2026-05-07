@@ -3,9 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TeleCloud - Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title x-text="t('setup_wizard_title')">TeleCloud - Setup Wizard</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 
@@ -19,14 +18,52 @@
     <script src="/static/js/script.min.js?v={{ .version }}"></script>
     <script defer src="/static/js/alpine-collapse.min.js?v={{ .version }}"></script>
     <script defer src="/static/js/alpine.min.js?v={{ .version }}"></script>
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
 </head>
 
 <body
-    class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-full relative overflow-hidden flex flex-col transition-colors duration-500"
+    class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-screen relative flex flex-col transition-colors duration-500"
     data-theme="system"
-    x-data="cloudApp(false, 'system', 0, 0, false)">
-    <div class="blob-1"></div>
-    <div class="blob-2"></div>
+    x-data="setupWizard('{{ .api_id }}', '{{ .api_hash }}', '{{ .log_group_id }}', {{ .admin_exists }})">
+    
+    <!-- Loading overlay before translations are loaded -->
+    <div x-show="!translationsLoaded" class="fixed inset-0 bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center z-[9999]">
+        <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+        <p class="text-slate-500 dark:text-slate-400 font-medium">Loading Setup / Đang tải...</p>
+    </div>
+
+    <!-- Main content hidden until translations load -->
+    <div x-show="translationsLoaded" x-cloak class="flex-1 w-full min-h-screen flex flex-col items-center justify-center relative">
+        <div class="blob-1"></div>
+        <div class="blob-2"></div>
+
+    <!-- Language Switcher -->
+    <div class="fixed top-6 right-6 z-[200]">
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" 
+                class="glass-menu px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium hover:scale-105 transition-transform shadow-lg border border-white/20">
+                <span x-text="TeleCloud.availableLangs.find(l => l.code === lang)?.flag"></span>
+                <span x-text="TeleCloud.availableLangs.find(l => l.code === lang)?.name"></span>
+                <i class="fa-solid fa-chevron-down text-xs transition-transform" :class="open ? 'rotate-180' : ''"></i>
+            </button>
+            <div x-show="open" @click.outside="open = false" x-transition 
+                class="absolute right-0 mt-2 w-48 glass-menu rounded-2xl p-2 shadow-2xl border border-white/20 overflow-hidden">
+                <template x-for="l in TeleCloud.availableLangs" :key="l.code">
+                    <button @click="setLang(l.code); open = false" 
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm"
+                        :class="lang === l.code ? 'text-blue-500 font-bold' : ''">
+                        <span x-text="l.flag"></span>
+                        <span x-text="l.name"></span>
+                        <i x-show="lang === l.code" class="fa-solid fa-check ml-auto text-xs"></i>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
 
     <div x-show="toastModal.show" x-cloak
         class="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
@@ -40,81 +77,625 @@
             </div>
 
             <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"
-                x-text="toastModal.type === 'error' ? t('failure') : t('success')"></h3>
+                x-text="toastModal.type === 'error' ? t('setup_error') : t('setup_success')"></h3>
             <p class="text-slate-600 dark:text-slate-300 text-sm mb-2" x-text="toastModal.message"></p>
 
             <button x-show="!toastModal.persistent" @click="toastModal.show = false"
                 class="mt-4 w-full py-3 rounded-xl text-white font-medium shadow-lg transition-transform active:scale-95"
-                :class="toastModal.type === 'error' ? 'bg-red-600 hover:bg-red-500 shadow-red-500/25' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25'"
-                x-text="t('close')">
+                :class="toastModal.type === 'error' ? 'bg-red-600 hover:bg-red-500 shadow-red-500/25' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25'">
+                <span x-text="t('close')"></span>
             </button>
         </div>
     </div>
 
-    <div x-show="modal.show" x-cloak
-        class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
-        x-transition.opacity>
-        <div @click.outside="if(modal.type==='alert') closeUIModal(null)"
-            class="glass-menu w-[90%] max-w-sm rounded-[2rem] p-6 shadow-2xl animate-modal-in border border-white/20">
-            <h3 class="text-xl font-bold mb-2 text-slate-900 dark:text-white" x-text="modal.title"></h3>
-            <p class="text-slate-600 dark:text-slate-300 text-sm mb-5" x-text="modal.message" x-show="modal.message">
-            </p>
-            <div class="flex justify-end gap-3 mt-2">
-                <button @click="closeUIModal(true)"
-                    class="px-5 py-2 rounded-xl text-white font-medium shadow-lg transition-transform active:scale-95 bg-blue-600 hover:bg-blue-500 shadow-blue-500/25"
-                    x-text="modal.type === 'alert' ? t('close') : t('confirm')"></button>
+    <div class="w-full min-h-[100dvh] flex flex-col items-center justify-center p-4 z-10 py-12">
+        <div class="glass-panel p-8 md:p-10 rounded-[2rem] w-full max-w-md relative overflow-hidden">
+            <!-- Progress Bar -->
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-200 dark:bg-slate-800">
+                <div class="h-full bg-blue-500 transition-all duration-500 ease-out" :style="'width: ' + ((step / 4) * 100) + '%'"></div>
             </div>
-        </div>
-    </div>
 
-    <div class="w-full h-[100dvh] flex flex-col items-center justify-center p-4 z-10">
-        <div class="glass-panel p-8 md:p-10 rounded-[2rem] w-full max-w-md relative">
-            <!-- Language Dropdown -->
-            <div class="absolute top-4 right-4 z-[110]" x-data="{ open: false }">
-                <button @click="open = !open" @click.outside="open = false"
-                    class="h-8 px-2 flex items-center gap-1.5 text-slate-500 hover:text-blue-500 bg-white/50 dark:bg-slate-800/50 rounded-lg transition-colors border border-slate-200 dark:border-slate-700/50">
-                    <i class="fa-solid fa-earth-americas text-xs"></i>
-                    <span class="text-[10px] font-bold uppercase" x-text="lang"></span>
+            <div class="text-center mb-8 mt-2">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4 transition-transform hover:scale-105 duration-300">
+                    <i class="fa-solid text-3xl text-white" :class="getStepIcon()"></i>
+                </div>
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white" x-text="getStepTitle()">Setup</h2>
+                <p class="text-sm text-slate-500 mt-2" x-text="admin_exists ? t('setup_reauth_required') : getStepDesc()"></p>
+            </div>
+
+            <!-- Step 1: API Config -->
+            <form x-show="step === 1" x-transition.opacity @submit.prevent="submitApiConfig" x-cloak>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" x-text="t('setup_api_id')"></label>
+                        <input type="number" x-model="api_id" required placeholder="123456"
+                            class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" x-text="t('setup_api_hash')"></label>
+                        <input type="text" x-model="api_hash" required placeholder="abcdef1234567890abcdef1234567890"
+                            class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all">
+                    </div>
+                </div>
+                <button type="submit" :disabled="loading"
+                    class="mt-8 w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="loading"></i>
+                    <span x-text="loading ? t('setup_saving') : t('setup_next')"></span>
                 </button>
-                <div x-show="open" x-cloak
-                    class="absolute top-10 right-0 w-32 glass-menu rounded-xl shadow-xl border border-white/20 p-1 z-[1000]"
-                    x-transition:enter="transition ease-out duration-100"
-                    x-transition:enter-start="transform opacity-0 scale-95"
-                    x-transition:enter-end="transform opacity-100 scale-100">
-                    <template x-for="l in TeleCloud.availableLangs" :key="l.code">
-                        <button @click="setLang(l.code); open = false"
-                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between"
-                            :class="lang === l.code ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'">
-                            <span x-text="l.name"></span>
-                            <span x-text="l.flag"></span>
-                        </button>
-                    </template>
-                </div>
-            </div>
-            <div class="text-center mb-8">
-                <div
-                    class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4">
-                    <i class="fa-solid fa-user-shield text-3xl text-white"></i>
-                </div>
-                <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white" x-text="t('setup_title')">Welcome</h2>
-                <p class="text-sm text-slate-500 mt-2" x-text="t('setup_desc')">Create an admin account to continue</p>
-            </div>
-            <form @submit.prevent="setupAdmin">
-                <input type="text" autocomplete="username" x-model="username"
-                    :placeholder="t('username')" required
-                    class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white mb-4 backdrop-blur-sm transition-all">
-                <input type="password" autocomplete="new-password" x-model="password"
-                    :placeholder="t('password')" required
-                    class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white mb-4 backdrop-blur-sm transition-all">
-                <input type="password" autocomplete="new-password" x-model="confirmPassword"
-                    :placeholder="t('setup_confirm_password')" required
-                    class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white mb-6 backdrop-blur-sm transition-all">
-                <button type="submit"
-                    class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98]"
-                    x-text="t('create_account')"></button>
             </form>
+
+            <!-- Step 2: Telegram Auth -->
+            <div x-show="step === 2" x-transition.opacity x-cloak>
+                <div x-show="authStep === 'phone' || authStep === 'qr'" class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl mb-6">
+                    <button @click="authStep = 'phone'" :disabled="loading"
+                        class="flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                        :class="authStep === 'phone' ? 'bg-white dark:bg-slate-800 shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'">
+                        <i class="fa-solid fa-phone"></i> <span x-text="t('setup_login_phone')"></span>
+                    </button>
+                    <button @click="startQRLogin()" :disabled="loading"
+                        class="flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                        :class="authStep === 'qr' ? 'bg-white dark:bg-slate-800 shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'">
+                        <i class="fa-solid fa-qrcode"></i> <span x-text="t('setup_login_qr')"></span>
+                    </button>
+                </div>
+
+                <!-- Phone -->
+                <form x-show="authStep === 'phone'" @submit.prevent="submitPhone" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" x-text="t('setup_login_phone')"></label>
+                        <input type="text" x-model="phone" placeholder="+84912345678" required
+                            @input="if(phone.length > 0 && !phone.startsWith('+')) phone = '+' + phone.replace(/[^0-9]/g, ''); else if(phone.length > 1) phone = '+' + phone.substring(1).replace(/[^0-9]/g, '')"
+                            class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all font-mono text-lg">
+                    </div>
+                    <button type="submit" :disabled="loading"
+                        class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50">
+                        <i class="fa-solid fa-spinner fa-spin" x-show="loading"></i>
+                        <span x-text="loading ? t('setup_sending') : t('setup_send_otp')"></span>
+                    </button>
+                </form>
+
+                <!-- Code -->
+                <form x-show="authStep === 'code'" @submit.prevent="submitCode" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" x-text="t('setup_login_code')"></label>
+                        <input type="text" x-model="code" placeholder="12345" required
+                            class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all font-mono tracking-widest text-center text-lg">
+                    </div>
+                    <button type="submit" :disabled="loading"
+                        class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50">
+                        <i class="fa-solid fa-spinner fa-spin" x-show="loading"></i>
+                        <span x-text="loading ? t('setup_verifying') : t('setup_verify_otp')"></span>
+                    </button>
+                    <button type="button" @click="cancelAuthFlow()" class="w-full py-4 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition-all shadow-md active:scale-[0.98] mt-3" x-text="t('setup_back_phone')"></button>
+                </form>
+
+                <!-- Password -->
+                <form x-show="authStep === 'password'" @submit.prevent="submitPassword" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" x-text="t('setup_2fa_password')"></label>
+                        <input type="password" x-model="password" required placeholder="••••••••"
+                            class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all">
+                    </div>
+                    <button type="submit" :disabled="loading"
+                        class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50">
+                        <i class="fa-solid fa-spinner fa-spin" x-show="loading"></i>
+                        <span x-text="loading ? t('setup_logging_in') : t('setup_login')"></span>
+                    </button>
+                </form>
+
+                <!-- QR -->
+                <div x-show="authStep === 'qr'" class="space-y-6 text-center py-4" x-transition.opacity>
+                    <div class="relative inline-block p-4 bg-white rounded-[2rem] shadow-2xl border border-slate-100 mx-auto">
+                        <template x-if="qr_url">
+                            <div class="space-y-4">
+                                <img :src="'/api/setup/tg/qr/image?t=' + qr_timestamp" class="w-56 h-56 mx-auto rounded-xl" />
+                                
+                                <div class="flex items-center justify-center gap-2 text-xs font-semibold">
+                                    <div class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full">
+                                        <i class="fa-solid fa-rotate-right" :class="qr_countdown <= 3 ? 'fa-spin' : ''"></i>
+                                        <span x-text="qr_countdown > 0 ? t('setup_qr_refresh_in').replace('{s}', qr_countdown) : t('setup_refreshing')"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="!qr_url">
+                            <div class="w-56 h-56 flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                                <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-500"></i>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-sm font-medium text-slate-900 dark:text-white" x-text="t('setup_scan_qr_title')"></p>
+                        <p class="text-xs text-slate-500 px-8" x-text="t('setup_scan_qr_desc')"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Log Group -->
+            <form x-show="step === 3" x-transition.opacity @submit.prevent="submitLogGroup" x-cloak>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" x-text="t('setup_log_group_id')"></label>
+                        <input type="text" x-model="log_group_id" placeholder="-1001234567890 or me" required
+                            class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all font-mono">
+                        <p class="text-xs text-slate-500 mt-2" x-text="t('setup_log_group_help')"></p>
+                    </div>
+                </div>
+                <button type="submit" :disabled="loading"
+                    class="mt-8 w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="loading"></i>
+                    <span x-text="loading ? t('setup_testing') : t('setup_verify_continue')"></span>
+                </button>
+            </form>
+ 
+            <!-- Step 4: Admin Creation -->
+            <form x-show="step === 4" x-transition.opacity @submit.prevent="submitAdmin" x-cloak>
+                <div class="space-y-4">
+                    <input type="text" autocomplete="username" x-model="admin_username" :placeholder="t('setup_admin_user')" required
+                        class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all">
+                    <input type="password" autocomplete="new-password" x-model="admin_password" :placeholder="t('setup_admin_pass')" required
+                        class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all">
+                    <input type="password" autocomplete="new-password" x-model="admin_confirm" :placeholder="t('setup_admin_confirm')" required
+                        class="w-full p-4 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white backdrop-blur-sm transition-all">
+                </div>
+                <button type="submit" :disabled="loading"
+                    class="mt-8 w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="loading"></i>
+                    <span x-text="loading ? t('setup_creating') : t('setup_finish')"></span>
+                </button>
+            </form>
+
+            <!-- Step 5: Setup Complete -->
+            <div x-show="step === 5" x-transition.opacity class="text-center space-y-6" x-cloak>
+                <div class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white" x-text="t('setup_complete_title')"></h2>
+                    <p class="mt-2 text-slate-600 dark:text-slate-400" x-text="t('setup_complete_desc')"></p>
+                </div>
+                <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 text-amber-800 dark:text-amber-200 text-sm leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    <span x-text="t('setup_restart_note')"></span>
+                </div>
+                <button @click="doRestart" :disabled="loading"
+                    class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all shadow-lg active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="loading"></i>
+                    <span x-text="loading ? t('setup_restarting') : t('setup_restart_finish')"></span>
+                </button>
+            </div>
         </div>
     </div>
+    
+    </div> <!-- Close main content wrapper -->
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('setupWizard', (initApiId, initApiHash, initLogGroupId, adminExists) => ({
+                step: 1, // 1: API, 2: Auth, 3: LogGroup, 4: Admin
+                admin_exists: adminExists,
+                authStep: 'phone', // phone, code, password
+                
+                api_id: initApiId === '0' ? '' : initApiId,
+                api_hash: initApiHash,
+                log_group_id: initLogGroupId || '',
+                
+                admin_username: '',
+                admin_password: '',
+                admin_confirm: '',
+                phone: '',
+                code: '',
+                password: '',
+                
+                qr_url: '',
+                qr_timestamp: Date.now(),
+                qr_poll_interval: null,
+                qr_countdown: 30,
+                qr_timer: null,
+
+                admin_username: '',
+                admin_password: '',
+                admin_confirm: '',
+                
+                loading: false,
+
+                lang: TeleCloud.lang,
+                t(key, params) { return TeleCloud.t(key, params, this.lang); },
+                async setLang(code) { 
+                    this.loading = true;
+                    await TeleCloud.setLang(code);
+                    this.lang = code;
+                    document.title = this.t('setup_wizard_title');
+                    this.loading = false;
+                },
+
+                toastModal: {
+                    show: false,
+                    type: 'success',
+                    message: '',
+                    persistent: false
+                },
+
+                showError(msg) {
+                    this.toastModal = { show: true, type: 'error', message: msg, persistent: false };
+                },
+
+                translationsLoaded: TeleCloud.translationsLoaded,
+
+                async init() {
+                    this.qr_timer = setInterval(() => {
+                        if (this.authStep === 'qr' && this.qr_url && this.qr_countdown > 0) {
+                            this.qr_countdown--;
+                        }
+                    }, 1000);
+                    window.addEventListener('tc-translations-loaded', (e) => {
+                        this.lang = ''; // Force reactivity trigger
+                        this.$nextTick(() => {
+                            this.lang = e.detail.lang;
+                            this.translationsLoaded = true;
+                        });
+                    });
+                    
+                    if (TeleCloud.translationsLoaded) {
+                        this.translationsLoaded = true;
+                    }
+
+                    // Update document title manually since Alpine is on body
+                    document.title = this.t('setup_wizard_title');
+
+                    // Check if env had API config
+                    if (this.api_id && this.api_hash) {
+                        this.loading = true;
+                        // Auto save config and move to step 2/3
+                        await this.doApiConfig();
+                        
+                        // Check if telegram is already authorized
+                        let isAuth = await this.checkTgAuth();
+                        if (isAuth) {
+                            if (this.log_group_id) {
+                                // If env also had log group, test it
+                                await this.doLogGroup();
+                            } else {
+                                this.step = 3;
+                            }
+                        } else {
+                            this.step = 2;
+                        }
+                        this.loading = false;
+                    }
+                },
+
+                getStepIcon() {
+                    return {
+                        1: 'fa-key',
+                        2: 'fa-paper-plane',
+                        3: 'fa-book',
+                        4: 'fa-user-shield',
+                        5: 'fa-circle-check'
+                    }[this.step];
+                },
+
+                getStepTitle() {
+                    return {
+                        1: this.t('setup_step_api'),
+                        2: this.t('setup_step_auth'),
+                        3: this.t('setup_step_log'),
+                        4: this.t('setup_step_admin'),
+                        5: this.t('setup_step_done')
+                    }[this.step];
+                },
+
+                getStepDesc() {
+                    return {
+                        1: this.t('setup_desc_api'),
+                        2: this.t('setup_desc_auth'),
+                        3: this.t('setup_desc_log'),
+                        4: this.t('setup_desc_admin')
+                    }[this.step];
+                },
+
+                async doApiConfig() {
+                    let fd = new FormData();
+                    fd.append('api_id', this.api_id);
+                    fd.append('api_hash', this.api_hash);
+                    fd.append('site_url', window.location.origin);
+                    let r = await fetch('/api/setup/config', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                    if (!r.ok) throw new Error((await r.json()).error || 'Failed');
+                },
+
+                async submitApiConfig() {
+                    this.loading = true;
+                    try {
+                        await this.doApiConfig();
+                        this.step = 2;
+                    } catch (e) {
+                        this.showError(e.message);
+                    }
+                    this.loading = false;
+                },
+
+                async checkTgAuth() {
+                    try {
+                        let r = await fetch('/api/setup/tg/status');
+                        let res = await r.json();
+                        return res.authorized === true;
+                    } catch (e) {
+                        return false;
+                    }
+                },
+
+                async submitPhone() {
+                    this.loading = true;
+                    try {
+                        let fd = new FormData();
+                        fd.append('phone', this.phone);
+                        let r = await fetch('/api/setup/tg/phone', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                        if (!r.ok) throw new Error((await r.json()).error || 'Failed');
+                        
+                        // Don't change authStep manually, let pollAuthStatus handle it
+                        this.pollAuthStatus();
+                    } catch (e) {
+                        this.showError(e.message);
+                        this.loading = false;
+                    }
+                },
+
+                async startQRLogin() {
+                    this.loading = true;
+                    this.authStep = 'qr';
+                    this.qr_url = '';
+                    try {
+                        let r = await fetch('/api/setup/tg/qr', { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                        if (!r.ok) throw new Error((await r.json()).error || 'Failed');
+                        this.pollAuthStatus();
+                    } catch (e) {
+                        this.showError(e.message);
+                        this.loading = false;
+                    }
+                },
+
+                async submitCode() {
+                    this.loading = true;
+                    try {
+                        let fd = new FormData();
+                        fd.append('code', this.code);
+                        let r = await fetch('/api/setup/tg/code', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                        let res = await r.json();
+                        if (!r.ok) {
+                            if (res.error === 'SESSION_EXPIRED') {
+                                throw new Error(this.t('setup_session_expired'));
+                            }
+                            throw new Error(this.t('setup_otp_invalid'));
+                        }
+                    } catch (e) {
+                        this.showError(e.message);
+                        this.loading = false;
+                        if (e.message === this.t('setup_session_expired')) this.authStep = 'phone';
+                    }
+                },
+
+                async submitPassword() {
+                    this.loading = true;
+                    try {
+                        let fd = new FormData();
+                        fd.append('password', this.password);
+                        let r = await fetch('/api/setup/tg/password', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                        let res = await r.json();
+                        if (!r.ok) {
+                            if (res.error === 'SESSION_EXPIRED') {
+                                throw new Error(this.t('setup_session_expired'));
+                            }
+                            throw new Error(this.t('setup_2fa_invalid'));
+                        }
+                    } catch (e) {
+                        this.showError(e.message);
+                        this.loading = false;
+                        if (e.message === this.t('setup_session_expired')) this.authStep = 'phone';
+                    }
+                },
+
+                async cancelAuthFlow() {
+                    this.loading = true;
+                    try {
+                        await fetch('/api/setup/tg/cancel', { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                        this.authStep = 'phone';
+                        // Clear the poll and error when cancelling
+                        if (this.qr_poll_interval) {
+                            clearInterval(this.qr_poll_interval);
+                            this.qr_poll_interval = null;
+                        }
+                    } catch (e) {}
+                    this.loading = false;
+                },
+
+                pollAuthStatus() {
+                    if (this.qr_poll_interval) clearInterval(this.qr_poll_interval);
+                    this.qr_poll_interval = setInterval(async () => {
+                        try {
+                            let r = await fetch('/api/setup/tg/status');
+                            let res = await r.json();
+                            
+                            if (res.error) {
+                                clearInterval(this.qr_poll_interval);
+                                let errMsg = res.error;
+                                let terminal = true;
+                                
+                                if (errMsg.includes('PASSWORD_HASH_INVALID')) {
+                                    errMsg = this.t('setup_2fa_invalid');
+                                    terminal = false;
+                                }
+                                if (errMsg.includes('PHONE_CODE_INVALID')) {
+                                    errMsg = this.t('setup_otp_invalid');
+                                    terminal = false;
+                                }
+                                if (errMsg.includes('FLOOD_WAIT')) {
+                                    errMsg = this.t('setup_flood_wait');
+                                    terminal = false;
+                                }
+                                
+                                if (terminal) {
+                                    clearInterval(this.qr_poll_interval);
+                                    this.qr_poll_interval = null;
+                                    if (errMsg.includes('API_ID_INVALID') || errMsg.includes('API_HASH_INVALID') || errMsg.includes('API_ID_PUBLISHED_FLOOD')) {
+                                        errMsg = this.t('setup_api_invalid');
+                                        this.step = 1;
+                                    }
+                                }
+
+                                this.showError(errMsg);
+                                this.loading = false;
+                                if (terminal) {
+                                    this.authStep = 'phone';
+                                    return;
+                                }
+                            }
+
+                            if (res.authorized) {
+                                clearInterval(this.qr_poll_interval);
+                                this.qr_poll_interval = null;
+                                this.loading = false;
+                                this.toastModal = { 
+                                    show: true, 
+                                    type: 'success', 
+                                    message: this.t('setup_auth_success'), 
+                                    persistent: false 
+                                };
+                                setTimeout(async () => {
+                                    this.toastModal.show = false;
+                                    if (this.log_group_id) {
+                                        this.loading = true;
+                                        try {
+                                            await this.doLogGroup();
+                                        } catch (e) {
+                                            this.showError(e.message);
+                                            this.step = 3;
+                                        }
+                                        this.loading = false;
+                                    } else {
+                                        this.step = 3;
+                                    }
+                                }, 1500);
+                            } else if (res.authState === 'verifying') {
+                                this.loading = true;
+                            } else if (res.authState === 'password' || res.authState === 'password_error') {
+                                this.authStep = 'password';
+                                this.loading = false;
+                                if (res.authState === 'password_error') {
+                                    this.showError(this.t('setup_2fa_invalid'));
+                                }
+                            } else if (res.authState === 'code' || res.authState === 'code_error') {
+                                this.authStep = 'code';
+                                this.loading = false;
+                                if (res.authState === 'code_error') {
+                                    this.showError(this.t('setup_otp_invalid'));
+                                }
+                            }
+
+                            if (res.transient_error) {
+                                let tErr = res.transient_error;
+                                if (tErr === 'PASSWORD_HASH_INVALID' || tErr === 'PASSWORD_INVALID') tErr = this.t('setup_2fa_invalid');
+                                if (tErr === 'PHONE_CODE_INVALID') tErr = this.t('setup_otp_invalid');
+                                this.showError(tErr);
+                                this.loading = false;
+                            }
+
+                            if (res.qr_url) {
+                                if (this.qr_url !== res.qr_url) {
+                                    this.qr_url = res.qr_url;
+                                    this.qr_timestamp = Date.now();
+                                    this.qr_countdown = 30; // Reset countdown
+                                }
+                            }
+                        } catch(e){}
+                    }, 2000);
+                },
+
+                async doLogGroup() {
+                    let fd = new FormData();
+                    fd.append('log_group_id', this.log_group_id);
+                    let r = await fetch('/api/setup/tg/test-log-group', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                    let res = await r.json();
+                    if (!r.ok) {
+                        let errMsg = res.error || 'Failed';
+                        if (errMsg.includes('PEER_ID_INVALID') || errMsg.includes('CHANNEL_INVALID') || errMsg.includes('could not resolve log group')) {
+                            errMsg = this.t('setup_log_invalid');
+                        }
+                        throw new Error(errMsg);
+                    }
+                    
+                    if (this.admin_exists) {
+                        this.step = 5; // Skip admin creation if already exists
+                    } else {
+                        this.step = 4;
+                    }
+                },
+
+                async submitLogGroup() {
+                    this.loading = true;
+                    try {
+                        await this.doLogGroup();
+                    } catch (e) {
+                        this.showError(e.message);
+                    }
+                    this.loading = false;
+                },
+
+                async submitAdmin() {
+                    if (this.admin_password !== this.admin_confirm) {
+                        return this.showError(this.t('setup_pass_mismatch'));
+                    }
+                    this.loading = true;
+                    try {
+                        let fd = new FormData();
+                        fd.append('username', this.admin_username);
+                        fd.append('password', this.admin_password);
+                        let r = await fetch('/setup', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                        if (!r.ok) throw new Error((await r.json()).error || 'Failed');
+                        
+                        this.step = 5;
+                    } catch (e) {
+                        this.showError(e.message);
+                    }
+                    this.loading = false;
+                },
+
+                async doRestart() {
+                    this.loading = true;
+                    try {
+                        let r = await fetch('/api/setup/restart', { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                        if (!r.ok) throw new Error(this.t('setup_restart_failed'));
+                        
+                        // Intelligent polling to wait for server restart and login
+                        let pollCount = 0;
+                        const poll = setInterval(async () => {
+                            pollCount++;
+                            try {
+                                let statusR = await fetch('/api/system/status');
+                                if (statusR.ok) {
+                                    let status = await statusR.json();
+                                    if (status.ready) {
+                                        clearInterval(poll);
+                                        window.location.href = '/';
+                                    }
+                                }
+                            } catch (e) {
+                                // Server is likely down during restart, just keep polling
+                            }
+                            
+                            // Safety timeout: if after 60 seconds it's still not ready, just try redirecting
+                            if (pollCount > 60) {
+                                clearInterval(poll);
+                                window.location.href = '/';
+                            }
+                        }, 2000);
+                    } catch (e) {
+                        this.showError(e.message);
+                        this.loading = false;
+                    }
+                }
+            }));
+        });
+    </script>
 </body>
 
 </html>

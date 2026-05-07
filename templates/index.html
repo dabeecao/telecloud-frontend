@@ -88,13 +88,14 @@
 
                 <input type="file" multiple class="hidden" x-ref="modalFileInput" @change="handleUploadModalSelect">
                 <input type="file" multiple webkitdirectory class="hidden" x-ref="modalFolderInput" @change="handleUploadModalSelect">
-                <div class="flex gap-3 z-10 relative">
+                <div class="flex flex-col sm:flex-row gap-3 z-10 relative w-full sm:w-auto">
                     <button @click="$refs.modalFileInput.click()"
-                        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 transition-transform active:scale-95 flex items-center gap-2"
-                        x-text="t('select_files')">
+                        class="w-full sm:w-auto px-4 sm:px-5 py-3 sm:py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-500/25 transition-transform active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        <span x-text="t('select_files')"></span>
                     </button>
                     <button @click="$refs.modalFolderInput.click()"
-                        class="px-6 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-xl font-semibold transition-transform active:scale-95 flex items-center gap-2">
+                        class="w-full sm:w-auto px-4 sm:px-5 py-3 sm:py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-xl text-sm font-bold transition-transform active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
                         <i class="fa-solid fa-folder-open"></i>
                         <span x-text="t('select_folder')"></span>
                     </button>
@@ -169,6 +170,52 @@
                     @keydown.enter="closeUIModal(modal.input)"
                     class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white mb-5 transition-all">
             </template>
+
+            <div class="flex flex-col gap-3 mt-2" x-show="modal.type === 'collision'">
+                <div class="flex items-center gap-3 mb-2 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100/50 dark:border-blue-800/20">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-file-circle-exclamation text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-blue-700 dark:text-blue-300 font-semibold" x-text="t('file_exists')"></span>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5" x-text="modal.message"></span>
+                    </div>
+                </div>
+                
+                <div class="space-y-2">
+                    <button @click="closeUIModal('overwrite')" 
+                        class="w-full flex items-center justify-between p-4 bg-white/50 dark:bg-slate-800/50 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-all border border-slate-200 dark:border-slate-700/50 hover:border-red-200 dark:hover:border-red-800 group">
+                        <div class="flex flex-col items-start">
+                            <span class="font-bold text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400" x-text="t('overwrite')"></span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400" x-text="t('overwrite_desc')"></span>
+                        </div>
+                        <i class="fa-solid fa-file-import text-slate-400 group-hover:text-red-500"></i>
+                    </button>
+
+                    <button @click="closeUIModal('rename')" 
+                        class="w-full flex items-center justify-between p-4 bg-white/50 dark:bg-slate-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-all border border-slate-200 dark:border-slate-700/50 hover:border-blue-200 dark:hover:border-blue-800 group">
+                        <div class="flex flex-col items-start">
+                            <span class="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400" x-text="t('rename')"></span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400" x-text="t('rename_desc')"></span>
+                        </div>
+                        <i class="fa-solid fa-pen-nib text-slate-400 group-hover:text-blue-500"></i>
+                    </button>
+
+                    <button @click="closeUIModal('skip')" 
+                        class="w-full flex items-center justify-between p-4 bg-white/50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-all border border-slate-200 dark:border-slate-700/50 group">
+                        <div class="flex flex-col items-start">
+                            <span class="font-bold text-slate-900 dark:text-white" x-text="t('skip')"></span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400" x-text="t('skip_desc')"></span>
+                        </div>
+                        <i class="fa-solid fa-forward-step text-slate-400"></i>
+                    </button>
+                </div>
+
+                <label class="flex items-center gap-3 mt-2 px-3 py-2 cursor-pointer group hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors">
+                    <input type="checkbox" x-model="modal.applyToAll" class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900">
+                    <span class="text-xs text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors font-medium" x-text="t('apply_to_all')"></span>
+                </label>
+            </div>
 
             <div class="flex flex-col gap-2 mt-2" x-show="modal.type === 'update'">
                 <button @click="closeUIModal('confirm')"
@@ -2181,9 +2228,14 @@
                                 <span x-show="task.size > 0" class="text-[10px] text-slate-400 mt-0.5"
                                     x-text="formatBytes(task.size)"></span>
                             </div>
-                            <span class="font-bold"
-                                :class="task.isCancelled ? 'text-red-500' : (task.progress === 100 ? 'text-emerald-500' : 'text-blue-600 dark:text-blue-400')"
-                                x-text="task.isCancelled ? t('cancelled') : task.progress + '%'"></span>
+                            <div class="flex items-center gap-2">
+                                <span x-show="task.progress === 100 && task.countdown > 0" 
+                                    class="text-[9px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-bold animate-pulse"
+                                    x-text="task.countdown + 's'"></span>
+                                <span class="font-bold"
+                                    :class="task.isCancelled ? 'text-red-500' : (task.progress === 100 ? 'text-emerald-500' : 'text-blue-600 dark:text-blue-400')"
+                                    x-text="task.isCancelled ? t('cancelled') : task.progress + '%'"></span>
+                            </div>
                         </div>
                         <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                             <div class="h-1.5 rounded-full transition-all duration-300 ease-out"

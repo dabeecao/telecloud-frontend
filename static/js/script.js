@@ -650,7 +650,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         toastTimeout: null,
         plyrInstance: null,
         fileInfoModal: { show: false, file: null, typeName: '', ext: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
-        modal: { show: false, type: 'alert', title: '', message: '', input: '', resolve: null, isDanger: false, inputType: 'text' },
+        modal: { show: false, type: 'alert', title: '', message: '', input: '', resolve: null, isDanger: false, inputType: 'text', applyToAll: false },
         contextMenu: { show: false, x: 0, y: 0, file: null },
         init() { 
             window.addEventListener('tc-translations-loaded', (e) => {
@@ -831,10 +831,15 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             task.statusText = this.t('done');
                             task.hasError = false;
                             this.fetchFiles(true);
-                            // Auto-remove task after 3 seconds
-                            setTimeout(() => {
-                                this.uploadQueue = this.uploadQueue.filter(t => t.id !== task.id);
-                            }, 3000);
+                            // Visual countdown before removal
+                            task.countdown = 5;
+                            const timer = setInterval(() => {
+                                task.countdown--;
+                                if (task.countdown <= 0) {
+                                    clearInterval(timer);
+                                    this.uploadQueue = this.uploadQueue.filter(t => t.id !== task.id);
+                                }
+                            }, 1000);
                         } else if (data.status === 'error') {
                             const errorMsg = data.message;
                             const translated = this.t(errorMsg);
@@ -1205,8 +1210,44 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         async uploadFiles(fileList) {
             const newTasks = [];
             
+            // Check for existing files
+            const filenames = fileList.map(f => f.name).join('|');
+            let existingFiles = [];
+            try {
+                const fd = new FormData();
+                fd.append('path', this.currentPath);
+                fd.append('filenames', filenames);
+                const res = await fetch('/api/upload/check-exists', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    existingFiles = data.existing || [];
+                }
+            } catch (e) { console.error("Collision check failed:", e); }
+
+            let applyToAllAction = null;
+
             for (let i = 0; i < fileList.length; i++) {
                 const file = fileList[i];
+                let overwrite = false;
+
+                if (existingFiles.includes(file.name)) {
+                    let action = applyToAllAction;
+                    if (!action) {
+                        this.modal.applyToAll = false;
+                        action = await this.showUIModal('collision', this.t('file_exists_title'), file.name);
+                        if (!action) continue; // Cancelled
+                        if (this.modal.applyToAll) applyToAllAction = action;
+                    }
+
+                    if (action === 'skip') continue;
+                    if (action === 'overwrite') overwrite = true;
+                    // rename is default (overwrite=false)
+                }
+
                 // Create a stable task ID based on file metadata to support resuming
                 const fileIdStr = `${file.name}_${file.size}_${file.lastModified}`;
                 // Safely handle Unicode characters (like Vietnamese) for btoa
@@ -1231,6 +1272,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     statusText: this.t('waiting_slot'), 
                     isCancelled: false,
                     file: file,
+                    overwrite: overwrite,
                     hasError: false,
                     targetPath: (function(app, f) {
                         let rel = f.relativeDir;
@@ -1266,7 +1308,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     if (task.isCancelled) continue;
                     
                     task.statusText = this.t('preparing_upload');
-                    await this.uploadSingleFile(task.file, task.id, task.targetPath);
+                    await this.uploadSingleFile(task.file, task.id, task.targetPath, task.overwrite);
                 }
             };
 
@@ -1285,10 +1327,10 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             task.statusText = this.t('preparing_upload');
             task.isCancelled = false;
             
-            await this.uploadSingleFile(task.file, taskId, task.targetPath);
+            await this.uploadSingleFile(task.file, taskId, task.targetPath, task.overwrite);
         },
 
-        async uploadSingleFile(file, taskId, targetPath) {
+        async uploadSingleFile(file, taskId, targetPath, overwrite = false) {
             const CHUNK_SIZE = 10 * 1024 * 1024;
             const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
             let hasError = false;
@@ -1345,6 +1387,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     const fd = new FormData(); 
                     fd.append('file', chunk); fd.append('filename', file.name); fd.append('path', targetPath); 
                     fd.append('task_id', taskId); fd.append('chunk_index', chunkIndex); fd.append('total_chunks', totalChunks);
+                    fd.append('overwrite', overwrite);
 
                     let retries = 3;
                     let success = false;
@@ -2129,3 +2172,4 @@ function shareApp(shareToken) {
         }
     }
 }
+
