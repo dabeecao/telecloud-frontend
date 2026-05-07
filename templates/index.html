@@ -124,12 +124,32 @@
             </div>
 
             <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block"
+                <div class="flex items-center justify-between px-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
                         x-text="t('url_label')"></label>
-                    <input type="url" x-model="remoteUrl" @keydown.enter="submitRemoteUpload"
-                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all"
-                        placeholder="https://example.com/file.zip">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase" x-text="t('batch_mode')"></span>
+                        <button @click="remoteIsBulk = !remoteIsBulk" 
+                            class="w-10 h-5 rounded-full p-1 transition-colors duration-200 focus:outline-none"
+                            :class="remoteIsBulk ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'">
+                            <div class="w-3 h-3 bg-white rounded-full transition-transform duration-200"
+                                :class="remoteIsBulk ? 'translate-x-5' : 'translate-x-0'"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <template x-if="!remoteIsBulk">
+                        <input type="url" x-model="remoteUrl" @keydown.enter="submitRemoteUpload"
+                            class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all text-sm"
+                            placeholder="https://example.com/file.zip">
+                    </template>
+                    <template x-if="remoteIsBulk">
+                        <textarea x-model="remoteUrl" 
+                            class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all resize-none h-32 text-sm"
+                            :placeholder="t('remote_urls_placeholder')"></textarea>
+                    </template>
+                    
                     <p class="mt-2 text-[10px] text-amber-500/80 italic flex items-start gap-1.5 leading-snug">
                         <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                         <span x-text="t('remote_no_thumb_warning')"></span>
