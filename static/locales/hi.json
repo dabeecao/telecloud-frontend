@@ -253,6 +253,10 @@
     "url_label_ytdlp": "वीडियो URL",
     "start_upload": "अपलोड शुरू करें",
     "remote_upload_note": "सिस्टम सर्वर के माध्यम से सीधे URL से Telegram तक फ़ाइल प्राप्त करेगा।",
+    "remote_urls_placeholder": "URL दर्ज करें, एक प्रति पंक्ति...",
+    "batch_mode": "बैच अपलोड",
+    "remote_html_confirm_title": "HTML फ़ाइल चेतावनी",
+    "remote_html_confirm_msg": "यह URL एक वेब पेज (HTML) की ओर ले जाता दिखता है एक फ़ाइल के बजाय। क्या आप निश्चित हैं कि आप इसे डाउनलोड करना चाहते हैं?",
     "remote_no_thumb_warning": "नोट: URL के माध्यम से वीडियो/ऑडियो डाउनलोड करने से थंबनेल स्वचालित रूप से जनरेट नहीं होंगे।",
     "overwrite_existing": "यदि फ़ाइल मौजूद है तो ओवरराइट करें",
     "err_forbidden_url": "इस URL से डाउनलोड नहीं किया जा सकता (आंतरिक IP ब्लॉक किया गया)!",
@@ -382,5 +386,7 @@
     "setup_refreshing": "रीफ्रेश कर रहे हैं...",
     "setup_auth_success": "Telegram सफलतापूर्वक प्रमाणित!",
     "setup_api_invalid": "अमान्य API ID या API Hash। कृपया my.telegram.org पर फिर से जांचें",
-    "setup_phone_invalid": "अमान्य फ़ोन नंबर। कृपया फिर से जांचें (देश कोड शामिल करें, जैसे +1...)"
+    "setup_phone_invalid": "अमान्य फ़ोन नंबर। कृपया फिर से जांचें (देश कोड शामिल करें, जैसे +1...)",
+    "batch_downloading": "बैच डाउनलोड",
+    "batch_dl_desc": "फ़ाइलें आपके ब्राउज़र पर क्रम से डाउनलोड हो रही हैं।"
 }
