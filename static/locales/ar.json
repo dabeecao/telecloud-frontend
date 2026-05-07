@@ -253,6 +253,10 @@
     "url_label_ytdlp": "رابط الفيديو",
     "start_upload": "بدء الرفع",
     "remote_upload_note": "سيقوم النظام بجلب الملف مباشرة من الرابط إلى تليجرام عبر الخادم.",
+    "remote_urls_placeholder": "أدخل عناوين URL، واحد في كل سطر...",
+    "batch_mode": "الرفع المجمع",
+    "remote_html_confirm_title": "تحذير ملف HTML",
+    "remote_html_confirm_msg": "يبدو أن عنوان URL هذا يؤدي إلى صفحة ويب (HTML) بدلاً من ملف. هل أنت متأكد من أنك تريد تنزيله؟",
     "remote_no_thumb_warning": "ملاحظة: تحميل الفيديوهات/الصوت عبر الرابط لن يولد صوراً مصغرة تلقائياً.",
     "overwrite_existing": "الكتابة فوق الملف إذا كان موجوداً",
     "err_forbidden_url": "لا يمكن التحميل من هذا الرابط (تم حظر عنوان IP داخلي)!",
@@ -382,5 +386,7 @@
     "setup_refreshing": "جاري التحديث...",
     "setup_auth_success": "تم المصادقة على Telegram بنجاح!",
     "setup_api_invalid": "معرف API أو API Hash غير صالح. يرجى التحقق مرة أخرى على my.telegram.org",
-    "setup_phone_invalid": "رقم هاتف غير صالح. يرجى التحقق مرة أخرى (تضمين رمز الدولة، مثل +1...)"
+    "setup_phone_invalid": "رقم هاتف غير صالح. يرجى التحقق مرة أخرى (تضمين رمز الدولة، مثل +1...)",
+    "batch_downloading": "التحميل المجمع",
+    "batch_dl_desc": "جاري تحميل الملفات على التوالي إلى متصفحك."
 }

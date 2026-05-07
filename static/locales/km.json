@@ -253,6 +253,10 @@
     "url_label_ytdlp": "URL វីដេអូ",
     "start_upload": "ចាប់ផ្តើមផ្ទុកឡើង",
     "remote_upload_note": "ប្រព័ន្ធនឹងទាញយកឯកសារដោយផ្ទាល់ពី URL ទៅ Telegram តាមរយៈម៉ាស៊ីនបម្រើ។",
+    "remote_urls_placeholder": "បញ្ចូល URLs ដូចម្ដេចម្ដង មួយក្នុងមួយលីនក្រុម...",
+    "batch_mode": "ការផ្ទុកឡើងជាក្រុម",
+    "remote_html_confirm_title": "ការព្រមាណ៍ឯកសារ HTML",
+    "remote_html_confirm_msg": "URL នេះហាក់ដូចជាដើរតៅទៅទំព័រ (HTML) ជំនួសឱ្យឯកសារ។ តើអ្នកប្រាកដថាចង់ទាញយកវាទេ?",
     "remote_no_thumb_warning": "សម្គាល់៖ ការទាញយកវីដេអូ/អូឌីយ៉ូតាមរយៈ URL នឹងមិនបង្កើតរូបភាពតូចដោយស្វ័យប្រវត្តិទេ។",
     "overwrite_existing": "សរសេរជាន់លើប្រសិនបើមានឯកសាររួចហើយ",
     "err_forbidden_url": "មិនអាចទាញយកពី URL នេះបានទេ (រារាំង IP ផ្ទៃក្នុង)!",
@@ -382,5 +386,7 @@
     "setup_refreshing": "អមិម្រេូសាសី...",
     "setup_auth_success": "ផ្លុល Telegram នុធ្រឡៃ।",
     "setup_api_invalid": "API ID ភាព API Hash មញ្ញុឈ। អយុវត្តលើហយមហន my.telegram.org",
-    "setup_phone_invalid": "ជ្ញាថិញជ្នាក់មញ្ញុឈ। អយុវត្តលើហយមហន (ក្ទៀយពនមុឃ្ឃ ក្យេង ម៉ោន +1...)"
+    "setup_phone_invalid": "ជ្ញាថិញជ្នាក់មញ្ញុឈ។ អយុវត្តលើហយមហន (ក្ទៀយពនមុឃ្ឃ ក្យេង ម៉ោន +1...)",
+    "batch_downloading": "ការទាញយកក្នុងលំដាប់",
+    "batch_dl_desc": "ឯកសារកំពុងត្រូវបានទាញយកស្របលំដាប់ទៅកម្មវិធីរុករងរបស់អ្នក។"
 }

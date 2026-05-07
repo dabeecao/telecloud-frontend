@@ -253,6 +253,10 @@
     "url_label_ytdlp": "视频 URL",
     "start_upload": "开始上传",
     "remote_upload_note": "系统将通过服务器直接从 URL 抓取文件到 Telegram。",
+    "remote_urls_placeholder": "输入 URL，每行一个...",
+    "batch_mode": "批量上传",
+    "remote_html_confirm_title": "HTML 文件警告",
+    "remote_html_confirm_msg": "此 URL 似乎指向网页 (HTML) 而非文件。您确定要下载吗？",
     "remote_no_thumb_warning": "注意：通过 URL 下载视频/音频不会自动生成缩略图。",
     "overwrite_existing": "如果文件已存在则覆盖",
     "err_forbidden_url": "无法从该 URL 下载 (内部 IP 已封锁)！",
@@ -382,5 +386,7 @@
     "setup_refreshing": "刷新中...",
     "setup_auth_success": "Telegram 认证成功！",
     "setup_api_invalid": "API ID 或 API Hash 无效。请在 my.telegram.org 上双重检查",
-    "setup_phone_invalid": "电话号码无效。请再次检查（包括国家代码，例如 +1..."
+    "setup_phone_invalid": "电话号码无效。请再次检查（包括国家代码，例如 +1...",
+    "batch_downloading": "批量下载",
+    "batch_dl_desc": "文件正在逐个下载到您的浏览器。"
 }

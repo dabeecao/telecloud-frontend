@@ -253,6 +253,10 @@
     "url_label_ytdlp": "ビデオURL",
     "start_upload": "アップロード開始",
     "remote_upload_note": "システムはサーバーを経由してURLから直接Telegramへファイルを保存します。",
+    "remote_urls_placeholder": "URLを入力してください。1行に1つずつ...",
+    "batch_mode": "バッチアップロード",
+    "remote_html_confirm_title": "HTMLファイル警告",
+    "remote_html_confirm_msg": "このURLはファイルではなくWebページ(HTML)を指しているようです。ダウンロードしてもよろしいですか？",
     "remote_no_thumb_warning": "注意: URL経由の動画/音声ダウンロードではサムネイルは自動生成されません。",
     "overwrite_existing": "同名ファイルが存在する場合は上書きする",
     "err_forbidden_url": "このURLからはダウンロードできません（内部IPがブロックされています）！",
@@ -382,5 +386,7 @@
     "setup_refreshing": "更新中...",
     "setup_auth_success": "Telegram認証が成功しました！",
     "setup_api_invalid": "API IDがmy.telegram.orgでもう一度01回確認してください。",
-    "setup_phone_invalid": "電話番号が不正です。もう一度01回、国番号（例〃+1）を含めて、確認してください。"
+    "setup_phone_invalid": "電話番号が不正です。もう一度01回、国番号（例〃+1）を含めて、確認してください。",
+    "batch_downloading": "バッチダウンロード",
+    "batch_dl_desc": "ファイルがブラウザにシーケンシャルダウンロードされています。"
 }
