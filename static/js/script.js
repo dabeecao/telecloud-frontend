@@ -25,6 +25,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         ytdlpDownloadType: 'video',
         ytdlpHasCookie: false,
         currentTheme: initialTheme || 'system',
+        batchDownload: {
+            active: false,
+            total: 0,
+            current: 0,
+            error: false
+        },
         setTheme(theme) {
             this.currentTheme = theme;
             TeleCloud.applyTheme(theme);
@@ -544,30 +550,36 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             if (this.selectedIds.length !== fileIdsToDownload.length) {
                 this.showToast(this.t('toast_skipped_folders'));
             }
-            this.showToast(this.t('toast_preparing_dl', {n: fileIdsToDownload.length}));
-            this.isPreparingDownload = true;
-            document.cookie = "dl_started=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+            // Start Batch Download UX
+            this.batchDownload.active = true;
+            this.batchDownload.total = fileIdsToDownload.length;
+            this.batchDownload.current = 0;
+
             for (let i = 0; i < fileIdsToDownload.length; i++) {
+                this.batchDownload.current = i + 1;
                 const fileId = fileIdsToDownload[i];
+                
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
                 iframe.src = `/download/${fileId}`;
                 document.body.appendChild(iframe);
-                if (i === 0) {
-                    let checkCookie = setInterval(() => {
-                        if (document.cookie.includes('dl_started=1')) {
-                            clearInterval(checkCookie);
-                            this.isPreparingDownload = false;
-                            document.cookie = "dl_started=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                        }
-                    }, 500);
-                    setTimeout(() => { if (this.isPreparingDownload) this.isPreparingDownload = false; }, 15000);
-                }
-                setTimeout(() => iframe.remove(), 20000);
+                
+                // Cleanup iframe after some time
+                setTimeout(() => iframe.remove(), 30000);
+
                 if (i < fileIdsToDownload.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    // Small delay to allow browser to handle multiple downloads
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
             }
+
+            // End Batch Download UX
+            setTimeout(() => {
+                this.batchDownload.active = false;
+                this.showToast(this.t('toast_dl_started'), 'success');
+            }, 2000);
+
             this.selectedIds = [];
         },
         files: [], 
@@ -1900,6 +1912,12 @@ function shareApp(shareToken) {
         isLoading: false, 
         isRefreshing: false,
         isPreparingDownload: false,
+        batchDownload: {
+            active: false,
+            total: 0,
+            current: 0,
+            error: false
+        },
         lang: TeleCloud.lang,
         toastModal: { show: false, message: '', type: 'success', persistent: false },
         showToast(msg, type = 'success', duration = 3500) {
@@ -1951,31 +1969,42 @@ function shareApp(shareToken) {
                 return f && !f.is_folder;
             });
             if (fileIdsToDownload.length === 0) {
+                this.showToast(this.t('toast_only_files'), 'error');
                 return;
             }
-            this.isPreparingDownload = true;
-            document.cookie = "dl_started=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            if (this.selectedIds.length !== fileIdsToDownload.length) {
+                this.showToast(this.t('toast_skipped_folders'));
+            }
+
+            // Start Batch Download UX
+            this.batchDownload.active = true;
+            this.batchDownload.total = fileIdsToDownload.length;
+            this.batchDownload.current = 0;
+
             for (let i = 0; i < fileIdsToDownload.length; i++) {
+                this.batchDownload.current = i + 1;
                 const fileId = fileIdsToDownload[i];
+                
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
                 iframe.src = `/s/${this.shareToken}/file/${fileId}/dl`;
                 document.body.appendChild(iframe);
-                if (i === 0) {
-                    let checkCookie = setInterval(() => {
-                        if (document.cookie.includes('dl_started=1')) {
-                            clearInterval(checkCookie);
-                            this.isPreparingDownload = false;
-                            document.cookie = "dl_started=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                        }
-                    }, 500);
-                    setTimeout(() => { if (this.isPreparingDownload) this.isPreparingDownload = false; }, 15000);
-                }
-                setTimeout(() => iframe.remove(), 20000);
+                
+                // Cleanup iframe after some time
+                setTimeout(() => iframe.remove(), 30000);
+
                 if (i < fileIdsToDownload.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    // Small delay to allow browser to handle multiple downloads
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
             }
+
+            // End Batch Download UX
+            setTimeout(() => {
+                this.batchDownload.active = false;
+                this.showToast(this.t('toast_dl_started'), 'success');
+            }, 2000);
+
             this.selectedIds = [];
         },
 

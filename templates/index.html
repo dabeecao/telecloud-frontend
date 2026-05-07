@@ -2165,6 +2165,27 @@
         </div>
     </div>
 
+    <!-- Batch Download Progress -->
+    <div x-show="batchDownload.active" x-cloak
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] w-[90%] max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-white/5 p-4 animate-modal-in backdrop-blur-md bg-opacity-90 dark:bg-opacity-90">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-cloud-arrow-down text-blue-600 dark:text-blue-400 text-xl animate-bounce"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-end mb-1">
+                    <span class="text-sm font-bold text-slate-900 dark:text-white" x-text="t('batch_downloading')"></span>
+                    <span class="text-xs font-bold text-blue-600 dark:text-blue-400" x-text="batchDownload.current + ' / ' + batchDownload.total"></span>
+                </div>
+                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-600 transition-all duration-500 ease-out" 
+                         :style="`width: ${(batchDownload.current / batchDownload.total) * 100}%` transition-all"></div>
+                </div>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 truncate" x-text="t('batch_dl_desc')"></p>
+            </div>
+        </div>
+    </div>
+
     <div x-show="uploadQueue.length > 0" x-cloak
         class="fixed z-40 md:z-50 transition-all duration-500 ease-in-out shadow-2xl border border-slate-200 dark:border-slate-700"
         :class="isQueueMinimized ? 

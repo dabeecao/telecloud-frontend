@@ -386,5 +386,7 @@
     "setup_refreshing": "Đang làm mới...",
     "setup_auth_success": "Xác thực Telegram thành công!",
     "setup_api_invalid": "API ID hoặc API Hash không hợp lệ. Vui lòng kiểm tra lại tại my.telegram.org",
-    "setup_phone_invalid": "Số điện thoại không hợp lệ. Vui lòng kiểm tra lại (bao gồm mã vùng, ví dụ: +84...)"
+    "setup_phone_invalid": "Số điện thoại không hợp lệ. Vui lòng kiểm tra lại (bao gồm mã vùng, ví dụ: +84...)",
+    "batch_downloading": "Tải xuống hàng loạt",
+    "batch_dl_desc": "Các tệp đang được tải xuống tuần tự về trình duyệt của bạn."
 }

@@ -386,5 +386,7 @@
     "setup_refreshing": "Refreshing...",
     "setup_auth_success": "Telegram Authenticated Successfully!",
     "setup_api_invalid": "Invalid API ID or API Hash. Please double check at my.telegram.org",
-    "setup_phone_invalid": "Invalid phone number. Please check again (include country code, e.g., +1...)"
+    "setup_phone_invalid": "Invalid phone number. Please check again (include country code, e.g., +1...)",
+    "batch_downloading": "Batch Download",
+    "batch_dl_desc": "Files are being downloaded sequentially to your browser."
 }
