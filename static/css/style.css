@@ -380,6 +380,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
     overflow: visible !important; 
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); 
     width: 100%; 
+    touch-action: manipulation;
 }
 .plyr__video-wrapper { 
     border-radius: 1rem; 

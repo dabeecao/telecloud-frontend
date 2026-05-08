@@ -1533,7 +1533,11 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
                             });
                             
-                            if (!response.ok) throw new Error("Upload failed");
+                            if (!response.ok) {
+                                let errorData;
+                                try { errorData = await response.json(); } catch(e) {}
+                                throw new Error(errorData && errorData.error ? errorData.error : "Upload failed (" + response.status + ")");
+                            }
                             const result = await response.json();
                             
                             uploadedChunks++;
