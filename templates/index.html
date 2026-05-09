@@ -2485,8 +2485,9 @@
                                     :title="task.statusText"
                                     :class="task.hasError || task.isCancelled ? 'text-red-400' : ''"></div>
                                 <div x-show="task.speed > 0 && task.progress < 100 && !task.isCancelled"
-                                    class="text-[9px] text-blue-500 font-bold mt-0.5">
-                                    <i class="fa-solid fa-bolt-lightning mr-1"></i>
+                                    class="text-[9px] font-bold mt-0.5 flex items-center gap-1"
+                                    :class="getSpeedColor(task.speed)">
+                                    <i class="fa-solid fa-bolt-lightning"></i>
                                     <span x-text="formatBytes(task.speed) + '/s'"></span>
                                 </div>
                             </div>

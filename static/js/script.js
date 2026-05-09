@@ -525,6 +525,11 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             this.lang = await TeleCloud.setLang(code);
         },
         formatBytes(b, d) { return TeleCloud.formatBytes(b, d); },
+        getSpeedColor(speed) {
+            if (speed >= 5242880) return 'text-emerald-500'; // > 5MB/s
+            if (speed >= 1048576) return 'text-amber-500';   // > 1MB/s
+            return 'text-rose-500';                         // < 1MB/s
+        },
         formatDate(d) { return TeleCloud.formatDate(d, this.lang); },
         getFileTypeData(f) { return TeleCloud.getFileTypeData(f); },
         parseMarkdown(t) { return TeleCloud.parseMarkdown(t); },
@@ -665,19 +670,20 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             let task = this.uploadQueue.find(t => t.id === taskId);
             if (!task) return;
 
-            // Only notify backend if the task is actually running and not already terminal
-            if (task.progress < 100 && !task.isCancelled && !task.hasError) {
-                task.statusText = this.t('cancelled');
-                
-                // Notify backend to cancel the task and clean up temporary files
-                let fd = new FormData();
-                fd.append('task_id', taskId);
-                fd.append('filename', task.name);
-                fetch('/api/cancel_upload', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }).catch(e => console.error("Cancel failed:", e));
+            // If task is already cancelled, errored, or done, clicking "X" removes it from UI
+            if (task.isCancelled || task.hasError || task.status === 'done') {
+                this.uploadQueue = this.uploadQueue.filter(t => t.id !== taskId);
+                return;
             }
 
-            // Always remove from UI when user clicks "X"
-            this.uploadQueue = this.uploadQueue.filter(t => t.id !== taskId);
+            // Otherwise, mark as cancelled and notify backend
+            task.isCancelled = true;
+            task.statusText = this.t('cancelled');
+            
+            let fd = new FormData();
+            fd.append('task_id', taskId);
+            fd.append('filename', task.name);
+            fetch('/api/cancel_upload', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } }).catch(e => console.error("Cancel failed:", e));
         },
         toastModal: { show: false, message: '', type: 'success', persistent: false },
         toastTimeout: null,
@@ -831,33 +837,42 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             } else {
                                 task.progress = 50 + Math.round(data.percent / 2);
                             }
+                            
                             if (data.uploaded_bytes && data.uploaded_bytes > 0) {
-                                // Reset startTime when phase changes to get accurate phase speed
-                                // Reset speed metrics when phase changes to telegram or if not yet initialized
-                                if (data.status === 'telegram' && (!task.lastUpdateTime || task.statusText === this.t('pushing_to_tg'))) {
-                                     if (!task.lastUpdateTime || task.statusText === this.t('pushing_to_tg')) {
-                                         task.startTime = Date.now();
-                                         task.uploadedBytes = 0;
-                                         task.lastUploadedBytes = 0;
-                                         task.lastUpdateTime = Date.now();
-                                         task.speed = 0;
-                                     }
+                                // Reset metrics when starting Telegram phase
+                                if (data.status === 'telegram' && (!task._speedInit || task.statusText === this.t('pushing_to_tg'))) {
+                                    task.startTime = Date.now();
+                                    task.uploadedBytes = data.uploaded_bytes;
+                                    task.lastSpeedBytes = data.uploaded_bytes;
+                                    task.lastSpeedTime = Date.now();
+                                    task.speed = 0;
+                                    task._speedBuffer = [];
+                                    task._speedInit = true;
                                 }
                                 
                                 task.uploadedBytes = data.uploaded_bytes;
                                 const now = Date.now();
-                                if (task.lastUpdateTime && task.lastUpdateTime < now) {
-                                    const elapsed = (now - task.lastUpdateTime) / 1000;
-                                    const bytesSent = task.uploadedBytes - task.lastUploadedBytes;
-                                    if (elapsed > 0 && bytesSent >= 0) {
+                                const lastTime = task.lastSpeedTime || task.startTime || now;
+                                const elapsed = (now - lastTime) / 1000;
+
+                                // Update speed every 1 second to ensure stability
+                                if (elapsed >= 1.0) {
+                                    const bytesSent = task.uploadedBytes - (task.lastSpeedBytes || 0);
+                                    if (bytesSent >= 0) {
                                         const instantSpeed = bytesSent / elapsed;
-                                        // EMA Smoothing: 70% old, 30% new
-                                        if (task.speed === 0) task.speed = instantSpeed;
-                                        else task.speed = (task.speed * 0.7) + (instantSpeed * 0.3);
+                                        
+                                        // Use a sliding window of the last 5 samples for professional-grade stability
+                                        if (!task._speedBuffer) task._speedBuffer = [];
+                                        task._speedBuffer.push(instantSpeed);
+                                        if (task._speedBuffer.length > 5) task._speedBuffer.shift();
+                                        
+                                        // Average the buffer to get a stable "moving average" speed
+                                        const sum = task._speedBuffer.reduce((a, b) => a + b, 0);
+                                        task.speed = sum / task._speedBuffer.length;
                                     }
+                                    task.lastSpeedTime = now;
+                                    task.lastSpeedBytes = task.uploadedBytes;
                                 }
-                                task.lastUpdateTime = now;
-                                task.lastUploadedBytes = task.uploadedBytes;
                             }
                         }
 
