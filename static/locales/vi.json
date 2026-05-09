@@ -405,5 +405,9 @@
     "ytdlp_no_cookie": "Chưa có tệp cookie nào được tải lên",
     "ytdlp_note": "Media sẽ được tải về server và tự động đẩy lên Telegram. Bạn có thể theo dõi tiến trình trong hàng đợi tải lên.",
     "ytdlp_started": "Đã bắt đầu tác vụ tải",
-    "ytdlp_thumbnail": "Đang xử lý ảnh bìa..."
+    "ytdlp_thumbnail": "Đang xử lý ảnh bìa...",
+    "ytdlp_help_title": "Hướng dẫn & Hỗ trợ",
+    "ytdlp_help_guide": "<ul class=\"list-disc pl-5 space-y-1.5\">\n  <li><b>Bước 1:</b> Dán URL của video hoặc playlist vào ô tìm kiếm.</li>\n  <li><b>Bước 2:</b> Nhấn <b>Lấy thông tin</b> để hệ thống kiểm tra các định dạng có sẵn.</li>\n  <li><b>Bước 3:</b> Chọn chất lượng bạn muốn (Video + Audio hoặc Chỉ Audio) rồi nhấn <b>Bắt đầu tải</b>.</li>\n  <li><b>Cookie:</b> Nếu video bị giới hạn độ tuổi hoặc yêu cầu đăng nhập, hãy sử dụng extension <a href=\"https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc\" target=\"_blank\" class=\"text-blue-500 hover:underline\">Get cookies.txt locally</a> để xuất cookie và tải lên phần <b>Tệp Cookie</b> ở trên.</li>\n</ul>",
+    "ytdlp_link_github": "Trang chủ yt-dlp (GitHub)",
+    "ytdlp_link_sites": "Danh sách trang web hỗ trợ"
 }
