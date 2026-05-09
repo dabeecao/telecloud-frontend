@@ -140,13 +140,13 @@
 
                 <div>
                     <template x-if="!remoteIsBulk">
-                        <input type="url" x-model="remoteUrl" @keydown.enter="submitRemoteUpload"
-                            class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all text-sm"
+                        <input type="url" x-model="remoteUrl" @keydown.enter="submitRemoteUpload" :disabled="remoteIsSubmitting"
+                            class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             placeholder="https://example.com/file.zip">
                     </template>
                     <template x-if="remoteIsBulk">
-                        <textarea x-model="remoteUrl" 
-                            class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all resize-none h-32 text-sm"
+                        <textarea x-model="remoteUrl" :disabled="remoteIsSubmitting"
+                            class="w-full p-3 rounded-xl bg-white/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white transition-all resize-none h-32 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             :placeholder="t('remote_urls_placeholder')"></textarea>
                     </template>
                     
@@ -157,16 +157,17 @@
                 </div>
 
                 <div class="flex items-center gap-2 px-1">
-                    <input type="checkbox" id="remoteOverwrite" x-model="remoteOverwrite"
-                        class="w-4 h-4 rounded accent-blue-600">
+                    <input type="checkbox" id="remoteOverwrite" x-model="remoteOverwrite" :disabled="remoteIsSubmitting"
+                        class="w-4 h-4 rounded accent-blue-600 disabled:opacity-50">
                     <label for="remoteOverwrite" class="text-sm text-slate-600 dark:text-slate-300 cursor-pointer"
+                        :class="remoteIsSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
                         x-text="t('overwrite_existing')"></label>
                 </div>
 
-                <button @click="submitRemoteUpload"
-                    class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 transition-transform active:scale-95 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-cloud-arrow-down"></i>
-                    <span x-text="t('start_upload')"></span>
+                <button @click="submitRemoteUpload" :disabled="remoteIsSubmitting"
+                    class="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-400 disabled:scale-100 disabled:cursor-not-allowed text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid" :class="remoteIsSubmitting ? 'fa-circle-notch fa-spin' : 'fa-cloud-arrow-down'"></i>
+                    <span x-text="remoteIsSubmitting ? t('loading') : t('start_upload')"></span>
                 </button>
             </div>
 
@@ -1765,10 +1766,35 @@
                         </div>
                     </div>
                     <div
-                        class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-700/30 flex gap-3">
+                        class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-700/30 flex gap-3 mb-6">
                         <i class="fa-solid fa-circle-info text-amber-500 mt-0.5"></i>
                         <p class="text-xs text-amber-800 dark:text-amber-200 leading-relaxed" x-text="t('ytdlp_note')">
                         </p>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700/50">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-circle-question text-blue-500"></i>
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200" x-text="t('ytdlp_help_title')"></h3>
+                        </div>
+                        
+                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/50 mb-6">
+                            <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" x-html="t('ytdlp_help_guide')"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" 
+                               class="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-all shadow-sm">
+                                <i class="fa-brands fa-github text-base"></i>
+                                <span x-text="t('ytdlp_link_github')"></span>
+                            </a>
+                            <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank"
+                               class="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-all shadow-sm">
+                                <i class="fa-solid fa-list-check text-base"></i>
+                                <span x-text="t('ytdlp_link_sites')"></span>
+                            </a>
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -2453,9 +2479,10 @@
                                 :class="task.hasError || task.isCancelled ? 'bg-red-400' : (task.progress === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500')"
                                 :style="`width: ${task.progress}%`"></div>
                         </div>
-                        <div class="flex justify-between items-center mt-1.5">
-                            <div class="flex flex-col">
-                                <div class="text-[10px] text-slate-400" x-text="task.statusText"
+                        <div class="flex justify-between items-center mt-1.5 gap-3">
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <div class="text-[10px] text-slate-400 truncate" x-text="task.statusText"
+                                    :title="task.statusText"
                                     :class="task.hasError || task.isCancelled ? 'text-red-400' : ''"></div>
                                 <div x-show="task.speed > 0 && task.progress < 100 && !task.isCancelled"
                                     class="text-[9px] text-blue-500 font-bold mt-0.5">
@@ -2463,8 +2490,7 @@
                                     <span x-text="formatBytes(task.speed) + '/s'"></span>
                                 </div>
                             </div>
-
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 shrink-0">
                                 <button x-show="(task.hasError || task.isCancelled) && task.progress < 100"
                                     @click="retryUpload(task.id)"
                                     class="text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1 text-[10px] font-bold">

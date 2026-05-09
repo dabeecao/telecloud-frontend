@@ -1142,9 +1142,10 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         remoteUrl: '',
         remoteOverwrite: false,
         remoteIsBulk: false,
+        remoteIsSubmitting: false,
         uploadQueue: [],
         async submitRemoteUpload() {
-            if (!this.remoteUrl) return;
+            if (!this.remoteUrl || this.remoteIsSubmitting) return;
             
             const urls = this.remoteUrl.split('\n').map(u => u.trim()).filter(u => u !== '');
             if (urls.length === 0) return;
@@ -1153,158 +1154,166 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 return;
             }
 
-            this.remoteUploadModal = false;
-            const originalUrls = this.remoteUrl;
-            this.remoteUrl = '';
-
-            const isSocialMedia = (url) => {
-                try {
-                    const u = new URL(url);
-                    const host = u.hostname.toLowerCase().replace(/^www\./, '');
-                    const socialDomains = [
-                        'youtube.com', 'youtu.be', 'tiktok.com', 'facebook.com', 'fb.watch', 'fb.com',
-                        'instagram.com', 'instagr.am', 'twitter.com', 'x.com', 'twitch.tv',
-                        'vimeo.com', 'dailymotion.com', 'soundcloud.com', 'reddit.com', 'threads.net',
-                        'bilibili.com', 'douyin.com', 'kuai.com', 'kuaishou.com'
-                    ];
-                    return socialDomains.some(d => host === d || host.endsWith('.' + d));
-                } catch (e) { return false; }
-            };
-
-            let tasksStarted = 0;
-            for (const rawUrl of urls) {
-                let targetUrl = rawUrl;
-                try {
-                    const u = new URL(targetUrl);
-                    if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
-                } catch (e) {
-                    this.showToast(this.t('err_invalid_url') + ': ' + targetUrl, 'error');
-                    continue;
-                }
-
-                if (isSocialMedia(targetUrl)) {
-                    if (!this.remoteIsBulk) {
-                        // Jump to YT-DLP tab and fetch info
-                        this.remoteUploadModal = false;
-                        this.currentTab = 'ytdlp';
-                        this.ytdlpUrl = targetUrl;
-                        this.ytdlpInfo = null;
-                        this.fetchYTDLPFormats();
-                        return;
-                    }
-
-                    // Batch mode or user continued: Route to YT-DLP background download
-                    const taskId = 'ytdlp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-                    this.uploadQueue.push({
-                        id: taskId,
-                        name: 'Social: ' + targetUrl,
-                        progress: 0,
-                        statusText: this.t('preparing_upload'),
-                        isCancelled: false,
-                        hasError: false,
-                        status: 'preparing',
-                        size: 0,
-                        singlePhase: false
-                    });
-                    tasksStarted++;
-
-                    let fd = new FormData();
-                    fd.append('url', targetUrl);
-                    fd.append('path', this.currentPath);
-                    fd.append('download_type', 'video'); // Default to video for auto-social
-                    fd.append('task_id', taskId);
-                    
+            this.remoteIsSubmitting = true;
+            try {
+                const isSocialMedia = (url) => {
                     try {
-                        let res = await fetch('/api/ytdlp/download', {
-                            method: 'POST',
-                            body: fd,
-                            headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
-                        });
-                        if (!res.ok) {
-                            let d = await res.json();
-                            let task = this.uploadQueue.find(t => t.id === taskId);
-                            if (task) {
-                                task.statusText = this.handleCommonError(d.error, 'status_error');
-                                task.hasError = true;
-                            }
-                        }
+                        const u = new URL(url);
+                        const host = u.hostname.toLowerCase().replace(/^www\./, '');
+                        const socialDomains = [
+                            'youtube.com', 'youtu.be', 'tiktok.com', 'facebook.com', 'fb.watch', 'fb.com',
+                            'instagram.com', 'instagr.am', 'twitter.com', 'x.com', 'twitch.tv',
+                            'vimeo.com', 'dailymotion.com', 'soundcloud.com', 'reddit.com', 'threads.net',
+                            'bilibili.com', 'douyin.com', 'kuai.com', 'kuaishou.com'
+                        ];
+                        return socialDomains.some(d => host === d || host.endsWith('.' + d));
+                    } catch (e) { return false; }
+                };
+
+                let tasksStarted = 0;
+                for (const rawUrl of urls) {
+                    let targetUrl = rawUrl;
+                    try {
+                        const u = new URL(targetUrl);
+                        if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
                     } catch (e) {
-                        let task = this.uploadQueue.find(t => t.id === taskId);
-                        if (task) {
-                            task.statusText = this.t('conn_error');
-                            task.hasError = true;
-                        }
+                        this.showToast(this.t('err_invalid_url') + ': ' + targetUrl, 'error');
+                        continue;
                     }
-                    continue;
-                }
 
-                // Regular Remote Upload - Check first
-                try {
-                    let checkFd = new FormData();
-                    checkFd.append('url', targetUrl);
-                    let checkRes = await fetch('/api/remote-upload/check', {
-                        method: 'POST',
-                        body: checkFd,
-                        headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
-                    });
-
-                    if (checkRes.ok) {
-                        const meta = await checkRes.json();
-                        if (meta.content_type && meta.content_type.includes('text/html')) {
-                            const confirmed = await this.customConfirm(this.t('remote_html_confirm_title'), this.t('remote_html_confirm_msg') + '\nURL: ' + targetUrl);
-                            if (!confirmed) continue;
+                    if (isSocialMedia(targetUrl)) {
+                        if (!this.remoteIsBulk) {
+                            // Jump to YT-DLP tab and fetch info
+                            this.remoteUploadModal = false;
+                            this.currentTab = 'ytdlp';
+                            this.ytdlpUrl = targetUrl;
+                            this.ytdlpInfo = null;
+                            this.fetchYTDLPFormats();
+                            return; // Exit early as we transitioned
                         }
 
-                        const taskId = 'task_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-                        const displayName = meta.filename || (targetUrl.split('/').pop() || targetUrl);
-                        
+                        // Batch mode or user continued: Route to YT-DLP background download
+                        const taskId = 'ytdlp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
                         this.uploadQueue.push({
                             id: taskId,
-                            name: 'URL: ' + displayName,
+                            name: 'Social: ' + targetUrl,
                             progress: 0,
                             statusText: this.t('preparing_upload'),
                             isCancelled: false,
                             hasError: false,
                             status: 'preparing',
-                            size: meta.content_length || 0,
-                            singlePhase: true
+                            size: 0,
+                            singlePhase: false,
+                            ytdlpUrl: targetUrl,
+                            targetPath: this.currentPath
                         });
                         tasksStarted++;
 
                         let fd = new FormData();
                         fd.append('url', targetUrl);
                         fd.append('path', this.currentPath);
-                        fd.append('overwrite', this.remoteOverwrite);
+                        fd.append('download_type', 'video'); // Default to video for auto-social
                         fd.append('task_id', taskId);
+                        
+                        try {
+                            let res = await fetch('/api/ytdlp/download', {
+                                method: 'POST',
+                                body: fd,
+                                headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
+                            });
+                            if (!res.ok) {
+                                let d = await res.json();
+                                let task = this.uploadQueue.find(t => t.id === taskId);
+                                if (task) {
+                                    task.statusText = this.handleCommonError(d.error, 'status_error');
+                                    task.hasError = true;
+                                }
+                            }
+                        } catch (e) {
+                            let task = this.uploadQueue.find(t => t.id === taskId);
+                            if (task) {
+                                task.statusText = this.t('conn_error');
+                                task.hasError = true;
+                            }
+                        }
+                        continue;
+                    }
 
-                        let res = await fetch('/api/remote-upload', {
+                    // Regular Remote Upload - Check first
+                    try {
+                        let checkFd = new FormData();
+                        checkFd.append('url', targetUrl);
+                        let checkRes = await fetch('/api/remote-upload/check', {
                             method: 'POST',
-                            body: fd,
+                            body: checkFd,
                             headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
                         });
 
-                        if (!res.ok) {
-                            let d = await res.json();
-                            this.uploadQueue = this.uploadQueue.filter(t => t.id !== taskId);
-                            this.showToast(this.handleCommonError(d.error, 'status_error') + ': ' + targetUrl, 'error');
-                        }
-                    } else {
-                        let errorMsg = 'remote_failed';
-                        try {
-                            const d = await checkRes.json();
-                            if (d.error) errorMsg = d.error;
-                        } catch(e) {}
-                        this.showToast(this.handleCommonError(errorMsg, 'err_remote_failed') + ': ' + targetUrl, 'error');
-                    }
-                } catch (e) {
-                    console.error('Check failed', e);
-                    this.showToast(this.t('conn_error') + ': ' + targetUrl, 'error');
-                }
-            }
-            if (tasksStarted > 0) {
-                this.showToast(this.t('toast_dl_started'), 'success');
-            }
+                        if (checkRes.ok) {
+                            const meta = await checkRes.json();
+                            if (meta.content_type && meta.content_type.includes('text/html')) {
+                                const confirmed = await this.customConfirm(this.t('remote_html_confirm_title'), this.t('remote_html_confirm_msg') + '\nURL: ' + targetUrl);
+                                if (!confirmed) continue;
+                            }
 
+                            const taskId = 'task_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+                            const displayName = meta.filename || (targetUrl.split('/').pop() || targetUrl);
+                            
+                            this.uploadQueue.push({
+                                id: taskId,
+                                name: 'URL: ' + displayName,
+                                progress: 0,
+                                statusText: this.t('preparing_upload'),
+                                isCancelled: false,
+                                hasError: false,
+                                status: 'preparing',
+                                size: meta.content_length || 0,
+                                singlePhase: true,
+                                remoteUrl: targetUrl,
+                                targetPath: this.currentPath,
+                                overwrite: this.remoteOverwrite
+                            });
+                            tasksStarted++;
+
+                            let fd = new FormData();
+                            fd.append('url', targetUrl);
+                            fd.append('path', this.currentPath);
+                            fd.append('overwrite', this.remoteOverwrite);
+                            fd.append('task_id', taskId);
+
+                            let res = await fetch('/api/remote-upload', {
+                                method: 'POST',
+                                body: fd,
+                                headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
+                            });
+
+                            if (!res.ok) {
+                                let d = await res.json();
+                                this.uploadQueue = this.uploadQueue.filter(t => t.id !== taskId);
+                                this.showToast(this.handleCommonError(d.error, 'status_error') + ': ' + targetUrl, 'error');
+                            }
+                        } else {
+                            let errorMsg = 'remote_failed';
+                            try {
+                                const d = await checkRes.json();
+                                if (d.error) errorMsg = d.error;
+                            } catch(e) {}
+                            this.showToast(this.handleCommonError(errorMsg, 'err_remote_failed') + ': ' + targetUrl, 'error');
+                        }
+                    } catch (e) {
+                        console.error('Check failed', e);
+                        this.showToast(this.t('conn_error') + ': ' + targetUrl, 'error');
+                    }
+                }
+                
+                if (tasksStarted > 0) {
+                    this.showToast(this.t('toast_dl_started'), 'success');
+                    this.remoteUploadModal = false;
+                    this.remoteUrl = '';
+                }
+            } finally {
+                this.remoteIsSubmitting = false;
+            }
         },
 
         async handleDrop(e) { 
@@ -1481,14 +1490,63 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
 
         async retryUpload(taskId) {
             const task = this.uploadQueue.find(t => t.id === taskId);
-            if (!task || !task.file) return;
+            if (!task) return;
             
             task.progress = 0;
             task.statusText = this.t('preparing_upload');
             task.isCancelled = false;
             task.hasError = false;
             
-            await this.uploadSingleFile(task.file, taskId, task.targetPath, task.overwrite);
+            if (task.file) {
+                // Retry local file upload
+                await this.uploadSingleFile(task.file, taskId, task.targetPath, task.overwrite);
+            } else if (task.remoteUrl) {
+                // Retry remote URL upload
+                let fd = new FormData();
+                fd.append('url', task.remoteUrl);
+                fd.append('path', task.targetPath);
+                fd.append('overwrite', task.overwrite);
+                fd.append('task_id', taskId);
+
+                try {
+                    let res = await fetch('/api/remote-upload', {
+                        method: 'POST',
+                        body: fd,
+                        headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
+                    });
+                    if (!res.ok) {
+                        let d = await res.json();
+                        task.statusText = this.handleCommonError(d.error, 'status_error');
+                        task.hasError = true;
+                    }
+                } catch (e) {
+                    task.statusText = this.t('conn_error');
+                    task.hasError = true;
+                }
+            } else if (task.ytdlpUrl) {
+                // Retry YT-DLP upload
+                let fd = new FormData();
+                fd.append('url', task.ytdlpUrl);
+                fd.append('path', task.targetPath);
+                fd.append('download_type', 'video');
+                fd.append('task_id', taskId);
+                
+                try {
+                    let res = await fetch('/api/ytdlp/download', {
+                        method: 'POST',
+                        body: fd,
+                        headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
+                    });
+                    if (!res.ok) {
+                        let d = await res.json();
+                        task.statusText = this.handleCommonError(d.error, 'status_error');
+                        task.hasError = true;
+                    }
+                } catch (e) {
+                    task.statusText = this.t('conn_error');
+                    task.hasError = true;
+                }
+            }
         },
 
         async uploadSingleFile(file, taskId, targetPath, overwrite = false) {
