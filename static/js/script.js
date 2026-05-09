@@ -1252,7 +1252,14 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         if (checkRes.ok) {
                             const meta = await checkRes.json();
                             if (meta.content_type && meta.content_type.includes('text/html')) {
-                                const confirmed = await this.customConfirm(this.t('remote_html_confirm_title'), this.t('remote_html_confirm_msg') + '\nURL: ' + targetUrl);
+                                const confirmed = await this.customConfirm(
+                                    this.t('remote_html_confirm_title'), 
+                                    this.t('remote_html_confirm_msg') + 
+                                    '<div class="mt-3 p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 text-[10px] font-mono flex flex-col gap-1">' +
+                                    '<span class="text-slate-400 uppercase font-bold tracking-wider">URL:</span>' +
+                                    '<div class="text-slate-600 dark:text-slate-400 truncate select-all" title="' + targetUrl + '">' + targetUrl + '</div>' +
+                                    '</div>'
+                                );
                                 if (!confirmed) continue;
                             }
 
