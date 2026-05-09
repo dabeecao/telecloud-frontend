@@ -68,6 +68,7 @@
     "err_admin_forbidden_child_path": "व्यवस्थापक चाइल्ड अकाउंट निर्देशिका में यह कार्रवाई नहीं कर सकता!",
     "err_already_setup": "सिस्टम पहले से ही सेटअप है!",
     "err_db_error": "डेटाबेस त्रुटि!",
+    "err_failed_to_connect": "Could not connect to the remote server. Check the URL or your server connection.",
     "err_failed_to_create_session": "सत्र बनाने में विफल!",
     "err_failed_to_hash_password": "पासवर्ड हैश करने में विफल!",
     "err_failed_to_open_temp_file": "सर्वर पर अस्थायी फ़ाइल खोलने में विफल!",

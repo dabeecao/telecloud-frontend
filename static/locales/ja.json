@@ -68,6 +68,7 @@
     "err_admin_forbidden_child_path": "管理者は子アカウントのディレクトリ内でこの操作を実行できません！",
     "err_already_setup": "システムは既にセットアップ済みです！",
     "err_db_error": "データベースエラー！",
+    "err_failed_to_connect": "Could not connect to the remote server. Check the URL or your server connection.",
     "err_failed_to_create_session": "セッションの作成に失敗しました！",
     "err_failed_to_hash_password": "パスワードのハッシュ化に失敗しました！",
     "err_failed_to_open_temp_file": "サーバー上の一時ファイルを開けませんでした！",

@@ -1171,6 +1171,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 } catch (e) { return false; }
             };
 
+            let tasksStarted = 0;
             for (const rawUrl of urls) {
                 let targetUrl = rawUrl;
                 try {
@@ -1205,6 +1206,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         size: 0,
                         singlePhase: false
                     });
+                    tasksStarted++;
 
                     let fd = new FormData();
                     fd.append('url', targetUrl);
@@ -1267,6 +1269,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             size: meta.content_length || 0,
                             singlePhase: true
                         });
+                        tasksStarted++;
 
                         let fd = new FormData();
                         fd.append('url', targetUrl);
@@ -1286,14 +1289,22 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             this.showToast(this.handleCommonError(d.error, 'status_error') + ': ' + targetUrl, 'error');
                         }
                     } else {
-                        this.showToast(this.t('err_remote_failed') + ': ' + targetUrl, 'error');
+                        let errorMsg = 'remote_failed';
+                        try {
+                            const d = await checkRes.json();
+                            if (d.error) errorMsg = d.error;
+                        } catch(e) {}
+                        this.showToast(this.handleCommonError(errorMsg, 'err_remote_failed') + ': ' + targetUrl, 'error');
                     }
                 } catch (e) {
                     console.error('Check failed', e);
                     this.showToast(this.t('conn_error') + ': ' + targetUrl, 'error');
                 }
             }
-            this.showToast(this.t('toast_dl_started'), 'success');
+            if (tasksStarted > 0) {
+                this.showToast(this.t('toast_dl_started'), 'success');
+            }
+
         },
 
         async handleDrop(e) { 

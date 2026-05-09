@@ -68,6 +68,7 @@
     "err_admin_forbidden_child_path": "لا يمكن للمسؤول تنفيذ هذا الإجراء في دليل حساب فرعي!",
     "err_already_setup": "تم إعداد النظام بالفعل!",
     "err_db_error": "خطأ في قاعدة البيانات!",
+    "err_failed_to_connect": "Could not connect to the remote server. Check the URL or your server connection.",
     "err_failed_to_create_session": "فشل في إنشاء الجلسة!",
     "err_failed_to_hash_password": "فشل في تشفير كلمة المرور!",
     "err_failed_to_open_temp_file": "فشل في فتح الملف المؤقت على الخادم!",

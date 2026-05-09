@@ -68,6 +68,7 @@
     "err_admin_forbidden_child_path": "Администратор не может выполнить это действие в каталоге дочернего аккаунта!",
     "err_already_setup": "Система уже настроена!",
     "err_db_error": "Ошибка базы данных!",
+    "err_failed_to_connect": "Could not connect to the remote server. Check the URL or your server connection.",
     "err_failed_to_create_session": "Не удалось создать сессию!",
     "err_failed_to_hash_password": "Ошибка хеширования пароля!",
     "err_failed_to_open_temp_file": "Не удалось открыть временный файл на сервере!",

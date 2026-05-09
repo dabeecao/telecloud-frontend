@@ -68,6 +68,7 @@
     "err_admin_forbidden_child_path": "Admin cannot perform this action in a child account directory!",
     "err_already_setup": "System is already set up!",
     "err_db_error": "Database error!",
+    "err_failed_to_connect": "Could not connect to the remote server. Check the URL or your server connection.",
     "err_failed_to_create_session": "Failed to create session!",
     "err_failed_to_hash_password": "Failed to hash password!",
     "err_failed_to_open_temp_file": "Cannot open temporary file on server!",

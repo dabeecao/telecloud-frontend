@@ -68,6 +68,7 @@
     "err_admin_forbidden_child_path": "Quản trị viên không thể thực hiện thao tác này trong thư mục của tài khoản con!",
     "err_already_setup": "Hệ thống đã được thiết lập trước đó!",
     "err_db_error": "Lỗi cơ sở dữ liệu!",
+    "err_failed_to_connect": "Không thể kết nối tới máy chủ từ xa. Vui lòng kiểm tra lại URL hoặc kết nối mạng của máy chủ.",
     "err_failed_to_create_session": "Không thể tạo phiên làm việc!",
     "err_failed_to_hash_password": "Lỗi mã hóa mật khẩu!",
     "err_failed_to_open_temp_file": "Không thể mở tệp tạm thời trên máy chủ!",

@@ -68,6 +68,7 @@
     "err_admin_forbidden_child_path": "管理员无法在子账户目录中执行此操作！",
     "err_already_setup": "系统已设置完毕！",
     "err_db_error": "数据库错误！",
+    "err_failed_to_connect": "Could not connect to the remote server. Check the URL or your server connection.",
     "err_failed_to_create_session": "无法创建会话！",
     "err_failed_to_hash_password": "密码哈希失败！",
     "err_failed_to_open_temp_file": "无法在服务器上打开临时文件！",
