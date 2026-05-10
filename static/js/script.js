@@ -806,6 +806,11 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                         msg = this.t('uploading_part', {n: matchSingle[1]});
                                     }
                                 }
+                            } else if (msg && msg.startsWith('retrying_part_')) {
+                                const match = msg.match(/retrying_part_(\d+)_attempt_(\d+)/);
+                                if (match) {
+                                    msg = this.t('retrying_part_attempt', {x: match[1], y: match[2]});
+                                }
                             } else {
                                 msg = this.t(msg);
                             }

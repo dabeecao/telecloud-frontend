@@ -208,6 +208,7 @@
     "response_async": "Kết quả trả về — Với async=true",
     "response_share": "Kết quả trả về — Với share=public",
     "retry": "Thử lại",
+    "retrying_part_attempt": "Đang thử lại mảnh {x} (lần {y})...",
     "revoke_link": "Thu hồi Link",
     "s3_access_key": "Access Key ID",
     "s3_desc": "API tương thích S3 để lưu trữ đám mây. Truy cập các tệp của bạn bằng các ứng dụng hỗ trợ S3 như Rclone hoặc S3 Browser.<br><b class=\"text-amber-500\">Lưu ý:</b> Nếu dùng Cloudflare Tunnel/Proxy, giới hạn upload là 100MB.",

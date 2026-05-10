@@ -208,6 +208,7 @@
     "response_async": "Response — With async=true",
     "response_share": "Response — With share=public",
     "retry": "Retry",
+    "retrying_part_attempt": "Retrying part {x} (attempt {y})...",
     "revoke_link": "Revoke Link",
     "s3_access_key": "Access Key ID",
     "s3_desc": "S3 compatible API for cloud storage. Access your files using S3 clients like Rclone or S3 Browser.<br><b class=\"text-amber-500\">Note:</b> Cloudflare Tunnel/Proxy limits uploads to 100MB.",
