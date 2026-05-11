@@ -379,14 +379,36 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 displayProgress = Math.round(task.percent / 2);
                             }
 
+                            // Translate status message properly
+                            let statusText = this.t(task.status) || task.status;
+                            if (task.message) {
+                                if (task.message.startsWith('uploading_part_')) {
+                                    const matchOf = task.message.match(/uploading_part_(\d+)_of_(\d+)/);
+                                    if (matchOf) statusText = this.t('uploading_part_x_of_y', {x: matchOf[1], y: matchOf[2]});
+                                    else {
+                                        const m = task.message.match(/uploading_part_(\d+)/);
+                                        if (m) statusText = this.t('uploading_part', {n: m[1]});
+                                    }
+                                } else if (task.message.startsWith('retrying_part_')) {
+                                    const m = task.message.match(/retrying_part_(\d+)_attempt_(\d+)/);
+                                    if (m) statusText = this.t('retrying_part_attempt', {x: m[1], y: m[2]});
+                                } else if (task.message === 'waiting_slot') {
+                                    statusText = this.t('waiting_slot');
+                                } else {
+                                    const t = this.t(task.message);
+                                    if (t !== task.message) statusText = t;
+                                }
+                            }
+
                             this.uploadQueue.push({
                                 id: id,
                                 name: task.filename || 'File',
                                 progress: displayProgress,
-                                statusText: task.status,
+                                statusText: statusText,
                                 hasError: task.status === 'error',
                                 isCancelled: task.status === 'cancelled',
-                                size: task.size || 0
+                                size: task.size || 0,
+                                singlePhase: task.status === 'downloading' || task.status === 'telegram'
                             });
                         }
                     }
@@ -606,7 +628,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         files: [], 
         searchQuery: '',
         currentPage: 1,
-        itemsPerPage: 15,
+        itemsPerPage: 30,
         get filteredFiles() {
             let results = [...this.files];
             if (this.searchQuery.trim() !== '') {
@@ -688,6 +710,8 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         toastModal: { show: false, message: '', type: 'success', persistent: false },
         toastTimeout: null,
         plyrInstance: null,
+        imageViewer: { show: false, src: '', filename: '' },
+        lightboxLoading: false,
         fileInfoModal: { show: false, file: null, typeName: '', ext: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
         modal: { show: false, type: 'alert', title: '', message: '', input: '', resolve: null, isDanger: false, inputType: 'text', applyToAll: false },
         contextMenu: { show: false, x: 0, y: 0, file: null },
@@ -896,9 +920,28 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 }
                             }, 1000);
                         } else if (data.status === 'error') {
-                            const errorMsg = data.message;
-                            const translated = this.t(errorMsg);
-                            task.statusText = this.t('status_error') + ': ' + (translated !== errorMsg ? translated : errorMsg);
+                            const errorMsg = data.message || '';
+                            // Error messages may be "key: detail" (e.g., "upload_part_failed: rpc error...")
+                            // Try to translate the key part and append the detail for context.
+                            let displayError;
+                            const colonIdx = errorMsg.indexOf(': ');
+                            if (colonIdx > 0) {
+                                const keyPart = errorMsg.substring(0, colonIdx);       // e.g. "upload_part_failed"
+                                const detailPart = errorMsg.substring(colonIdx + 2);   // e.g. "rpc error..."
+                                const translatedKey = this.t(keyPart);
+                                if (translatedKey !== keyPart) {
+                                    // Key has a translation — show "TranslatedKey (detail)"
+                                    displayError = translatedKey + ' (' + detailPart + ')';
+                                } else {
+                                    // No translation for compound key — try whole string
+                                    const translatedFull = this.t(errorMsg);
+                                    displayError = (translatedFull !== errorMsg) ? translatedFull : errorMsg;
+                                }
+                            } else {
+                                const translated = this.t(errorMsg);
+                                displayError = (translated !== errorMsg) ? translated : errorMsg;
+                            }
+                            task.statusText = this.t('status_error') + ': ' + displayError;
                             task.hasError = true;
                         } else if (data.status === 'cancelled') {
                             task.statusText = this.t('cancelled');
@@ -1081,6 +1124,20 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         navigateToIndex(index) { if (this.isLoading || this.isRefreshing) return; this.currentPath = '/' + this.getBreadcrumbs().slice(0, index + 1).join('/'); this.fetchFiles(); },
         navigateTo(path) { if (this.isLoading || this.isRefreshing) return; this.currentPath = path; this.fetchFiles(); },
         async fetchFiles(silentLoad = false) {
+            // Debounce silent refreshes: many tasks completing simultaneously
+            // would otherwise hammer /api/files. Coalesce into a single call
+            // after 800ms of quiet. Non-silent calls (navigation) run immediately.
+            if (silentLoad) {
+                if (this._fetchDebounceTimer) clearTimeout(this._fetchDebounceTimer);
+                this._fetchDebounceTimer = setTimeout(() => {
+                    this._fetchDebounceTimer = null;
+                    this._doFetchFiles(true);
+                }, 800);
+                return;
+            }
+            return this._doFetchFiles(false);
+        },
+        async _doFetchFiles(silentLoad = false) {
             if (this.isLoading || this.isRefreshing) return;
             const startTime = Date.now();
             if (!silentLoad && (!this.files || this.files.length === 0)) { this.isLoading = true; } else { this.isRefreshing = true; }
@@ -1399,8 +1456,8 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             return files;
         },
         async uploadFiles(fileList) {
-            if (fileList.length > 200) {
-                this.showToast(this.t('err_max_files').replace('{n}', 200), 'error');
+            if (fileList.length > 500) {
+                this.showToast(this.t('err_max_files').replace('{n}', 500), 'error');
                 return;
             }
             const newTasks = [];
@@ -1583,7 +1640,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         },
 
         async uploadSingleFile(file, taskId, targetPath, overwrite = false) {
-            const CHUNK_SIZE = 10 * 1024 * 1024;
+            const CHUNK_SIZE = 50 * 1024 * 1024;
             const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
             let hasError = false;
             let uploadedChunks = 0;
@@ -1709,6 +1766,108 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 workers.push(uploadWorker());
             }
             await Promise.all(workers);
+
+            // Fallback polling: if WS missed the `done`/`error` message (common when uploading
+            // many files simultaneously and WS reconnects or browser is overloaded), poll the
+            // task status API until we get a terminal state. Max 10 minutes.
+            if (!hasError) {
+                const POLL_INTERVAL = 3000;
+                const POLL_TIMEOUT = 10 * 60 * 1000;
+                const pollStart = Date.now();
+
+                const pollTask = async () => {
+                    while (Date.now() - pollStart < POLL_TIMEOUT) {
+                        // Stop polling if WS already updated the task to a terminal state
+                        const t = this.uploadQueue.find(q => q.id === taskId);
+                        if (!t) return; // Task removed from queue
+                        if (t.status === 'done' || t.isCancelled || t.hasError) return;
+
+                        await new Promise(r => setTimeout(r, POLL_INTERVAL));
+
+                        try {
+                            const res = await fetch('/api/tasks');
+                            if (!res.ok) continue;
+                            const data = await res.json();
+                            const serverTask = data.tasks && data.tasks[taskId];
+                            const task = this.uploadQueue.find(q => q.id === taskId);
+                            if (!task) return;
+
+                            if (!serverTask) {
+                                // Task no longer on server — may have been cleaned up after done
+                                // Give WS a little more time before giving up
+                                await new Promise(r => setTimeout(r, 2000));
+                                const t2 = this.uploadQueue.find(q => q.id === taskId);
+                                if (t2 && t2.status !== 'done' && !t2.hasError) {
+                                    // Still not updated — assume done (task cleaned up = completed)
+                                    task.progress = 100;
+                                    task.status = 'done';
+                                    task.statusText = this.t('done');
+                                    task.hasError = false;
+                                    this.fetchFiles(true);
+                                    task.countdown = 5;
+                                    const timer = setInterval(() => {
+                                        task.countdown--;
+                                        if (task.countdown <= 0) {
+                                            clearInterval(timer);
+                                            this.uploadQueue = this.uploadQueue.filter(q => q.id !== taskId);
+                                        }
+                                    }, 1000);
+                                }
+                                return;
+                            }
+
+                            if (serverTask.status === 'done') {
+                                task.progress = 100;
+                                task.status = 'done';
+                                task.statusText = this.t('done');
+                                task.hasError = false;
+                                if (serverTask.file_id) task.fileId = serverTask.file_id;
+                                this.fetchFiles(true);
+                                task.countdown = 5;
+                                const timer = setInterval(() => {
+                                    task.countdown--;
+                                    if (task.countdown <= 0) {
+                                        clearInterval(timer);
+                                        this.uploadQueue = this.uploadQueue.filter(q => q.id !== taskId);
+                                    }
+                                }, 1000);
+                                return;
+                            } else if (serverTask.status === 'error') {
+                                const errorMsg = serverTask.message || '';
+                                let displayError;
+                                const colonIdx = errorMsg.indexOf(': ');
+                                if (colonIdx > 0) {
+                                    const keyPart = errorMsg.substring(0, colonIdx);
+                                    const detailPart = errorMsg.substring(colonIdx + 2);
+                                    const translatedKey = this.t(keyPart);
+                                    displayError = (translatedKey !== keyPart) ? translatedKey + ' (' + detailPart + ')' : errorMsg;
+                                } else {
+                                    const translated = this.t(errorMsg);
+                                    displayError = (translated !== errorMsg) ? translated : errorMsg;
+                                }
+                                task.statusText = this.t('status_error') + ': ' + displayError;
+                                task.hasError = true;
+                                task.status = 'error';
+                                return;
+                            } else if (serverTask.status === 'cancelled') {
+                                task.statusText = this.t('cancelled');
+                                task.isCancelled = true;
+                                task.status = 'cancelled';
+                                return;
+                            }
+                            // Still in progress — update progress display from server data
+                            if (serverTask.status === 'telegram' && serverTask.percent !== undefined) {
+                                task.progress = 50 + Math.round(serverTask.percent / 2);
+                                task.statusText = this.t('telegram');
+                            }
+                        } catch (e) {
+                            console.warn('[Poll] Task status check failed:', e);
+                        }
+                    }
+                };
+
+                pollTask();
+            }
         },
         async toggleShare(file) {
             const targetFile = this.files.find(f => f.id === file.id);
@@ -1790,6 +1949,14 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             if (this.plyrInstance) { this.plyrInstance.destroy(); this.plyrInstance = null; }
             setTimeout(() => { if (!this.fileInfoModal.show) { this.fileInfoModal.isMedia = false; this.fileInfoModal.mediaHtml = ''; this.fileInfoModal.isLarge = false; this.fileInfoModal.isPreviewLoading = false; this.fileInfoModal.needsLoad = false; this.fileInfoModal.tooLarge = false; } }, 300);
         },
+        openImageViewer(src, filename) {
+            if (this.imageViewer.src === src) {
+                this.imageViewer.show = true;
+                return;
+            }
+            this.lightboxLoading = true;
+            this.imageViewer = { show: true, src, filename };
+        },
         async showFileInfo(file) {
             if (file.is_folder) return;
             const typeData = this.getFileTypeData(file.filename);
@@ -1818,29 +1985,17 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const streamUrl = `/api/files/${file.id}/stream`;
             const thumbUrl = `/api/files/${file.id}/thumb`;
             
-            if (imgExts.includes(ext)) { 
-                if (file.size > 10 * 1024 * 1024) {
-                    let largeMediaHtml = '';
-                    if (file.has_thumb) {
-                        largeMediaHtml = '<img src="' + thumbUrl + '" alt="' + file.filename + '" class="max-h-64 object-contain rounded-[1rem] w-full shadow-md opacity-60 blur-[2px]" onerror="this.style.display=\'none\'">';
-                    }
-                    this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: !!file.has_thumb, mediaHtml: largeMediaHtml, isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: true };
-                    return;
+            mediaHtml = TeleCloud.getMediaHtml(file);
+            if (mediaHtml) {
+                isMedia = true;
+                if (imgExts.includes(ext) && file.size > 50 * 1024 * 1024) this.fileInfoModal.tooLarge = true;
+                if (videoExts.includes(ext) || audioExts.includes(ext)) {
+                    playerTarget = { el: '#index-tele-player', type: videoExts.includes(ext) ? 'video' : 'audio' };
                 }
-                mediaHtml = '<img src="' + streamUrl + '" alt="' + file.filename + '" class="max-h-64 object-contain rounded-[1rem] w-full shadow-md">'; 
-                isMedia = true; 
-            } else if (videoExts.includes(ext)) {
-                const typeAttr = mimeTypes[ext] || 'video/mp4';
-                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] bg-black shadow-md"><video id="index-tele-player" playsinline controls preload="none" ' + (file.has_thumb ? 'data-poster="' + thumbUrl + '"' : '') + '><source src="' + streamUrl + '" type="' + typeAttr + '"></video></div>';
-                isMedia = true; playerTarget = { el: '#index-tele-player', type: 'video' };
-            } else if (audioExts.includes(ext)) {
-                const typeAttr = mimeTypes[ext] || 'audio/mpeg';
-                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 glass-panel shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
-                isMedia = true; playerTarget = { el: '#index-tele-player', type: 'audio' };
             } else if (textExts.includes(ext)) {
                 this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
                 
-                if (file.size > 10 * 1024 * 1024) {
+                if (file.size > 50 * 1024 * 1024) {
                     this.fileInfoModal.tooLarge = true;
                 } else {
                     this.fileInfoModal.needsLoad = true;
@@ -2151,9 +2306,10 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
     }
 }
 
-function shareApp(shareToken) {
+function shareApp() {
     return {
-        shareToken: shareToken,
+        shareToken: '',
+        currentTheme: localStorage.getItem('theme') || 'system',
         currentTab: 'files',
         viewMode: localStorage.getItem('viewMode') || 'list',
         toggleViewMode() {
@@ -2265,7 +2421,7 @@ function shareApp(shareToken) {
         totalSize: 0,
         searchQuery: '',
         currentPage: 1,
-        itemsPerPage: 15,
+        itemsPerPage: 30,
         get filteredFiles() {
             let results = [...this.files];
             if (this.searchQuery.trim() !== '') {
@@ -2315,10 +2471,13 @@ function shareApp(shareToken) {
         selectedIds: [], 
 
         plyrInstance: null,
+        imageViewer: { show: false, src: '', filename: '' },
+        lightboxLoading: false,
         fileInfoModal: { show: false, file: null, typeName: '', ext: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
         contextMenu: { show: false, x: 0, y: 0, file: null },
         
         init() { 
+            this.shareToken = this.$refs.token ? this.$refs.token.textContent.trim() : '';
             window.addEventListener('tc-translations-loaded', (e) => {
                 this.lang = '';
                 this.$nextTick(() => { this.lang = e.detail.lang; });
@@ -2330,8 +2489,6 @@ function shareApp(shareToken) {
             TeleCloud.initTheme('system');
 
             this.fetchFiles(false);
-            this.fetchYTDLPStatus();
-            this.checkYTDLPCookies();
         },
         openContextMenu(e, file) {
             if (!file) return; 
@@ -2371,6 +2528,14 @@ function shareApp(shareToken) {
             if (this.plyrInstance) { this.plyrInstance.destroy(); this.plyrInstance = null; }
             setTimeout(() => { if (!this.fileInfoModal.show) { this.fileInfoModal.isMedia = false; this.fileInfoModal.mediaHtml = ''; this.fileInfoModal.isLarge = false; this.fileInfoModal.isPreviewLoading = false; this.fileInfoModal.needsLoad = false; this.fileInfoModal.tooLarge = false; } }, 300);
         },
+        openImageViewer(src, filename) {
+            if (this.imageViewer.src === src) {
+                this.imageViewer.show = true;
+                return;
+            }
+            this.lightboxLoading = true;
+            this.imageViewer = { show: true, src, filename };
+        },
         async showFileInfo(file) {
             if (file.is_folder) return;
             const typeData = this.getFileTypeData(file.filename);
@@ -2388,32 +2553,18 @@ function shareApp(shareToken) {
             };
             let isMedia = false; let mediaHtml = ''; let playerTarget = null;
             let isLarge = false;
-            const streamUrl = `/s/${this.shareToken}/file/${file.id}/stream`;
-            const thumbUrl = `/s/${this.shareToken}/file/${file.id}/thumb`;
             
-            if (imgExts.includes(ext)) { 
-                if (file.size > 10 * 1024 * 1024) {
-                    let largeMediaHtml = '';
-                    if (file.has_thumb) {
-                        largeMediaHtml = '<img src="' + thumbUrl + '" alt="' + file.filename + '" class="max-h-64 object-contain rounded-[1rem] w-full shadow-md opacity-60 blur-[2px]" onerror="this.style.display=\'none\'">';
-                    }
-                    this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: !!file.has_thumb, mediaHtml: largeMediaHtml, isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: true };
-                    return;
+            mediaHtml = TeleCloud.getMediaHtml(file, { isShare: true, shareToken: this.shareToken });
+            if (mediaHtml) {
+                isMedia = true;
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif'].includes(ext) && file.size > 50 * 1024 * 1024) this.fileInfoModal.tooLarge = true;
+                if (videoExts.includes(ext) || audioExts.includes(ext)) {
+                    playerTarget = { el: '#index-tele-player', type: videoExts.includes(ext) ? 'video' : 'audio' };
                 }
-                mediaHtml = '<img src="' + streamUrl + '" alt="' + file.filename + '" class="max-h-64 object-contain rounded-[1rem] w-full shadow-md">'; 
-                isMedia = true; 
-            } else if (videoExts.includes(ext)) {
-                const typeAttr = mimeTypes[ext] || 'video/mp4';
-                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] bg-black shadow-md"><video id="index-tele-player" playsinline controls preload="none" ' + (file.has_thumb ? 'data-poster="' + thumbUrl + '"' : '') + '><source src="' + streamUrl + '" type="' + typeAttr + '"></video></div>';
-                isMedia = true; playerTarget = { el: '#index-tele-player', type: 'video' };
-            } else if (audioExts.includes(ext)) {
-                const typeAttr = mimeTypes[ext] || 'audio/mpeg';
-                mediaHtml = '<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 glass-panel shadow-inner">' + (file.has_thumb ? '<img src="' + thumbUrl + '" class="w-32 h-32 mx-auto rounded-2xl mb-4 object-cover shadow-md">' : '<div class="w-32 h-32 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm"><i class="fa-solid fa-music text-5xl text-slate-300 dark:text-slate-500"></i></div>') + '<audio id="index-tele-player" controls preload="none"><source src="' + streamUrl + '" type="' + typeAttr + '"></audio></div>';
-                isMedia = true; playerTarget = { el: '#index-tele-player', type: 'audio' };
             } else if (textExts.includes(ext)) {
                 this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
                 
-                if (file.size > 10 * 1024 * 1024) {
+                if (file.size > 50 * 1024 * 1024) {
                     this.fileInfoModal.tooLarge = true;
                 } else {
                     this.fileInfoModal.needsLoad = true;
@@ -2467,6 +2618,212 @@ function shareApp(shareToken) {
             } finally {
                 this.fileInfoModal.isPreviewLoading = false;
             }
+        }
+    }
+}
+
+function shareFileApp() {
+    return {
+        lang: TeleCloud.lang,
+        currentTheme: localStorage.getItem('theme') || 'system',
+        token: '',
+        filename: '',
+        typeKey: '',
+        typeExt: '',
+        isMedia: false,
+        showTextPreviewPrompt: false,
+        tooLarge: false,
+        isPreviewLoading: false,
+        textPreviewHtml: '',
+        imageViewer: { show: false, src: '', filename: '' },
+        lightboxLoading: false,
+        toastModal: { show: false, message: '', type: 'success', persistent: false },
+        toastTimeout: null,
+        
+        t(key) { return TeleCloud.t(key, {}, this.lang); },
+        async toggleLang() { this.lang = await TeleCloud.toggleLang(); },
+        async setLang(code) { this.lang = await TeleCloud.setLang(code); },
+        
+        showToast(msg, type = 'success', duration = 3500) {
+            if (this.toastTimeout) clearTimeout(this.toastTimeout);
+            this.toastModal = { show: true, message: msg, type: type, persistent: duration === 0 };
+            if (duration > 0) {
+                this.toastTimeout = setTimeout(() => { this.toastModal.show = false; }, duration);
+            }
+        },
+
+        openImageViewer(src, filename) { 
+            if (this.imageViewer.src === src) {
+                this.imageViewer.show = true;
+                return;
+            }
+            this.lightboxLoading = true;
+            this.imageViewer = { show: true, src, filename }; 
+        },
+
+        init() {
+            window.addEventListener('tc-translations-loaded', (e) => {
+                this.lang = '';
+                this.$nextTick(() => { this.lang = e.detail.lang; });
+            });
+            window.addEventListener('online', () => this.showToast(this.t('you_are_online'), 'success'));
+            window.addEventListener('offline', () => this.showToast(this.t('you_are_offline'), 'error', 0));
+            TeleCloud.initTheme('system');
+
+            this.$nextTick(() => {
+                const tokenEl = this.$refs.token;
+                const sizeEl = this.$refs.size;
+                const thumbEl = this.$refs.hasThumb;
+                const nameEl = document.getElementById('raw-filename');
+                
+                if (!tokenEl || !nameEl) return;
+
+                this.token = tokenEl.textContent.trim();
+                const rawSize = parseInt(sizeEl ? sizeEl.textContent : '0') || 0;
+                const hasThumb = (thumbEl ? thumbEl.textContent.trim() : '') === 'true' || (thumbEl ? thumbEl.textContent.trim() : '') === '1';
+                this.filename = nameEl.textContent.trim();
+                
+                const ext = this.filename.split('.').pop().toLowerCase();
+                const streamUrl = `/s/${this.token}/stream`;
+                
+                const result = TeleCloud.getFileTypeData(this.filename);
+                const container = document.getElementById('file-icon-container');
+                if (container) {
+                    container.className = 'w-24 h-24 rounded-[2rem] flex items-center justify-center shadow-inner mb-6 transition-all duration-300 ' + result.c;
+                    container.innerHTML = result.i.replace('text-2xl', 'text-5xl');
+                }
+                this.typeKey = result.n;
+                this.typeExt = result.ext || '';
+
+                const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif'];
+                const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv', 'ogv', '3gp', 'flv', 'wmv'];
+                const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus', 'oga', 'aac', 'm4b'];
+                const textExts = ['txt', 'md', 'log', 'json', 'js', 'py', 'go', 'html', 'css', 'yml', 'yaml', 'sql', 'sh', 'conf', 'ini', 'c', 'cpp', 'h', 'hpp', 'cs', 'java', 'rb', 'rs', 'swift'];
+
+                const mediaInjectedContent = document.getElementById('media-injected-content');
+                const idEl = this.$refs.id;
+                const rawId = idEl ? idEl.textContent.trim() : '';
+
+                let injectedHtml = TeleCloud.getShareMediaHtml({ id: rawId, filename: this.filename, size: rawSize, has_thumb: hasThumb }, this.token);
+
+                if (injectedHtml) {
+                    this.isMedia = true;
+                    if (imgExts.includes(ext) && rawSize > 50 * 1024 * 1024) this.tooLarge = true;
+                    if (mediaInjectedContent) mediaInjectedContent.innerHTML = injectedHtml;
+                } else if (textExts.includes(ext)) {
+                    this.isMedia = true;
+                    this.showTextPreviewPrompt = true;
+                    this.loadTextPreview = () => {
+                        if (this.isPreviewLoading) return;
+                        this.isPreviewLoading = true;
+                        fetch(streamUrl, { headers: { 'Range': 'bytes=0-262144' } })
+                            .then(r => r.text())
+                            .then(content => {
+                                const langMap = {
+                                    'js': 'javascript', 'json': 'json', 'py': 'python', 'go': 'go', 
+                                    'html': 'markup', 'css': 'css', 'yml': 'yaml', 'yaml': 'yaml',
+                                    'sql': 'sql', 'sh': 'bash', 'md': 'markdown', 'c': 'clike', 'cpp': 'clike',
+                                    'h': 'clike', 'hpp': 'clike', 'cs': 'clike', 'java': 'java', 'rb': 'ruby',
+                                    'rs': 'rust', 'swift': 'swift'
+                                };
+                                const langClass = 'language-' + (langMap[ext] || 'none');
+                                const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                this.textPreviewHtml = `<div class='w-full max-h-[60vh] overflow-auto rounded-xl bg-slate-900 text-left relative'><pre class='!m-0 !p-4 !bg-transparent'><code class='${langClass}'>${escaped}</code></pre></div>`;
+                                this.showTextPreviewPrompt = false;
+                                this.$nextTick(() => { if (window.Prism) Prism.highlightAllUnder(document.querySelector('#media-preview-container')); });
+                            })
+                            .catch(err => {
+                                this.textPreviewHtml = `<div class='p-6 text-center text-red-500'><i class='fa-solid fa-circle-exclamation text-4xl mb-3'></i><p class='text-sm'>${TeleCloud.t('preview_error')}</p></div>`;
+                                this.showTextPreviewPrompt = false;
+                            })
+                            .finally(() => { this.isPreviewLoading = false; });
+                    };
+                }
+
+                if (this.isMedia) {
+                    const mainCard = document.getElementById('main-card');
+                    const contentGrid = document.getElementById('main-content-grid');
+                    const iconContainer = document.getElementById('file-icon-container');
+                    if (iconContainer) {
+                        iconContainer.classList.remove('w-24', 'h-24', 'mb-6', 'rounded-[2rem]');
+                        iconContainer.classList.add('w-16', 'h-16', 'mb-4', 'rounded-[1.2rem]');
+                        const icon = iconContainer.querySelector('i');
+                        if (icon) { icon.classList.remove('text-5xl'); icon.classList.add('text-3xl'); }
+                    }
+                    
+                    if (nameEl) {
+                        nameEl.classList.remove('text-2xl', 'sm:text-3xl', 'mb-2');
+                        nameEl.classList.add('text-xl', 'mb-1');
+                    }
+                    
+                    const typeEl = document.getElementById('file-type-name');
+                    if (typeEl) {
+                        typeEl.classList.remove('mb-6', 'text-sm');
+                        typeEl.classList.add('mb-4', 'text-xs');
+                        const detailsBox = typeEl.nextElementSibling;
+                        if (detailsBox && detailsBox.tagName === 'DIV') { 
+                            detailsBox.classList.remove('p-4', 'space-y-3'); 
+                            detailsBox.classList.add('p-3', 'space-y-2'); 
+                        }
+                    }
+                    
+                    if (mainCard && contentGrid) {
+                        if (audioExts.includes(ext)) { 
+                            mainCard.classList.remove('max-w-lg', 'sm:max-w-xl', 'lg:max-w-2xl', 'xl:max-w-3xl'); 
+                            mainCard.classList.add('max-w-lg', 'sm:max-w-xl'); 
+                            contentGrid.className = 'flex flex-col gap-6 w-full'; 
+                        } else { 
+                            mainCard.classList.remove('max-w-lg', 'sm:max-w-xl', 'lg:max-w-2xl', 'xl:max-w-3xl'); 
+                            mainCard.classList.add('max-w-4xl', 'lg:max-w-6xl', '2xl:max-w-7xl'); 
+                            contentGrid.className = 'grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-8 w-full items-center'; 
+                        }
+                    }
+
+                    if (videoExts.includes(ext) || audioExts.includes(ext)) { 
+                        setTimeout(() => { 
+                            const isAudio = audioExts.includes(ext);
+                            const plyrOpts = isAudio
+                                ? { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } }
+                                : { ratio: '16:9', controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings', 'pip', 'fullscreen'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } };
+                            new Plyr('#tele-player', plyrOpts);
+                        }, 50); 
+                    }
+                }
+
+                // Restore download form logic
+                const form = document.getElementById('download-form');
+                const overlay = document.getElementById('download-overlay');
+                if (form && overlay) {
+                    form.addEventListener('submit', () => {
+                        overlay.classList.remove('hidden'); 
+                        overlay.classList.add('flex');
+                        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                        
+                        document.cookie = 'dl_started=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                        
+                        let checkCookie = setInterval(() => {
+                            if (document.cookie.includes('dl_started=1')) {
+                                clearInterval(checkCookie); 
+                                overlay.classList.add('opacity-0');
+                                setTimeout(() => { 
+                                    overlay.classList.add('hidden'); 
+                                    overlay.classList.remove('flex'); 
+                                }, 300); 
+                                document.cookie = 'dl_started=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                            }
+                        }, 500);
+                        
+                        setTimeout(() => { 
+                            clearInterval(checkCookie); 
+                            overlay.classList.add('opacity-0'); 
+                            setTimeout(() => { 
+                                overlay.classList.add('hidden'); 
+                                overlay.classList.remove('flex'); 
+                            }, 300); 
+                        }, 15000);
+                    });
+                }
+            });
         }
     }
 }

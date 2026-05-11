@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
     <script>window.TELECLOUD_VERSION = '{{ .version }}';</script>
     <script src="/static/js/common.min.js?v={{ .version }}"></script>
+    <script>TeleCloud.version = '{{ .version }}';</script>
+    <script src="/static/js/script.min.js?v={{ .version }}"></script>
+    <script defer src="/static/js/alpine-collapse.min.js?v={{ .version }}"></script>
+    <script defer src="/static/js/alpine.min.js?v={{ .version }}"></script>
 </head>
 
 <body
@@ -63,8 +67,11 @@
             <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
         </div>
         <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2" x-text="t('access_failed')"></h2>
-        <p class="text-slate-600 dark:text-slate-400 mb-8"
-            x-text="'{{ .error_message }}'.includes('File not found') || '{{ .error_message }}' === '' ? t('file_not_found_msg') : '{{ .error_message }}'">
+        <p class="text-slate-600 dark:text-slate-400 mb-8" 
+            x-data="{ msg: '' }"
+            x-init="msg = $refs.rawMsg.textContent"
+            x-text="msg.includes('File not found') || msg === '' ? t('file_not_found_msg') : msg">
+            <span x-ref="rawMsg" class="hidden">{{ .error_message }}</span>
         </p>
 
         <a href="/"

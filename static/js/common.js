@@ -219,6 +219,56 @@ const TeleCloud = {
                 this.applyTheme('system');
             }
         });
+    },
+
+    getMediaHtml(file, options = {}) {
+        if (!file || !file.filename) return '';
+        const { filename, size, has_thumb: hasThumb, id } = file;
+        const { streamUrl: customStreamUrl, thumbUrl: customThumbUrl, isShare = false, lightboxAttr = true } = options;
+        
+        const ext = filename.split('.').pop().toLowerCase();
+        const streamUrl = customStreamUrl || (isShare 
+            ? (id ? `/s/${options.shareToken}/file/${id}/stream` : `/s/${options.shareToken}/stream`)
+            : `/api/files/${id}/stream`);
+        const thumbUrl = customThumbUrl || (isShare 
+            ? (id ? `/s/${options.shareToken}/file/${id}/thumb` : `/s/${options.shareToken}/thumb`)
+            : `/api/files/${id}/thumb`);
+        
+        const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif'];
+        const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'mkv', 'ogv', '3gp', 'flv', 'wmv'];
+        const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'opus', 'oga', 'aac', 'm4b'];
+        
+        const safeFilename = filename.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+
+        if (imgExts.includes(ext)) {
+            const isBlur = size > 50 * 1024 * 1024 ? 'blur-[2px] opacity-60' : '';
+            const lbAttr = lightboxAttr ? `data-lightbox-src="${streamUrl}" data-lightbox-name="${safeFilename}"` : '';
+            const clickHandler = isShare 
+                ? `onclick="(function(el){var scope=Alpine.$data(document.body);if(scope&&scope.openImageViewer)scope.openImageViewer('${streamUrl}', el.alt)})(this)"`
+                : '';
+            
+            const finalSrc = (hasThumb) ? thumbUrl : (size <= 50 * 1024 * 1024 ? streamUrl : '');
+            if (!finalSrc) return '';
+
+            return `<img src="${finalSrc}" alt="${safeFilename}" class="max-h-64 object-contain rounded-[1rem] w-full shadow-md cursor-zoom-in ${isBlur} opacity-0 scale-95 transition-all duration-700 transform" onload="this.classList.remove('opacity-0', 'scale-95'); this.classList.add('opacity-100', 'scale-100')" onerror="this.style.display='none'" ${lbAttr} ${clickHandler}>`;
+        } else if (videoExts.includes(ext)) {
+            const mimeTypes = { 'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg', 'ogv': 'video/ogg', 'mov': 'video/mp4', 'mkv': 'video/webm' };
+            const typeAttr = mimeTypes[ext] || 'video/mp4';
+            const posterAttr = hasThumb ? `data-poster="${thumbUrl}"` : '';
+            const playerId = isShare ? 'tele-player' : 'index-tele-player';
+            return `<div class="w-full relative z-20 rounded-[1rem] bg-black shadow-md"><video id="${playerId}" playsinline controls preload="none" ${posterAttr}><source src="${streamUrl}" type="${typeAttr}"></video></div>`;
+        } else if (audioExts.includes(ext)) {
+            const mimeTypes = { 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'opus': 'audio/ogg', 'oga': 'audio/ogg', 'aac': 'audio/aac', 'm4b': 'audio/mp4' };
+            const typeAttr = mimeTypes[ext] || 'audio/mpeg';
+            const coverHtml = hasThumb ? `<img src="${thumbUrl}" class="w-48 h-48 mx-auto rounded-2xl mb-4 object-cover shadow-md">` : `<div class="w-48 h-48 mx-auto rounded-2xl mb-4 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm"><i class="fa-solid fa-music text-6xl text-slate-300 dark:text-slate-500"></i></div>`;
+            const playerId = isShare ? 'tele-player' : 'index-tele-player';
+            return `<div class="w-full relative z-20 rounded-[1rem] p-2 sm:p-4 glass-panel shadow-inner">${coverHtml}<audio id="${playerId}" controls preload="none"><source src="${streamUrl}" type="${typeAttr}"></audio></div>`;
+        }
+        return '';
+    },
+
+    getShareMediaHtml(file, shareToken) {
+        return this.getMediaHtml(file, { shareToken, isShare: true, lightboxAttr: false });
     }
 };
 
