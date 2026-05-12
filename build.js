@@ -106,6 +106,7 @@ async function main() {
     { in: 'static/js/common.js',  out: 'static/js/common.min.js' },
     { in: 'static/js/script.js',  out: 'static/js/script.min.js' },
     { in: 'static/js/prism.js',   out: 'static/js/prism.min.js'  },
+    { in: 'static/js/artplayer.js', out: 'static/js/artplayer.min.js' },
   ];
 
   // CSS files

@@ -104,6 +104,7 @@
     "err_username_exists": "ユーザー名が既に存在します！",
     "err_video_private": "このビデオは非公開です（独自のCookieが必要です）。",
     "err_video_unavailable": "動画が利用できないか、ブロックされています",
+    "err_video_unsupported_apple": "This video format may not be supported by Safari or Apple devices. Try downloading it or using another browser.",
     "error": "エラー",
     "failure": "失敗！",
     "fetch": "取得",

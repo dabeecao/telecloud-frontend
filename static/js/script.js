@@ -702,6 +702,14 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             task.isCancelled = true;
             task.statusText = this.t('cancelled');
             
+            // Abort active HTTP requests if any
+            if (task._xhrs && Array.isArray(task._xhrs)) {
+                task._xhrs.forEach(xhr => {
+                    try { xhr.abort(); } catch(e) {}
+                });
+                task._xhrs = [];
+            }
+            
             let fd = new FormData();
             fd.append('task_id', taskId);
             fd.append('filename', task.name);
@@ -709,7 +717,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         },
         toastModal: { show: false, message: '', type: 'success', persistent: false },
         toastTimeout: null,
-        plyrInstance: null,
+        playerInstance: null,
         imageViewer: { show: false, src: '', filename: '' },
         lightboxLoading: false,
         fileInfoModal: { show: false, file: null, typeName: '', ext: '', svgIcon: '', bgColor: '', isMedia: false, mediaHtml: '', isLarge: false, isPreviewLoading: false, needsLoad: false, tooLarge: false },
@@ -849,6 +857,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 // Phase 1: 0-50%
                                 if (data.percent !== undefined) {
                                     task.progress = Math.round(data.percent / 2);
+                                }
+                                if (data.speed !== undefined && data.speed > 0) {
+                                    task.speed = data.speed;
+                                }
+                                if (data.uploaded_bytes !== undefined && data.uploaded_bytes > 0) {
+                                    task.uploadedBytes = data.uploaded_bytes;
                                 }
                             }
                         } else if (data.message === 'waiting_slot') {
@@ -1694,54 +1708,123 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     const end = Math.min(start + CHUNK_SIZE, file.size);
                     const chunk = file.slice(start, end);
                     const fd = new FormData(); 
-                    fd.append('file', chunk); fd.append('filename', file.name); fd.append('path', targetPath); 
-                    fd.append('task_id', taskId); fd.append('chunk_index', chunkIndex); fd.append('total_chunks', totalChunks);
+                    fd.append('file', chunk); 
+                    fd.append('filename', file.name); 
+                    fd.append('path', targetPath); 
+                    fd.append('task_id', taskId); 
+                    fd.append('chunk_index', chunkIndex); 
+                    fd.append('total_chunks', totalChunks);
+                    fd.append('total_size', file.size);
+                    fd.append('chunk_size', CHUNK_SIZE);
                     fd.append('overwrite', overwrite);
 
                     let retries = 3;
                     let success = false;
                     while (retries > 0 && !success) {
+                        let task = this.uploadQueue.find(t => t.id === taskId);
+                        if (task && task.isCancelled) return; // Exit if already cancelled
+
                         try {
-                            let task = this.uploadQueue.find(t => t.id === taskId);
                             if (task && !task.statusText.includes(this.t('status_error'))) {
                                 task.statusText = `${this.t('pushing')} (${uploadedChunks + 1}/${totalChunks})... ${retries < 3 ? '(' + this.t('retry') + ' ' + (3 - retries) + ')' : ''}`;
                             }
 
-                            const response = await fetch('/api/upload', { 
-                                method: 'POST', 
-                                body: fd, 
-                                headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                            const result = await new Promise((resolve, reject) => {
+                                const xhr = new XMLHttpRequest();
+                                if (task) {
+                                    if (!task._xhrs) task._xhrs = [];
+                                    task._xhrs.push(xhr);
+                                }
+
+                                xhr.open('POST', '/api/upload');
+                                xhr.setRequestHeader('X-CSRF-Token', TeleCloud.getCsrfToken());
+                                
+                                xhr.upload.onprogress = (e) => {
+                                    if (e.lengthComputable) {
+                                        const now = Date.now();
+                                        const task = this.uploadQueue.find(t => t.id === taskId);
+                                        if (task) {
+                                            if (task.isCancelled) {
+                                                xhr.abort();
+                                                return;
+                                            }
+                                            if (!task._progressMap) task._progressMap = {};
+                                            task._progressMap[chunkIndex] = e.loaded;
+                                            
+                                            const activeUploaded = Object.values(task._progressMap).reduce((a, b) => a + b, 0);
+                                            const totalUploaded = (uploadedChunks * CHUNK_SIZE) + activeUploaded;
+                                            task.uploadedBytes = totalUploaded;
+                                            
+                                            if (task.lastUpdateTime && task.lastUpdateTime < now) {
+                                                const elapsed = (now - task.lastUpdateTime) / 1000;
+                                                const bytesSentSinceLast = totalUploaded - (task.lastUploadedBytes || 0);
+                                                if (elapsed > 0.1) { // More frequent updates for smooth UI
+                                                    const instantSpeed = bytesSentSinceLast / elapsed;
+                                                    if (task.speed === 0) task.speed = instantSpeed;
+                                                    else task.speed = (task.speed * 0.8) + (instantSpeed * 0.2);
+                                                    
+                                                    task.lastUpdateTime = now;
+                                                    task.lastUploadedBytes = totalUploaded;
+                                                }
+                                            } else {
+                                                task.lastUpdateTime = now;
+                                                task.lastUploadedBytes = totalUploaded;
+                                            }
+
+                                            const overallPercent = (totalUploaded / file.size) * 50;
+                                            task.progress = Math.min(50, Math.round(overallPercent));
+                                        }
+                                    }
+                                };
+
+                                xhr.onload = () => {
+                                    const task = this.uploadQueue.find(t => t.id === taskId);
+                                    if (task) {
+                                        if (task._xhrs) task._xhrs = task._xhrs.filter(x => x !== xhr);
+                                        if (task._progressMap) delete task._progressMap[chunkIndex];
+                                    }
+                                    
+                                    if (xhr.status >= 200 && xhr.status < 300) {
+                                        try { resolve(JSON.parse(xhr.responseText)); } catch(e) { reject(e); }
+                                    } else {
+                                        try {
+                                            const err = JSON.parse(xhr.responseText);
+                                            reject(new Error(err.error || `Upload failed (${xhr.status})`));
+                                        } catch(e) {
+                                            reject(new Error(`Upload failed (${xhr.status})`));
+                                        }
+                                    }
+                                };
+                                xhr.onerror = () => {
+                                    const task = this.uploadQueue.find(t => t.id === taskId);
+                                    if (task) {
+                                        if (task._xhrs) task._xhrs = task._xhrs.filter(x => x !== xhr);
+                                        if (task._progressMap) delete task._progressMap[chunkIndex];
+                                    }
+                                    reject(new Error(this.t('conn_error')));
+                                };
+                                xhr.onabort = () => {
+                                    const task = this.uploadQueue.find(t => t.id === taskId);
+                                    if (task) {
+                                        if (task._xhrs) task._xhrs = task._xhrs.filter(x => x !== xhr);
+                                        if (task._progressMap) delete task._progressMap[chunkIndex];
+                                    }
+                                    reject(new Error(this.t('cancelled')));
+                                };
+                                xhr.send(fd);
                             });
-                            
-                            if (!response.ok) {
-                                let errorData;
-                                try { errorData = await response.json(); } catch(e) {}
-                                throw new Error(errorData && errorData.error ? errorData.error : "Upload failed (" + response.status + ")");
-                            }
-                            const result = await response.json();
                             
                             uploadedChunks++;
                             if (task) {
-                                task.uploadedBytes += chunk.size;
-                                const now = Date.now();
-                                if (task.lastUpdateTime && task.lastUpdateTime < now) {
-                                    const elapsed = (now - task.lastUpdateTime) / 1000;
-                                    const bytesSent = chunk.size; // We just finished this chunk
-                                    if (elapsed > 0) {
-                                        const instantSpeed = bytesSent / elapsed;
-                                        // EMA Smoothing
-                                        if (task.speed === 0) task.speed = instantSpeed;
-                                        else task.speed = (task.speed * 0.7) + (instantSpeed * 0.3);
-                                    }
-                                }
-                                task.lastUpdateTime = now;
-                                task.lastUploadedBytes = task.uploadedBytes;
+                                task.uploadedBytes = Math.min(uploadedChunks * CHUNK_SIZE, file.size);
                                 task.progress = Math.round((uploadedChunks / totalChunks) * 50);
+                                if (uploadedChunks < totalChunks) {
+                                    task.statusText = `${this.t('pushing')} (${uploadedChunks + 1}/${totalChunks})...`;
+                                } else if (result.status === "processing_telegram") {
+                                    task.statusText = this.t('syncing_tg');
+                                }
                             }
                             
-                            if (result.status === "processing_telegram") {
-                                if (task) task.statusText = this.t('syncing_tg');
-                            }
                             success = true;
                         } catch (err) { 
                             retries--;
@@ -1988,6 +2071,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             mediaHtml = TeleCloud.getMediaHtml(file);
             if (mediaHtml) {
                 isMedia = true;
+                isLarge = true; // Make media modals larger by default
                 if (imgExts.includes(ext) && file.size > 50 * 1024 * 1024) this.fileInfoModal.tooLarge = true;
                 if (videoExts.includes(ext) || audioExts.includes(ext)) {
                     playerTarget = { el: '#index-tele-player', type: videoExts.includes(ext) ? 'video' : 'audio' };
@@ -2006,11 +2090,53 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: isMedia, mediaHtml: mediaHtml, isLarge: isLarge, isPreviewLoading: false };
             if (playerTarget) {
                 setTimeout(() => {
-                    if (this.plyrInstance) this.plyrInstance.destroy();
-                    const plyrOpts = playerTarget.type === 'audio'
-                        ? { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } }
-                        : { ratio: '16:9', controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings', 'fullscreen'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } };
-                    this.plyrInstance = new Plyr(playerTarget.el, plyrOpts);
+                    if (this.playerInstance) this.playerInstance.destroy();
+                    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
+                    
+                    if (playerTarget.type === 'audio') {
+                        const plyrOpts = { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } };
+                        this.playerInstance = new Plyr(playerTarget.el, plyrOpts);
+                    } else {
+                        this.playerInstance = new Artplayer({
+                            container: playerTarget.el,
+                            url: streamUrl,
+                            poster: thumbUrl,
+                            title: file.filename,
+                            theme: accentColor,
+                            fullscreen: true,
+                            fullscreenWeb: true,
+                            pip: true,
+                            setting: true,
+                            playbackRate: true,
+                            aspectRatio: true,
+                            autoSize: false,
+                            autoMini: true,
+                            playsInline: true,
+                            lock: true,
+                            fastForward: true,
+                            autoPlayback: true,
+                            airplay: true,
+                            type: file.filename.split('.').pop().toLowerCase() === 'mkv' ? 'mp4' : file.filename.split('.').pop().toLowerCase(),
+                            moreVideoAttr: {
+                                'playsinline': true,
+                                'webkit-playsinline': true,
+                                'x5-video-player-type': 'h5-page',
+                            },
+                            icons: {
+                                loading: '<i class="fa-solid fa-spinner fa-spin text-4xl"></i>',
+                                state: '<i class="fa-solid fa-play text-4xl"></i>',
+                            }
+                        });
+                        this.playerInstance.on('error', (error, reconnectTime) => {
+                            const ua = navigator.userAgent;
+                            const isApple = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Safari") && !ua.includes("Chrome") && !ua.includes("Edg"));
+                            if (isApple) {
+                                Alpine.store('app').showToast(this.t('err_video_unsupported_apple'), "error");
+                            }
+                        });
+                        this.playerInstance.on('fullscreen', (state) => document.body.classList.toggle('art-fullscreen-active', state));
+                        this.playerInstance.on('fullscreenWeb', (state) => document.body.classList.toggle('art-fullscreen-active', state));
+                    }
                 }, 50);
             }
         },
@@ -2557,9 +2683,10 @@ function shareApp() {
             mediaHtml = TeleCloud.getMediaHtml(file, { isShare: true, shareToken: this.shareToken });
             if (mediaHtml) {
                 isMedia = true;
+                isLarge = true; // Make media modals larger by default
                 if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif'].includes(ext) && file.size > 50 * 1024 * 1024) this.fileInfoModal.tooLarge = true;
                 if (videoExts.includes(ext) || audioExts.includes(ext)) {
-                    playerTarget = { el: '#index-tele-player', type: videoExts.includes(ext) ? 'video' : 'audio' };
+                    playerTarget = { el: '#tele-player', type: videoExts.includes(ext) ? 'video' : 'audio' };
                 }
             } else if (textExts.includes(ext)) {
                 this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: false, mediaHtml: '', isLarge: true, isPreviewLoading: false, needsLoad: false, tooLarge: false };
@@ -2575,11 +2702,55 @@ function shareApp() {
             this.fileInfoModal = { show: true, file: file, typeName: typeData.n, ext: typeData.ext || '', svgIcon: typeData.i, bgColor: typeData.c, isMedia: isMedia, mediaHtml: mediaHtml, isLarge: isLarge, isPreviewLoading: false };
             if (playerTarget) {
                 setTimeout(() => {
-                    if (this.plyrInstance) this.plyrInstance.destroy();
-                    const plyrOpts = playerTarget.type === 'audio'
-                        ? { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } }
-                        : { ratio: '16:9', controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings', 'fullscreen'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } };
-                    this.plyrInstance = new Plyr(playerTarget.el, plyrOpts);
+                    if (this.playerInstance) this.playerInstance.destroy();
+                    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
+                    const streamUrl = `/s/${this.shareToken}/file/${file.id}/stream`;
+                    const thumbUrl = `/s/${this.shareToken}/file/${file.id}/thumb`;
+
+                    if (playerTarget.type === 'audio') {
+                        const plyrOpts = { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } };
+                        this.playerInstance = new Plyr(playerTarget.el, plyrOpts);
+                    } else {
+                        this.playerInstance = new Artplayer({
+                            container: playerTarget.el,
+                            url: streamUrl,
+                            poster: thumbUrl,
+                            title: file.filename,
+                            theme: accentColor,
+                            fullscreen: true,
+                            fullscreenWeb: true,
+                            pip: true,
+                            setting: true,
+                            playbackRate: true,
+                            aspectRatio: true,
+                            autoSize: false,
+                            autoMini: true,
+                            playsInline: true,
+                            lock: true,
+                            fastForward: true,
+                            autoPlayback: true,
+                            airplay: true,
+                            type: file.filename.split('.').pop().toLowerCase() === 'mkv' ? 'mp4' : file.filename.split('.').pop().toLowerCase(),
+                            moreVideoAttr: {
+                                'playsinline': true,
+                                'webkit-playsinline': true,
+                                'x5-video-player-type': 'h5-page',
+                            },
+                            icons: {
+                                loading: '<i class="fa-solid fa-spinner fa-spin text-4xl"></i>',
+                                state: '<i class="fa-solid fa-play text-4xl"></i>',
+                            }
+                        });
+                        this.playerInstance.on('error', (error, reconnectTime) => {
+                            const ua = navigator.userAgent;
+                            const isApple = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Safari") && !ua.includes("Chrome") && !ua.includes("Edg"));
+                            if (isApple) {
+                                Alpine.store('app').showToast(this.t('err_video_unsupported_apple'), "error");
+                            }
+                        });
+                        this.playerInstance.on('fullscreen', (state) => document.body.classList.toggle('art-fullscreen-active', state));
+                        this.playerInstance.on('fullscreenWeb', (state) => document.body.classList.toggle('art-fullscreen-active', state));
+                    }
                 }, 50);
             }
         },
@@ -2781,11 +2952,57 @@ function shareFileApp() {
 
                     if (videoExts.includes(ext) || audioExts.includes(ext)) { 
                         setTimeout(() => { 
+                            if (this.playerInstance) this.playerInstance.destroy();
+                            const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
                             const isAudio = audioExts.includes(ext);
-                            const plyrOpts = isAudio
-                                ? { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } }
-                                : { ratio: '16:9', controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings', 'pip', 'fullscreen'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } };
-                            new Plyr('#tele-player', plyrOpts);
+                            const idEl = this.$refs.id;
+                            const rawId = idEl ? idEl.textContent.trim() : '';
+                            const thumbUrl = `/s/${this.token}/thumb`;
+
+                            if (isAudio) {
+                                const plyrOpts = { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'settings'], settings: ['speed'], speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] } };
+                                this.playerInstance = new Plyr('#tele-player', plyrOpts);
+                            } else {
+                                this.playerInstance = new Artplayer({
+                                    container: '#tele-player',
+                                    url: streamUrl,
+                                    poster: thumbUrl,
+                                    title: this.filename,
+                                    theme: accentColor,
+                                    fullscreen: true,
+                                    fullscreenWeb: true,
+                                    pip: true,
+                                    setting: true,
+                                    playbackRate: true,
+                                    aspectRatio: true,
+                                    autoSize: false,
+                                    autoMini: true,
+                                    playsInline: true,
+                                    lock: true,
+                                    fastForward: true,
+                                    autoPlayback: true,
+                                    airplay: true,
+                                    type: this.filename.split('.').pop().toLowerCase() === 'mkv' ? 'mp4' : this.filename.split('.').pop().toLowerCase(),
+                                    moreVideoAttr: {
+                                        'playsinline': true,
+                                        'webkit-playsinline': true,
+                                        'x5-video-player-type': 'h5-page',
+                                    },
+                                    icons: {
+                                        loading: '<i class="fa-solid fa-spinner fa-spin text-4xl"></i>',
+                                        state: '<i class="fa-solid fa-play text-4xl"></i>',
+                                    }
+                                });
+                                this.playerInstance.on('error', (error, reconnectTime) => {
+                                    const ua = navigator.userAgent;
+                                    const isApple = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Safari") && !ua.includes("Chrome") && !ua.includes("Edg"));
+                                    if (isApple) {
+                                        Alpine.store('app').showToast(Alpine.store('app').t('err_video_unsupported_apple'), "error");
+                                    }
+                                });
+                                this.playerInstance.on('fullscreen', (state) => document.body.classList.toggle('art-fullscreen-active', state));
+                                this.playerInstance.on('fullscreenWeb', (state) => document.body.classList.toggle('art-fullscreen-active', state));
+                            }
                         }, 50); 
                     }
                 }

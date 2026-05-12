@@ -104,6 +104,7 @@
     "err_username_exists": "ឈ្មោះអ្នកប្រើប្រាស់មានរួចហើយ!",
     "err_video_private": "វីដេអូនេះជាលក្ខណៈឯកជន (ទាមទារ Cookies ផ្ទាល់ខ្លួន)។",
     "err_video_unavailable": "វីដេអូមិនអាចប្រើបាន ឬត្រូវបានរារាំង",
+    "err_video_unsupported_apple": "This video format may not be supported by Safari or Apple devices. Try downloading it or using another browser.",
     "error": "កំហុស",
     "failure": "បរាជ័យ!",
     "fetch": "ទាញយកព័ត៌មាន",

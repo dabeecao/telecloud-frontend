@@ -104,6 +104,7 @@
     "err_username_exists": "Имя пользователя уже занято!",
     "err_video_private": "Это видео является приватным (требуются собственные Cookies).",
     "err_video_unavailable": "Видео недоступно или заблокировано",
+    "err_video_unsupported_apple": "This video format may not be supported by Safari or Apple devices. Try downloading it or using another browser.",
     "error": "Ошибка",
     "failure": "Ошибка!",
     "fetch": "Получить",

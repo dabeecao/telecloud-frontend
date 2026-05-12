@@ -104,6 +104,7 @@
     "err_username_exists": "اسم المستخدم موجود بالفعل!",
     "err_video_private": "هذا الفيديو خاص (يتطلب ملفات تعريف الارتباط الخاصة بك).",
     "err_video_unavailable": "الفيديو غير متاح أو محجوب",
+    "err_video_unsupported_apple": "This video format may not be supported by Safari or Apple devices. Try downloading it or using another browser.",
     "error": "خطأ",
     "failure": "فشل!",
     "fetch": "جلب",

@@ -15,6 +15,7 @@
 
     <link rel="stylesheet" href="/static/css/plyr.min.css?v={{ .version }}" />
     <script src="/static/js/plyr.polyfilled.js?v={{ .version }}"></script>
+    <script src="/static/js/artplayer.min.js?v={{ .version }}"></script>
     <link rel="stylesheet" href="/static/css/prism.min.css?v={{ .version }}">
     <script src="/static/js/prism.min.js?v={{ .version }}"></script>
     <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
@@ -371,7 +372,7 @@
             </div>
 
             <!-- Fullscreen button (only for images, outside x-html) -->
-            <template x-if="fileInfoModal.isMedia && fileInfoModal.file && ['jpg','jpeg','png','gif','webp','svg','bmp','heic','heif'].includes(fileInfoModal.file.filename?.split('.').pop().toLowerCase())">
+            <template x-if="fileInfoModal.isMedia && fileInfoModal.file && fileInfoModal.typeName === 'type_image'">
                 <button @click="openImageViewer(`/api/files/${fileInfoModal.file.id}/stream`, fileInfoModal.file.filename)"
                     :title="t('view_fullscreen')"
                     class="w-full mt-1 mb-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium transition-all">

@@ -104,6 +104,7 @@
     "err_username_exists": "उपयोगकर्ता नाम पहले से मौजूद है!",
     "err_video_private": "यह वीडियो निजी है (अपनी कुकीज़ की आवश्यकता है)।",
     "err_video_unavailable": "वीडियो अनुपलब्ध या अवरुद्ध है",
+    "err_video_unsupported_apple": "This video format may not be supported by Safari or Apple devices. Try downloading it or using another browser.",
     "error": "त्रुटि",
     "failure": "विफलता!",
     "fetch": "प्राप्त करें",

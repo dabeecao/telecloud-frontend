@@ -40,6 +40,7 @@ curl -sSL https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js -o static/
 curl -sSL https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js -o static/js/alpine-collapse.min.js
 curl -sSL https://cdn.plyr.io/3.7.8/plyr.css -o static/css/plyr.css
 curl -sSL https://cdn.plyr.io/3.7.8/plyr.polyfilled.js -o static/js/plyr.polyfilled.js
+curl -sSL https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js -o static/js/artplayer.js
 curl -sSL https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css -o static/css/fontawesome.min.css
 
 echo Building Prism.js locally...

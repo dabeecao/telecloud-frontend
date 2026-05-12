@@ -18,11 +18,12 @@ static/js/*.min.js
 static/locales/*.min.json
 static/css/tailwind.css
 
-# Plyr and Prism
+# Plyr and Prism and ArtPlayer
 static/css/plyr.css
 static/css/prism.css
 static/js/plyr.polyfilled.js
 static/js/prism.js
+static/js/artplayer.js
 # AlpineJS
 static/js/alpine.min.js
 static/js/alpine-collapse.min.js

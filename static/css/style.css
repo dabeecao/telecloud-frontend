@@ -4,7 +4,7 @@
 @import './nunito.css';
 
 :root {
-    --plyr-color-main: var(--accent-color); 
+    --plyr-color-main: var(--accent-color);
     --plyr-video-background: rgba(0, 0, 0, 0.4);
     --plyr-menu-background: var(--bg-menu);
     --plyr-menu-color: var(--text-primary);
@@ -15,19 +15,19 @@
     --accent-color: #3b82f6;
     --accent-glow: rgba(59, 130, 246, 0.3);
     --accent-text: #ffffff;
-    
+
     --bg-body: #f8fafc;
     --bg-panel: rgba(255, 255, 255, 0.6);
     --bg-menu: rgba(255, 255, 255, 0.85);
     --bg-surface: #ffffff;
-    
+
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #94a3b8;
-    
+
     --border-main: rgba(226, 232, 240, 0.8);
     --border-light: rgba(226, 232, 240, 0.4);
-    
+
     --glass-blur: 24px;
     --glass-border: rgba(255, 255, 255, 0.6);
 
@@ -58,14 +58,14 @@
     --bg-panel: rgba(15, 23, 42, 0.65);
     --bg-menu: rgba(30, 41, 59, 0.85);
     --bg-surface: #0f172a;
-    
+
     --text-primary: #f8fafc;
     --text-secondary: #cbd5e1;
     --text-muted: #64748b;
-    
+
     --border-main: rgba(255, 255, 255, 0.1);
     --border-light: rgba(255, 255, 255, 0.05);
-    
+
     --glass-border: rgba(255, 255, 255, 0.1);
 
     /* Status Colors - Dark */
@@ -90,66 +90,79 @@
 /* =========================================
    2. BASE STYLES
    ========================================= */
-[x-cloak] { display: none !important; }
+[x-cloak] {
+    display: none !important;
+}
 
-body { 
-    font-family: 'Nunito', sans-serif; 
-    -webkit-tap-highlight-color: transparent; 
-    scroll-behavior: smooth; 
+body {
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
 }
 
 /* =========================================
    3. GLASSMORPHISM COMPONENTS
    ========================================= */
-.glass-panel { 
-    background: var(--bg-panel); 
-    backdrop-filter: blur(var(--glass-blur)); 
+.glass-panel {
+    background: var(--bg-panel);
+    backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border); 
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); 
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 }
+
 .glass-panel:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
 }
 
-.glass-menu { 
-    background: var(--bg-menu); 
-    backdrop-filter: blur(var(--glass-blur)); 
+.glass-menu {
+    background: var(--bg-menu);
+    backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border); 
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); 
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
 
-.dark .glass-panel { 
-    background: var(--bg-panel); 
-    border: 1px solid var(--glass-border); 
+.dark .glass-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--glass-border);
 }
-.dark .glass-menu { 
-    background: var(--bg-menu); 
-    border: 1px solid var(--glass-border); 
+
+.dark .glass-menu {
+    background: var(--bg-menu);
+    border: 1px solid var(--glass-border);
 }
 
 
 /* =========================================
    4. BACKGROUND BLOBS & ANIMATIONS
    ========================================= */
-.blob-1 { 
-    position: fixed; top: -10%; left: -10%; 
-    width: 50vw; height: 50vw; 
-    background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%); 
-    z-index: -1; filter: blur(40px); 
+.blob-1 {
+    position: fixed;
+    top: -10%;
+    left: -10%;
+    width: 50vw;
+    height: 50vw;
+    background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%);
+    z-index: -1;
+    filter: blur(40px);
     opacity: 0.15;
-    animation: float 10s infinite alternate ease-in-out; 
+    animation: float 10s infinite alternate ease-in-out;
 }
-.blob-2 { 
-    position: fixed; bottom: -10%; right: -10%; 
-    width: 60vw; height: 60vw; 
-    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); 
-    z-index: -1; filter: blur(40px); 
+
+.blob-2 {
+    position: fixed;
+    bottom: -10%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    z-index: -1;
+    filter: blur(40px);
     opacity: 0.15;
-    animation: float 12s infinite alternate-reverse ease-in-out; 
+    animation: float 12s infinite alternate-reverse ease-in-out;
 }
 
 /* =========================================
@@ -240,8 +253,8 @@ body[data-theme] .border-slate-300 {
 }
 
 /* Specific component locking */
-body[data-theme] input, 
-body[data-theme] select, 
+body[data-theme] input,
+body[data-theme] select,
 body[data-theme] textarea {
     background-color: var(--bg-surface) !important;
     color: var(--text-primary) !important;
@@ -253,14 +266,17 @@ body[data-theme] .bg-amber-50,
 .dark body[data-theme] .dark\:bg-amber-900\/20 {
     background-color: var(--warning-bg) !important;
 }
+
 body[data-theme] .border-amber-200,
 .dark body[data-theme] .dark\:border-amber-700\/30 {
     border-color: var(--warning-border) !important;
 }
+
 body[data-theme] .text-amber-800,
 .dark body[data-theme] .dark\:text-amber-200 {
     color: var(--warning-text) !important;
 }
+
 body[data-theme] .text-amber-500 {
     color: var(--warning-icon) !important;
 }
@@ -269,14 +285,17 @@ body[data-theme] .bg-emerald-50,
 .dark body[data-theme] .dark\:bg-emerald-950\/30 {
     background-color: var(--success-bg) !important;
 }
+
 body[data-theme] .border-emerald-200,
 .dark body[data-theme] .dark\:border-emerald-800\/30 {
     border-color: var(--success-border) !important;
 }
+
 body[data-theme] .text-emerald-800,
 .dark body[data-theme] .dark\:text-emerald-200 {
     color: var(--success-text) !important;
 }
+
 body[data-theme] .text-emerald-500,
 .dark body[data-theme] .dark\:text-emerald-400 {
     color: var(--success-icon) !important;
@@ -289,30 +308,62 @@ body[data-theme] .bg-indigo-600 {
 }
 
 
-@keyframes float { 
-    0% { transform: translate(0, 0) scale(1); } 
-    100% { transform: translate(30px, 30px) scale(1.1); } 
+@keyframes float {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(30px, 30px) scale(1.1);
+    }
 }
 
-@keyframes indeterminate { 
-    0% { transform: translateX(-100%); width: 30%; } 
-    50% { width: 50%; } 
-    100% { transform: translateX(400%); width: 10%; } 
+@keyframes indeterminate {
+    0% {
+        transform: translateX(-100%);
+        width: 30%;
+    }
+
+    50% {
+        width: 50%;
+    }
+
+    100% {
+        transform: translateX(400%);
+        width: 10%;
+    }
 }
 
 @keyframes pulse-soft {
-    0%, 100% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.05); opacity: 1; }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
 }
 
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
-.animate-pulse-soft { animation: pulse-soft 3s infinite ease-in-out; }
+.animate-pulse-soft {
+    animation: pulse-soft 3s infinite ease-in-out;
+}
+
 .animate-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
 }
@@ -322,8 +373,15 @@ body[data-theme] .bg-indigo-600 {
 }
 
 @keyframes step-in {
-    from { opacity: 0; transform: translateY(10px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .loader-bar {
@@ -348,45 +406,81 @@ body[data-theme] .bg-indigo-600 {
 }
 
 @keyframes loader-slide {
-    0% { left: -50%; width: 30%; }
-    50% { width: 50%; }
-    100% { left: 100%; width: 30%; }
+    0% {
+        left: -50%;
+        width: 30%;
+    }
+
+    50% {
+        width: 50%;
+    }
+
+    100% {
+        left: 100%;
+        width: 30%;
+    }
 }
 
 /* =========================================
    5. UTILITIES (SCROLLBARS & SPACING)
    ========================================= */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
 
 /* Global Focus Ring Override */
-input:focus, select:focus, textarea:focus, button:focus-visible {
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
     --tw-ring-color: var(--accent-color) !important;
     border-color: var(--accent-color) !important;
 }
 
-.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+}
 
-.hide-scrollbar::-webkit-scrollbar { display: none; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
 
 /* =========================================
    6. PLYR MEDIA PLAYER CUSTOMIZATIONS
    ========================================= */
-.plyr { 
-    border-radius: 1rem; 
-    overflow: visible !important; 
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); 
-    width: 100%; 
+.plyr {
+    border-radius: 1rem;
+    overflow: visible !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    width: 100%;
     touch-action: manipulation;
 }
-.plyr__video-wrapper { 
-    border-radius: 1rem; 
+
+.plyr__video-wrapper {
+    border-radius: 1rem;
     overflow: hidden;
     height: 100%;
 }
+
 .plyr-fixed-video {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -397,24 +491,35 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
     align-items: center;
     justify-content: center;
 }
+
 .plyr-fixed-video video {
     max-height: 100%;
     width: 100%;
     object-fit: contain;
 }
+
 .plyr--video {
     height: 100%;
 }
-.plyr__controls { 
-    backdrop-filter: blur(var(--glass-blur)) !important; 
-    background: var(--bg-menu) !important; 
-    padding: 10px !important; 
+
+.plyr__controls {
+    backdrop-filter: blur(var(--glass-blur)) !important;
+    background: var(--bg-menu) !important;
+    padding: 10px !important;
     color: var(--text-primary) !important;
 }
-.plyr--audio .plyr__controls { 
-    border-radius: 1rem; 
-    background: var(--plyr-audio-controls-background) !important; 
+
+.plyr--audio .plyr__controls {
+    border-radius: 1rem;
+    background: var(--plyr-audio-controls-background) !important;
     color: var(--plyr-audio-control-color) !important;
+}
+
+.plyr--audio {
+    max-width: 480px !important;
+    margin: 0 auto !important;
+    border-radius: 1rem !important;
+    overflow: hidden !important;
 }
 
 /* Fullscreen fix for Plyr when inside modals/containers */
@@ -422,7 +527,28 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
     z-index: 999999 !important;
 }
 
-:fullscreen .plyr, :-webkit-full-screen .plyr, :-moz-full-screen .plyr, :-ms-fullscreen .plyr {
+/* Fix for stacking context issues when parent has transform (like .glass-panel) */
+body:has(.plyr--fullscreen-active) .glass-panel,
+body:has(.art-fullscreen) .glass-panel,
+body:has(.art-fullscreen-web) .glass-panel,
+body.art-fullscreen-active .glass-panel {
+    transform: none !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+    z-index: 999999 !important;
+}
+
+/* Prevent body scroll when in fullscreen */
+body:has(.art-fullscreen),
+body:has(.art-fullscreen-web),
+body.art-fullscreen-active {
+    overflow: hidden !important;
+}
+
+:fullscreen .plyr,
+:-webkit-full-screen .plyr,
+:-moz-full-screen .plyr,
+:-ms-fullscreen .plyr {
     width: 100% !important;
     height: 100% !important;
 }
@@ -449,27 +575,119 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 }
 
 /* =========================================
-   7. CHANGELOG & MARKDOWN STYLES
+   7. ARTPLAYER CUSTOMIZATIONS
+   ========================================= */
+.artplayer-app {
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    touch-action: manipulation;
+}
+
+.art-video-player.art-fullscreen {
+    z-index: 999999 !important;
+}
+
+.art-control {
+    color: var(--text-primary) !important;
+}
+
+.art-layer-loading {
+    color: var(--accent-color) !important;
+}
+
+.art-state {
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+}
+
+/* Safe Area support for notched iPhones */
+.art-video-player.art-fullscreen .art-controls,
+.art-video-player.art-fullscreen-web .art-controls {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 10px) !important;
+    padding-left: env(safe-area-inset-left) !important;
+    padding-right: env(safe-area-inset-right) !important;
+}
+
+.art-video-player.art-fullscreen {
+    background: #000 !important;
+}
+
+/* Optimize controls for small/narrow players (especially vertical videos) */
+.art-video-player {
+    min-width: 280px !important;
+    /* Prevent controls from disappearing */
+}
+
+@media (max-width: 400px) {
+    .art-control-time {
+        font-size: 10px !important;
+    }
+
+    .art-control-time .art-time-duration {
+        display: none !important;
+        /* Hide total time on very small screens */
+    }
+
+    .art-control-volume {
+        display: none !important;
+        /* Mobile users use hardware buttons */
+    }
+}
+
+.art-controls {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.art-control-time {
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* =========================================
+   8. CHANGELOG & MARKDOWN STYLES
    ========================================= */
 .changelog-body {
     line-height: 1.6;
 }
-.changelog-body h1, .changelog-body h2, .changelog-body h3 {
+
+.changelog-body h1,
+.changelog-body h2,
+.changelog-body h3 {
     color: inherit;
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
     font-weight: 700;
 }
-.changelog-body h1 { font-size: 1.25rem; }
-.changelog-body h2 { font-size: 1.125rem; }
-.changelog-body h3 { font-size: 1rem; }
-.changelog-body ul, .changelog-body ol {
+
+.changelog-body h1 {
+    font-size: 1.25rem;
+}
+
+.changelog-body h2 {
+    font-size: 1.125rem;
+}
+
+.changelog-body h3 {
+    font-size: 1rem;
+}
+
+.changelog-body ul,
+.changelog-body ol {
     margin-left: 1.25rem;
     margin-bottom: 1rem;
 }
+
 .changelog-body li {
     margin-bottom: 0.25rem;
 }
+
 .changelog-body code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.875em;
@@ -477,6 +695,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
     border-radius: 0.375rem;
     background-color: rgba(0, 0, 0, 0.05);
 }
+
 .dark .changelog-body code {
     background-color: rgba(255, 255, 255, 0.1);
 }
@@ -533,7 +752,9 @@ code[class*="language-"] {
     line-height: 1.6;
 }
 
-.markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
     margin-top: 1rem;
     margin-bottom: 0.5rem;
     font-weight: 700;
@@ -551,7 +772,8 @@ code[class*="language-"] {
 
 /* Responsive Modal Widths */
 .modal-wide {
-    max-width: 48rem !important; /* max-w-3xl */
+    max-width: 60rem !important;
+    /* max-w-5xl */
 }
 
 @media (min-width: 768px) {
@@ -559,46 +781,69 @@ code[class*="language-"] {
         width: 80% !important;
     }
 }
+
+@media (min-width: 1280px) {
+    .modal-wide {
+        max-width: 62rem !important;
+        /* max-w-7xl */
+    }
+}
+
 /* Premium Loading Spinner for Lightbox */
 .premium-loader {
-  width: 60px;
-  height: 60px;
-  position: relative;
+    width: 60px;
+    height: 60px;
+    position: relative;
 }
 
 .premium-loader::before,
 .premium-loader::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  border-top-color: #3b82f6; /* Blue-500 */
-  animation: premium-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #3b82f6;
+    /* Blue-500 */
+    animation: premium-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
 .premium-loader::after {
-  border-top-color: rgba(59, 130, 246, 0.3);
-  animation-delay: -0.4s;
-  width: 80%;
-  height: 80%;
-  top: 10%;
-  left: 10%;
+    border-top-color: rgba(59, 130, 246, 0.3);
+    animation-delay: -0.4s;
+    width: 80%;
+    height: 80%;
+    top: 10%;
+    left: 10%;
 }
 
 @keyframes premium-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loader-pulse {
-  animation: loader-pulse 2s ease-in-out infinite;
+    animation: loader-pulse 2s ease-in-out infinite;
 }
 
 @keyframes loader-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
 }

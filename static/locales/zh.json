@@ -104,6 +104,7 @@
     "err_username_exists": "用户名已存在！",
     "err_video_private": "此视频是私有的（需要自己的 Cookie）。",
     "err_video_unavailable": "视频不可用或已被屏蔽",
+    "err_video_unsupported_apple": "This video format may not be supported by Safari or Apple devices. Try downloading it or using another browser.",
     "error": "错误",
     "failure": "失败！",
     "fetch": "获取信息",

@@ -104,6 +104,7 @@
     "err_username_exists": "This username already exists!",
     "err_video_private": "This video is private (Requires own Cookies).",
     "err_video_unavailable": "Video is unavailable or deleted",
+    "err_video_unsupported_apple": "This video format may not be supported by Safari or Apple devices. Try downloading it or using another browser.",
     "error": "Error",
     "failure": "Failure!",
     "fetch": "Fetch",
