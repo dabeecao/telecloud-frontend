@@ -1342,10 +1342,25 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
 
                         if (checkRes.ok) {
                             const meta = await checkRes.json();
+                            let warningShown = false;
                             if (meta.content_type && meta.content_type.includes('text/html')) {
+                                warningShown = true;
                                 const confirmed = await this.customConfirm(
                                     this.t('remote_html_confirm_title'), 
                                     this.t('remote_html_confirm_msg') + 
+                                    '<div class="mt-3 p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 text-[10px] font-mono flex flex-col gap-1">' +
+                                    '<span class="text-slate-400 uppercase font-bold tracking-wider">URL:</span>' +
+                                    '<div class="text-slate-600 dark:text-slate-400 truncate select-all" title="' + targetUrl + '">' + targetUrl + '</div>' +
+                                    '</div>'
+                                );
+                                if (!confirmed) continue;
+                            }
+
+                            // Range Support Check - Only show if HTML warning wasn't already shown
+                            if (!warningShown && meta.range_support === false && (meta.content_length > 200 * 1024 * 1024 || meta.content_length === 0)) {
+                                const confirmed = await this.customConfirm(
+                                    this.t('remote_poor_url_confirm_title'),
+                                    this.t('remote_poor_url_confirm_msg') +
                                     '<div class="mt-3 p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 text-[10px] font-mono flex flex-col gap-1">' +
                                     '<span class="text-slate-400 uppercase font-bold tracking-wider">URL:</span>' +
                                     '<div class="text-slate-600 dark:text-slate-400 truncate select-all" title="' + targetUrl + '">' + targetUrl + '</div>' +
@@ -1709,8 +1724,8 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const uploadWorker = async () => {
                 while (chunkQueue.length > 0 && !hasError) {
                     const chunkIndex = chunkQueue.shift();
-                    let taskObj = this.uploadQueue.find(t => t.id === taskId);
-                    if (!taskObj || taskObj.isCancelled) break;
+                    let task = this.uploadQueue.find(t => t.id === taskId);
+                    if (!task || task.isCancelled) break;
 
                     const start = chunkIndex * CHUNK_SIZE;
                     const end = Math.min(start + CHUNK_SIZE, file.size);

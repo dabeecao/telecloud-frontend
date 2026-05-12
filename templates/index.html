@@ -2528,6 +2528,21 @@
                                     :class="task.isCancelled ? 'line-through' : ''"></span>
                                 <span x-show="task.size > 0" class="text-[10px] text-slate-400 mt-0.5"
                                     x-text="formatBytes(task.size)"></span>
+                                <div class="flex gap-1 mt-1">
+                                    <template x-if="task.statusText.includes('[No Resume Support]')">
+                                        <span class="text-[8px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider flex items-center gap-1 cursor-help"
+                                            :title="t('range_warning')">
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                            <span x-text="t('non_resumable')"></span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!task.statusText.includes('[No Resume Support]') && (task.statusText.includes('uploading_part') || task.statusText.includes('waiting_slot') || task.statusText.includes('pushing'))">
+                                        <span class="text-[8px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider flex items-center gap-1">
+                                            <i class="fa-solid fa-shield-check"></i>
+                                            <span x-text="t('resumable')"></span>
+                                        </span>
+                                    </template>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span x-show="task.progress === 100 && task.countdown > 0" 
@@ -2545,8 +2560,8 @@
                         </div>
                         <div class="flex justify-between items-center mt-1.5 gap-3">
                             <div class="flex flex-col flex-1 min-w-0">
-                                <div class="text-[10px] text-slate-400 truncate" x-text="task.statusText"
-                                    :title="task.statusText"
+                                <div class="text-[10px] text-slate-400 truncate" x-text="task.statusText.replace(' [No Resume Support]', '')"
+                                    :title="task.statusText.replace(' [No Resume Support]', '')"
                                     :class="task.hasError || task.isCancelled ? 'text-red-400' : ''"></div>
                                 <div x-show="task.speed > 0 && task.progress < 100 && !task.isCancelled"
                                     class="text-[9px] font-bold mt-0.5 flex items-center gap-1"
