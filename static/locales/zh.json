@@ -180,7 +180,7 @@
     "private": "私有",
     "processing_telegram": "正在处理 Telegram 上传...",
     "public": "公开",
-    "pushing": "推送中",
+    "pushing": "推送中... {uploaded} / {total}",
     "pushing_to_tg": "已收到全部，正在推送到 Telegram...",
     "quality_low": "低",
     "quality_medium": "中等",

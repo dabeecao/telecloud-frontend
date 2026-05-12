@@ -180,7 +180,7 @@
     "private": "Private",
     "processing_telegram": "Processing Telegram upload...",
     "public": "Public",
-    "pushing": "Pushing",
+    "pushing": "Pushing... {uploaded} / {total}",
     "pushing_to_tg": "Received all parts, pushing to Telegram...",
     "quality_low": "Low",
     "quality_medium": "Medium",

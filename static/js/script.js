@@ -1657,7 +1657,10 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const CHUNK_SIZE = 50 * 1024 * 1024;
             const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
             let hasError = false;
-            let uploadedChunks = 0;
+            let task = this.uploadQueue.find(t => t.id === taskId);
+            if (task) {
+                task._progressMap = new Array(totalChunks).fill(0);
+            }
 
             // Check if server already has some chunks for this task
             let existingChunks = [];
@@ -1666,18 +1669,23 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 if (checkRes.ok) {
                     const checkData = await checkRes.json();
                     existingChunks = checkData.chunks || [];
-                    uploadedChunks = existingChunks.length;
-                    const task = this.uploadQueue.find(t => t.id === taskId);
-                    if (task && uploadedChunks > 0) {
-                        task.progress = Math.round((uploadedChunks / totalChunks) * 50);
-                        task.uploadedBytes = uploadedChunks * CHUNK_SIZE;
+                    if (task && existingChunks.length > 0) {
+                        existingChunks.forEach(chunkIndex => {
+                            const actualSize = (chunkIndex === totalChunks - 1) 
+                                ? (file.size % CHUNK_SIZE || CHUNK_SIZE) 
+                                : CHUNK_SIZE;
+                            task._progressMap[chunkIndex] = actualSize;
+                        });
+                        const totalUploaded = task._progressMap.reduce((a, b) => a + b, 0);
+                        task.uploadedBytes = Math.min(totalUploaded, file.size);
+                        task.progress = Math.round((task.uploadedBytes / file.size) * 50);
                     }
                 }
             } catch (e) {
                 console.error("Resume check failed:", e);
             }
 
-            const task = this.uploadQueue.find(t => t.id === taskId);
+            task = this.uploadQueue.find(t => t.id === taskId);
             if (task) {
                 task.startTime = Date.now();
                 task.lastUpdateTime = task.startTime;
@@ -1690,7 +1698,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             
             if (chunkQueue.length === 0 && totalChunks > 0) {
                 // All chunks already uploaded
-                const task = this.uploadQueue.find(t => t.id === taskId);
+                task = this.uploadQueue.find(t => t.id === taskId);
                 if (task) {
                     task.progress = 50;
                     task.statusText = this.t('syncing_tg');
@@ -1721,13 +1729,16 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     let retries = 3;
                     let success = false;
                     while (retries > 0 && !success) {
-                        let task = this.uploadQueue.find(t => t.id === taskId);
+                        task = this.uploadQueue.find(t => t.id === taskId);
                         if (task && task.isCancelled) return; // Exit if already cancelled
 
                         try {
                             if (task && !task.statusText.includes(this.t('status_error'))) {
-                                task.statusText = `${this.t('pushing')} (${uploadedChunks + 1}/${totalChunks})... ${retries < 3 ? '(' + this.t('retry') + ' ' + (3 - retries) + ')' : ''}`;
+                                const uploadedStr = this.formatBytes(task.uploadedBytes || 0);
+                                const totalStr = this.formatBytes(file.size);
+                                task.statusText = `${this.t('pushing', { uploaded: uploadedStr, total: totalStr })} ${retries < 3 ? '(' + this.t('retry') + ' ' + (3 - retries) + ')' : ''}`;
                             }
+
 
                             const result = await new Promise((resolve, reject) => {
                                 const xhr = new XMLHttpRequest();
@@ -1743,22 +1754,16 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                     if (e.lengthComputable) {
                                         const now = Date.now();
                                         const task = this.uploadQueue.find(t => t.id === taskId);
-                                        if (task) {
-                                            if (task.isCancelled) {
-                                                xhr.abort();
-                                                return;
-                                            }
-                                            if (!task._progressMap) task._progressMap = {};
+                                        if (task && task._progressMap) {
                                             task._progressMap[chunkIndex] = e.loaded;
                                             
-                                            const activeUploaded = Object.values(task._progressMap).reduce((a, b) => a + b, 0);
-                                            const totalUploaded = (uploadedChunks * CHUNK_SIZE) + activeUploaded;
-                                            task.uploadedBytes = totalUploaded;
+                                            const totalUploaded = task._progressMap.reduce((a, b) => a + b, 0);
+                                            task.uploadedBytes = Math.min(totalUploaded, file.size);
                                             
                                             if (task.lastUpdateTime && task.lastUpdateTime < now) {
                                                 const elapsed = (now - task.lastUpdateTime) / 1000;
                                                 const bytesSentSinceLast = totalUploaded - (task.lastUploadedBytes || 0);
-                                                if (elapsed > 0.1) { // More frequent updates for smooth UI
+                                                if (elapsed > 0.1) {
                                                     const instantSpeed = bytesSentSinceLast / elapsed;
                                                     if (task.speed === 0) task.speed = instantSpeed;
                                                     else task.speed = (task.speed * 0.8) + (instantSpeed * 0.2);
@@ -1771,20 +1776,25 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                                 task.lastUploadedBytes = totalUploaded;
                                             }
 
-                                            const overallPercent = (totalUploaded / file.size) * 50;
+                                            const overallPercent = (task.uploadedBytes / file.size) * 50;
                                             task.progress = Math.min(50, Math.round(overallPercent));
+
+                                            // Real-time byte progress in status text
+                                            const uploadedStr = this.formatBytes(task.uploadedBytes);
+                                            const totalStr = this.formatBytes(file.size);
+                                            task.statusText = this.t('pushing', { uploaded: uploadedStr, total: totalStr });
                                         }
                                     }
                                 };
-
                                 xhr.onload = () => {
                                     const task = this.uploadQueue.find(t => t.id === taskId);
-                                    if (task) {
-                                        if (task._xhrs) task._xhrs = task._xhrs.filter(x => x !== xhr);
-                                        if (task._progressMap) delete task._progressMap[chunkIndex];
-                                    }
+                                    if (task && task._xhrs) task._xhrs = task._xhrs.filter(x => x !== xhr);
                                     
                                     if (xhr.status >= 200 && xhr.status < 300) {
+                                        // Mark chunk as fully completed in the map
+                                        if (task && task._progressMap) {
+                                            task._progressMap[chunkIndex] = chunk.size;
+                                        }
                                         try { resolve(JSON.parse(xhr.responseText)); } catch(e) { reject(e); }
                                     } else {
                                         try {
@@ -1799,7 +1809,6 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                     const task = this.uploadQueue.find(t => t.id === taskId);
                                     if (task) {
                                         if (task._xhrs) task._xhrs = task._xhrs.filter(x => x !== xhr);
-                                        if (task._progressMap) delete task._progressMap[chunkIndex];
                                     }
                                     reject(new Error(this.t('conn_error')));
                                 };
@@ -1807,25 +1816,22 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                     const task = this.uploadQueue.find(t => t.id === taskId);
                                     if (task) {
                                         if (task._xhrs) task._xhrs = task._xhrs.filter(x => x !== xhr);
-                                        if (task._progressMap) delete task._progressMap[chunkIndex];
                                     }
-                                    reject(new Error(this.t('cancelled')));
+                                    const msg = (task && task.isCancelled) ? this.t('cancelled') : this.t('conn_error');
+                                    reject(new Error(msg));
                                 };
                                 xhr.send(fd);
                             });
                             
-                            uploadedChunks++;
+                            success = true;
                             if (task) {
-                                task.uploadedBytes = Math.min(uploadedChunks * CHUNK_SIZE, file.size);
-                                task.progress = Math.round((uploadedChunks / totalChunks) * 50);
-                                if (uploadedChunks < totalChunks) {
-                                    task.statusText = `${this.t('pushing')} (${uploadedChunks + 1}/${totalChunks})...`;
-                                } else if (result.status === "processing_telegram") {
+                                const totalUploaded = task._progressMap.reduce((a, b) => a + b, 0);
+                                task.uploadedBytes = Math.min(totalUploaded, file.size);
+                                task.progress = Math.round((task.uploadedBytes / file.size) * 50);
+                                if (result.status === "processing_telegram") {
                                     task.statusText = this.t('syncing_tg');
                                 }
                             }
-                            
-                            success = true;
                         } catch (err) { 
                             retries--;
                             console.error(`Upload chunk ${chunkIndex} error (retries left: ${retries}):`, err);

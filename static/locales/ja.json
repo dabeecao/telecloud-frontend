@@ -180,7 +180,7 @@
     "private": "非公開",
     "processing_telegram": "Telegramアップロードを処理中...",
     "public": "公開",
-    "pushing": "プッシュ中",
+    "pushing": "プッシュ中... {uploaded} / {total}",
     "pushing_to_tg": "すべて受信しました。Telegramにプッシュ中...",
     "quality_low": "低",
     "quality_medium": "中",

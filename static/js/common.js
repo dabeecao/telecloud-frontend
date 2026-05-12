@@ -38,7 +38,7 @@ const TeleCloud = {
     t(key, params = {}, lang = this.lang) {
         let text = (this.translations[lang] && this.translations[lang][key]) || key;
         Object.keys(params).forEach(p => {
-            text = text.replace(`{${p}}`, params[p]);
+            text = text.split(`{${p}}`).join(params[p]);
         });
         return text;
     },

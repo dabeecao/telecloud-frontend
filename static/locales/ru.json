@@ -180,7 +180,7 @@
     "private": "Приватный",
     "processing_telegram": "Обработка загрузки Telegram...",
     "public": "Публичный",
-    "pushing": "Отправка",
+    "pushing": "Отправка... {uploaded} / {total}",
     "pushing_to_tg": "Все получено, отправка в Telegram...",
     "quality_low": "Низкое",
     "quality_medium": "Среднее",

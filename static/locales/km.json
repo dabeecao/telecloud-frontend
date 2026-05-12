@@ -180,7 +180,7 @@
     "private": "ឯកជន",
     "processing_telegram": "កំពុងដំណើរការការផ្ទុកឡើង Telegram...",
     "public": "សាធារណៈ",
-    "pushing": "កំពុងរុញ",
+    "pushing": "កំពុងរុញ... {uploaded} / {total}",
     "pushing_to_tg": "ទទួលបានទាំងអស់ កំពុងរុញទៅ Telegram...",
     "quality_low": "ទាប",
     "quality_medium": "មធ្យម",

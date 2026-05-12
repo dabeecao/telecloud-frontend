@@ -180,7 +180,7 @@
     "private": "निजी",
     "processing_telegram": "Telegram अपलोड प्रोसेस हो रहा है...",
     "public": "सार्वजनिक",
-    "pushing": "भेज रहा है",
+    "pushing": "भेज रहा है... {uploaded} / {total}",
     "pushing_to_tg": "सब मिल गया, Telegram पर भेज रहा है...",
     "quality_low": "कम",
     "quality_medium": "मध्यम",

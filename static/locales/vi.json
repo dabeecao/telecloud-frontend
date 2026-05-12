@@ -179,7 +179,7 @@
     "private": "Riêng tư",
     "processing_telegram": "Đang xử lý đẩy lên Telegram...",
     "public": "Công khai",
-    "pushing": "Đang đẩy lên",
+    "pushing": "Đang đẩy lên... {uploaded} / {total}",
     "pushing_to_tg": "Đã nhận đủ, đang đẩy lên Telegram...",
     "quality_low": "Thấp",
     "quality_medium": "Trung bình",

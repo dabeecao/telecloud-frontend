@@ -180,7 +180,7 @@
     "private": "خاص",
     "processing_telegram": "جاري معالجة الرفع إلى تليجرام...",
     "public": "عام",
-    "pushing": "جاري الدفع",
+    "pushing": "جاري الدفع... {uploaded} / {total}",
     "pushing_to_tg": "تم الاستلام، جاري الدفع إلى تليجرام...",
     "quality_low": "منخفض",
     "quality_medium": "متوسط",
