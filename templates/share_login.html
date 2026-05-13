@@ -5,8 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Protected Content - TeleCloud</title>
+    <title>{{ .filename }} - TeleCloud Share</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+
     <link rel="stylesheet" href="/static/css/tailwind.css?v={{ .version }}">
     <link rel="stylesheet" href="/static/css/fontawesome.min.css?v={{ .version }}">
     <link rel="stylesheet" href="/static/css/style.min.css?v={{ .version }}">
@@ -20,6 +22,16 @@
             document.documentElement.classList.add('dark');
         }
     </script>
+
+    <!-- SEO & Social Meta Tags -->
+    <meta name="description" content="Protected Content: {{ .filename }}">
+    <meta property="og:title" content="{{ .filename }} - TeleCloud Share">
+    <meta property="og:description" content="This content is protected by a password. Please enter the password to access.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/static/favicon.ico">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ .filename }} - TeleCloud Share">
+    <meta name="twitter:description" content="This content is protected by a password. Please enter the password to access.">
     <style>
         [x-cloak] {
             display: none !important;
