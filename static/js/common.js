@@ -114,8 +114,27 @@ const TeleCloud = {
             .replace(/\n/gim, '<br>');
     },
 
-    getFileTypeData(filename) {
-        if (!filename) return { n: 'type_unknown', c: 'bg-slate-100 dark:bg-slate-800', i: '<i class="fa-solid fa-file text-2xl"></i>' };
+    getFileTypeData(fileOrName) {
+        if (!fileOrName) return { n: 'type_unknown', c: 'bg-slate-100 dark:bg-slate-800', i: '<i class="fa-solid fa-file text-2xl"></i>' };
+        
+        let filename = "";
+        let isFolder = false;
+        
+        if (typeof fileOrName === 'string') {
+            filename = fileOrName;
+        } else {
+            filename = fileOrName.filename || "";
+            isFolder = fileOrName.is_folder || false;
+        }
+
+        if (isFolder) {
+            return { 
+                n: 'type_folder', 
+                c: 'bg-blue-100 text-blue-500 dark:bg-blue-500/20 dark:text-blue-400', 
+                i: '<i class="fa-solid fa-folder text-2xl"></i>' 
+            };
+        }
+
         const ext = filename.split('.').pop().toLowerCase();
         const types = {
             'jpg': { n: 'type_image', c: 'bg-rose-100 text-rose-500 dark:bg-rose-500/20 dark:text-rose-400', i: '<i class="fa-solid fa-image text-2xl"></i>' },

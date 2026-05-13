@@ -25,6 +25,11 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         ytdlpSelectedFormat: '',
         ytdlpDownloadType: 'video',
         ytdlpHasCookie: false,
+        torrentEnabled: false,
+        torrentInput: '',
+        torrentLoading: false,
+        storageTotal: 0,
+        storageFree: 0,
         currentTheme: initialTheme || 'system',
         batchDownload: {
             active: false,
@@ -32,6 +37,8 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             current: 0,
             error: false
         },
+        uploadQueue: [],
+        tasks: {},
         setTheme(theme) {
             this.currentTheme = theme;
             TeleCloud.applyTheme(theme);
@@ -134,7 +141,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         isLoggingIn: false,
         isLoading: false, 
         isRefreshing: false,
+        isTrashLoading: false,
         isPreparingDownload: false,
+        trashFiles: [],
+        trashSearchQuery: '',
+        trashCurrentPage: 1,
+        trashItemsPerPage: 10,
         ws: null,
         lang: TeleCloud.lang,
         t(key, params) { return TeleCloud.t(key, params, this.lang); },
@@ -389,6 +401,15 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                         const m = task.message.match(/uploading_part_(\d+)/);
                                         if (m) statusText = this.t('uploading_part', {n: m[1]});
                                     }
+                                } else if (task.message && task.message.includes('|')) {
+                                    const parts = task.message.split('|');
+                                    const key = parts[0];
+                                    const params = {};
+                                    parts[1].split(',').forEach(p => {
+                                        const [k, v] = p.split('=');
+                                        params[k] = v;
+                                    });
+                                    statusText = this.t(key, params);
                                 } else if (task.message.startsWith('retrying_part_')) {
                                     const m = task.message.match(/retrying_part_(\d+)_attempt_(\d+)/);
                                     if (m) statusText = this.t('retrying_part_attempt', {x: m[1], y: m[2]});
@@ -415,6 +436,18 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 }
             } catch (e) {
                 console.error("Fetch tasks error", e);
+            }
+        },
+        async fetchSystemStatus() {
+            try {
+                const res = await fetch('/api/system/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.storageTotal = data.storage_total || 0;
+                    this.storageFree = data.storage_free || 0;
+                }
+            } catch (e) {
+                console.error("Fetch system status error", e);
             }
         },
         async fetchChildAPIKey() {
@@ -669,6 +702,18 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         get totalPages() {
             return Math.ceil(this.filteredFiles.length / this.itemsPerPage) || 1;
         },
+        get filteredTrashFiles() {
+            if (!this.trashSearchQuery) return this.trashFiles;
+            const q = this.trashSearchQuery.toLowerCase();
+            return this.trashFiles.filter(f => f.filename.toLowerCase().includes(q));
+        },
+        get trashTotalPages() {
+            return Math.ceil(this.filteredTrashFiles.length / this.trashItemsPerPage) || 1;
+        },
+        get displayedTrashFiles() {
+            const start = (this.trashCurrentPage - 1) * this.trashItemsPerPage;
+            return this.filteredTrashFiles.slice(start, start + this.trashItemsPerPage);
+        },
         get displayedFiles() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + this.itemsPerPage;
@@ -742,7 +787,14 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 this.fetchPasskeys();
                 this.fetchActiveTasks();
                 this.fetchYTDLPStatus();
+                this.fetchTorrentStatus();
                 this.checkYTDLPCookies();
+                this.fetchSystemStatus();
+
+                // Refresh system status every 30 seconds
+                setInterval(() => {
+                    this.fetchSystemStatus();
+                }, 30000);
                 
                 if (!this.isAdmin) {
                     this.fetchChildAPIKey();
@@ -820,12 +872,52 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 try {
                     const data = JSON.parse(event.data);
                     let task = this.uploadQueue.find(t => t.id === data.task_id);
+                    if (!task) {
+                        // Dynamically create task if it's not in the visible queue (e.g., torrent subtasks)
+                        if (data.status === 'done' || data.status === 'error' || data.status === 'cancelled') return;
+                        
+                        task = {
+                            id: data.task_id,
+                            name: data.filename || 'File',
+                            filename: data.filename,
+                            size: data.size || 0,
+                            uploadedBytes: data.uploaded_bytes || 0,
+                            progress: data.percent ? Math.round(data.percent / 2) : 0,
+                            status: data.status,
+                            statusText: '',
+                            hasError: false,
+                            isCancelled: false,
+                            countdown: 5,
+                            countdownInterval: null,
+                            isTorrent: data.task_id.startsWith('torrent_')
+                        };
+                        
+                        // Parse message immediately for new tasks
+                        let msg = data.message;
+                        if (msg && msg.includes('|')) {
+                            const parts = msg.split('|');
+                            const key = parts[0];
+                            const params = {};
+                            parts[1].split(',').forEach(p => {
+                                const [k, v] = p.split('=');
+                                params[k] = v;
+                            });
+                            msg = this.t(key, params);
+                        } else if (msg) {
+                            msg = this.t(msg);
+                        }
+                        task.statusText = msg || this.t(data.status);
+
+                        this.tasks[data.task_id] = task;
+                        this.uploadQueue.unshift(task);
+                    }
+
                     if (task) {
                         if (task.isCancelled && data.status !== 'cancelled') return;
                         if (data.size && data.size > 0 && (!task.size || task.size === 0)) {
                             task.size = data.size;
                         }
-                        if (data.status === 'downloading' || data.status === 'telegram' || data.status === 'done' || data.status === 'error' || data.status === 'cancelled') {
+                        if (data.status === 'downloading' || data.status === 'telegram' || data.status === 'uploading' || data.status === 'done' || data.status === 'error' || data.status === 'cancelled') {
                             task.status = data.status;
                             let msg = data.message;
                             if (msg && msg.startsWith('uploading_part_')) {
@@ -843,6 +935,15 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 if (match) {
                                     msg = this.t('retrying_part_attempt', {x: match[1], y: match[2]});
                                 }
+                            } else if (msg && msg.includes('|')) {
+                                const parts = msg.split('|');
+                                const key = parts[0];
+                                const params = {};
+                                parts[1].split(',').forEach(p => {
+                                    const [k, v] = p.split('=');
+                                    params[k] = v;
+                                });
+                                msg = this.t(key, params);
                             } else {
                                 msg = this.t(msg);
                             }
@@ -863,6 +964,15 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 }
                                 if (data.uploaded_bytes !== undefined && data.uploaded_bytes > 0) {
                                     task.uploadedBytes = data.uploaded_bytes;
+                                }
+                                if (data.size !== undefined && data.size > 0) {
+                                    task.size = data.size;
+                                }
+                                if (data.filename) {
+                                    task.filename = data.filename;
+                                    if (task.name === 'Torrent' || task.name === 'File' || task.isTorrent || !task.name) {
+                                        task.name = data.filename; // Only sync UI binding for generic tasks to avoid overwriting local file names
+                                    }
                                 }
                             }
                         } else if (data.message === 'waiting_slot') {
@@ -919,17 +1029,21 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             }
                         }
 
-                        if (data.status === 'done') {
+                        if (data.status === 'done' && !task._countdownStarted) {
                             task.progress = 100;
                             task.statusText = this.t('done');
                             task.hasError = false;
                             this.fetchFiles(true);
+                            
                             // Visual countdown before removal
+                            task._countdownStarted = true;
                             task.countdown = 5;
-                            const timer = setInterval(() => {
+                            if (task.countdownInterval) clearInterval(task.countdownInterval);
+                            
+                            task.countdownInterval = setInterval(() => {
                                 task.countdown--;
                                 if (task.countdown <= 0) {
-                                    clearInterval(timer);
+                                    clearInterval(task.countdownInterval);
                                     this.uploadQueue = this.uploadQueue.filter(t => t.id !== task.id);
                                 }
                             }, 1000);
@@ -1177,6 +1291,84 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 const elapsed = Date.now() - startTime;
                 if (elapsed < 500 && this.isRefreshing) await new Promise(r => setTimeout(r, 500 - elapsed));
                 this.isLoading = false; this.isRefreshing = false; 
+            }
+        },
+        async fetchTrashFiles() {
+            if (this.isTrashLoading) return;
+            const startTime = Date.now();
+            this.isTrashLoading = true;
+            try {
+                const res = await fetch('/api/trash');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.trashFiles = data.files || [];
+                }
+            } catch (e) {
+                console.error('Fetch trash error', e);
+            } finally {
+                const elapsed = Date.now() - startTime;
+                if (elapsed < 500) await new Promise(r => setTimeout(r, 500 - elapsed));
+                this.isTrashLoading = false;
+            }
+        },
+        async restoreFile(id) {
+            try {
+                const res = await fetch(`/api/files/${id}/restore`, { 
+                    method: 'POST', 
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                });
+                if (res.ok) {
+                    this.showToast(this.t('toast_restored'), 'success');
+                    this.fetchTrashFiles();
+                    this.fetchFiles(true);
+                } else {
+                    const d = await res.json();
+                    this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            }
+        },
+        async permanentDeleteFile(id) {
+            const confirmed = await this.customConfirm(this.t('delete_permanent_title'), this.t('delete_permanent_msg'), true);
+            if (!confirmed) return;
+            try {
+                const res = await fetch(`/api/files/${id}/permanent`, { 
+                    method: 'DELETE', 
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                });
+                if (res.ok) {
+                    this.showToast(this.t('toast_deleted_permanent'), 'success');
+                    this.fetchTrashFiles();
+                } else {
+                    const d = await res.json();
+                    this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            }
+        },
+        async emptyTrash() {
+            const confirmed = await this.customConfirm(this.t('empty_trash'), this.t('empty_trash_confirm_msg'), true);
+            if (!confirmed) return;
+            this.isTrashLoading = true;
+            try {
+                const res = await fetch('/api/trash', { 
+                    method: 'DELETE', 
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                });
+                if (res.ok) {
+                    this.showToast(this.t('toast_trash_emptied'), 'success');
+                    this.trashFiles = [];
+                    this.fetchFiles(true);
+                } else {
+                    const d = await res.json();
+                    this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            } finally {
+                this.isTrashLoading = false;
             }
         },
         async createNewFolder() {
@@ -1986,8 +2178,11 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         this.showToast(this.handleCommonError(data.error, 'status_error'), 'error');
                     }
                 } else {
+                    const password = await this.customPrompt(this.t('share_password_prompt'), "");
                     targetFile.share_token = 'loading...';
-                    const response = await fetch(`/api/files/${file.id}/share`, { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                    const fd = new FormData();
+                    if (password) fd.append('password', password);
+                    const response = await fetch(`/api/files/${file.id}/share`, { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
                     if (response.ok) {
                         const data = await response.json();
                         targetFile.share_token = data.share_token;
@@ -2326,6 +2521,72 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                     this.ytdlpEnabled = data.enabled;
                 }
             } catch (e) { console.error('Failed to fetch ytdlp status', e); }
+        },
+        async fetchTorrentStatus() {
+            try {
+                const res = await fetch('/api/torrent/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.torrentEnabled = data.enabled;
+                }
+            } catch (e) { console.error('Failed to fetch torrent status', e); }
+        },
+        async submitTorrentAdd() {
+            if (!this.torrentInput) return;
+            this.torrentLoading = true;
+            let fd = new FormData();
+            fd.append('input', this.torrentInput);
+            fd.append('path', this.currentPath);
+            try {
+                const res = await fetch('/api/torrent/add', { 
+                    method: 'POST', 
+                    body: fd, 
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } 
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    this.showToast(this.t('torrent_started'), 'success');
+                    this.torrentInput = '';
+                    this.isQueueMinimized = false;
+                    this.fetchActiveTasks();
+                } else {
+                    this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            } finally {
+                this.torrentLoading = false;
+            }
+        },
+        async uploadTorrentFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            this.torrentLoading = true;
+            let fd = new FormData();
+            fd.append('file', file);
+            fd.append('path', this.currentPath);
+            
+            try {
+                const res = await fetch('/api/torrent/upload', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() }
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    this.showToast(this.t('torrent_started'), 'success');
+                    this.isQueueMinimized = false;
+                    this.fetchActiveTasks();
+                } else {
+                    this.showToast(this.handleCommonError(d.error, 'status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            } finally {
+                this.torrentLoading = false;
+                e.target.value = '';
+            }
         },
         async checkYTDLPCookies() {
             try {

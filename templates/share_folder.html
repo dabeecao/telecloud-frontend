@@ -520,7 +520,7 @@
                                 </template>
 
                                 <template x-if="files.length === 0 && !isLoading && !isRefreshing">
-                                    <div class="py-20 text-center flex flex-col items-center"
+                                    <div class="py-20 text-center flex flex-col items-center col-span-full"
                                         @contextmenu.prevent="openContextMenu($event, null)" x-transition.opacity>
                                         <div
                                             class="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
@@ -533,7 +533,7 @@
                                 </template>
 
                                 <template x-if="files.length > 0 && filteredFiles.length === 0">
-                                    <div class="py-16 text-center flex flex-col items-center" x-transition.opacity>
+                                    <div class="py-16 text-center flex flex-col items-center col-span-full" x-transition.opacity>
                                         <div
                                             class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                                             <i

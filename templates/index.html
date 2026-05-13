@@ -540,23 +540,28 @@
                 <div class="flex items-center gap-4">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-cloud text-blue-600 dark:text-blue-400 text-2xl"></i>
-                        <span class="font-bold text-lg sm:block">TeleCloud</span>
+                        <span class="font-bold text-lg md:block">TeleCloud</span>
                     </div>
-                    <div class="hidden sm:flex items-center gap-1 bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl">
+                    <div class="hidden md:flex items-center gap-1 bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl">
                         <button @click="currentTab = 'files'"
                             class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
                             :class="currentTab === 'files' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
                             <i class="fa-solid fa-folder-open mr-1.5"></i><span x-text="t('home')"></span>
+                        </button>
+                        <button @click="currentTab = 'trash'; fetchTrashFiles()"
+                            class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+                            :class="currentTab === 'trash' ? 'bg-white dark:bg-slate-700 text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
+                            <i class="fa-solid fa-trash-can mr-1.5"></i><span x-text="t('trash')"></span>
                         </button>
                         <button @click="currentTab = 'ytdlp'" x-show="ytdlpEnabled" x-cloak
                             class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
                             :class="currentTab === 'ytdlp' ? 'bg-white dark:bg-slate-700 text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
                             <i class="fa-brands fa-youtube mr-1.5"></i><span>YT-DLP</span>
                         </button>
-                        <button @click="currentTab = 'settings'"
+                        <button @click="currentTab = 'torrent'" x-show="torrentEnabled" x-cloak
                             class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
-                            :class="currentTab === 'settings' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
-                            <i class="fa-solid fa-gear mr-1.5"></i><span x-text="t('settings')"></span>
+                            :class="currentTab === 'torrent' ? 'bg-white dark:bg-slate-700 text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
+                            <i class="fa-solid fa-magnet mr-1.5"></i><span>Torrent</span>
                         </button>
                         {{ if .is_admin }}
                         <button @click="currentTab = 'users'; fetchUsers()"
@@ -565,6 +570,11 @@
                             <i class="fa-solid fa-users mr-1.5"></i><span x-text="t('users')"></span>
                         </button>
                         {{ end }}
+                        <button @click="currentTab = 'settings'"
+                            class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+                            :class="currentTab === 'settings' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
+                            <i class="fa-solid fa-gear mr-1.5"></i><span x-text="t('settings')"></span>
+                        </button>
                         <button @click="currentTab = 'changelog'" x-show="updateAvailable" x-cloak
                             class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all relative"
                             :class="currentTab === 'changelog' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
@@ -621,24 +631,24 @@
                     </template>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button @click="fetchFiles(true)" :title="t('refresh')"
+                    <button @click="fetchFiles()" :title="t('refresh')"
                         class="h-8 w-8 flex items-center justify-center text-slate-500 hover:text-blue-500 bg-white/50 dark:bg-slate-800/50 rounded-lg transition-all active:scale-90 disabled:opacity-50"
                         :disabled="isRefreshing || isLoading">
                         <i class="fa-solid fa-arrows-rotate" :class="isRefreshing ? 'fa-spin text-blue-500' : ''"></i>
                     </button>
                     <button @click="createNewFolder"
-                        class="hidden sm:flex px-3 py-1.5 bg-white/50 dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold items-center gap-2 transition-colors">
+                        class="hidden md:flex px-3 py-1.5 bg-white/50 dark:bg-slate-800 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold items-center gap-2 transition-colors">
                         <i class="fa-solid fa-folder-plus"></i><span class="hidden lg:inline"
                             x-text="t('new_folder')"></span>
                     </button>
                     <button @click="remoteUploadModal = true"
-                        class="hidden sm:flex px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm shadow-md shadow-indigo-500/25 font-semibold items-center gap-2 transition-all">
-                        <i class="fa-solid fa-link"></i><span class="hidden sm:inline"
+                        class="hidden md:flex px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm shadow-md shadow-indigo-500/25 font-semibold items-center gap-2 transition-all">
+                        <i class="fa-solid fa-link"></i><span class="hidden md:inline"
                             x-text="t('remote_upload')"></span>
                     </button>
                     <button @click="uploadModal = true"
                         class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm shadow-md shadow-blue-500/25 font-semibold flex items-center gap-2 transition-all">
-                        <i class="fa-solid fa-cloud-arrow-up"></i><span class="hidden sm:inline"
+                        <i class="fa-solid fa-cloud-arrow-up"></i><span class="hidden md:inline"
                             x-text="t('upload')"></span>
                     </button>
                 </div>
@@ -732,6 +742,35 @@
 
                     <div class="grid grid-cols-1 gap-6" :class="isAdmin ? 'md:grid-cols-2' : ''">
                         <div class="flex flex-col gap-6">
+                            <!-- System Info Card -->
+                            <div class="glass-panel p-6 rounded-3xl border border-white/10" x-show="isAdmin && storageTotal > 0" x-cloak>
+                                <h3 class="text-lg font-bold flex items-center gap-2 mb-4">
+                                    <i class="fa-solid fa-server text-blue-500"></i>
+                                    <span x-text="t('system_info')"></span>
+                                </h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                            <span x-text="t('host_storage')"></span>
+                                            <span x-text="formatBytes(storageTotal - storageFree) + ' / ' + formatBytes(storageTotal)"></span>
+                                        </div>
+                                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="h-full transition-all duration-1000 ease-out" 
+                                                :style="`width: ${(storageTotal > 0 ? ((storageTotal - storageFree) / storageTotal) * 100 : 0)}%`"
+                                                :class="(storageFree < 1024*1024*1024) ? 'bg-rose-500' : (storageFree < 5*1024*1024*1024 ? 'bg-amber-500' : 'bg-blue-500')">
+                                            </div>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1.5 font-medium">
+                                            <i class="fa-solid fa-circle-info opacity-70"></i>
+                                            <span x-text="t('storage_free_desc', {f: formatBytes(storageFree)})"></span>
+                                        </p>
+                                        <p class="text-[9px] leading-relaxed text-slate-400 dark:text-slate-500 mt-2 pl-5 italic">
+                                            <span x-text="t('host_storage_note')"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- WebDAV Card -->
                             <div class="glass-panel p-6 rounded-3xl border border-white/10">
                                 <div class="flex items-center justify-between mb-2">
@@ -1862,6 +1901,211 @@
                     </div>
                 </div>
 
+                <div x-show="currentTab === 'torrent'" x-cloak class="max-w-3xl mx-auto py-4 md:py-6 animate-fade-in-up">
+                    <div
+                        class="bg-violet-600 rounded-[1.5rem] p-6 text-white mb-6 shadow-xl shadow-violet-500/20 relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 opacity-10 rotate-12">
+                            <i class="fa-solid fa-magnet text-[10rem]"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2 relative z-10" x-text="t('torrent_download')"></h2>
+                        <p class="text-sm text-violet-100 relative z-10 max-w-lg" x-text="t('torrent_desc')"></p>
+                    </div>
+
+                    <!-- Torrent File Upload (New Panel Style) -->
+                    <div
+                        class="glass-panel p-4 mb-6 rounded-3xl border border-white/10 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-500">
+                                <i class="fa-solid fa-file-arrow-up text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200"
+                                    x-text="t('upload_torrent_file')"></h3>
+                                <p class="text-[10px] text-slate-500 font-medium"
+                                    x-text="t('upload_torrent_desc')"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="file" x-ref="torrentFile" @change="uploadTorrentFile" accept=".torrent" class="hidden">
+                            <button @click="$refs.torrentFile.click()" :disabled="torrentLoading"
+                                class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white rounded-xl text-[11px] font-bold transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-upload"></i>
+                                <span x-text="t('select_file')"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-3xl border border-white/10 mb-6">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 block"
+                                    x-text="t('magnet_url_label')"></label>
+                                <textarea x-model="torrentInput"
+                                    class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all text-sm resize-none h-32"
+                                    :placeholder="t('torrent_placeholder')"></textarea>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button @click="submitTorrentAdd" :disabled="torrentLoading || !torrentInput"
+                                    class="flex-1 py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-violet-500/20 flex items-center justify-center gap-3 font-bold">
+                                    <i class="fa-solid fa-cloud-arrow-down" x-show="!torrentLoading"></i>
+                                    <i class="fa-solid fa-spinner fa-spin" x-show="torrentLoading" x-cloak></i>
+                                    <span x-text="torrentLoading ? t('initiating_torrent') : t('start_download')"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-700/30 flex gap-3 mb-6">
+                        <i class="fa-solid fa-circle-info text-amber-500 mt-0.5"></i>
+                        <p class="text-xs text-amber-800 dark:text-amber-200 leading-relaxed" x-text="t('torrent_note')"></p>
+                    </div>
+
+                    <!-- Torrent Help Section -->
+                    <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700/50">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-circle-question text-violet-500"></i>
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200" x-text="t('torrent_help_title')"></h3>
+                        </div>
+                        
+                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/50 mb-6">
+                            <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" x-html="t('torrent_help_guide')"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <a href="https://aria2.github.io/" target="_blank" 
+                               class="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-all shadow-sm">
+                                <i class="fa-solid fa-bolt text-violet-500 text-base"></i>
+                                <span x-text="t('torrent_link_aria2')"></span>
+                            </a>
+                            <a href="https://en.wikipedia.org/wiki/Magnet_URI_scheme" target="_blank"
+                               class="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-all shadow-sm">
+                                <i class="fa-solid fa-magnet text-violet-500 text-base"></i>
+                                <span x-text="t('torrent_link_magnet')"></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="currentTab === 'trash'" x-cloak class="max-w-4xl mx-auto py-4 md:py-6 animate-fade-in-up">
+                    <div
+                        class="bg-rose-600 rounded-[1.5rem] p-6 text-white mb-6 shadow-xl shadow-rose-500/20 relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 opacity-10 rotate-12">
+                            <i class="fa-solid fa-trash-can text-[10rem]"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2 relative z-10" x-text="t('trash')"></h2>
+                        <p class="text-sm text-rose-100 relative z-10 max-w-lg" x-text="t('trash_desc')"></p>
+                    </div>
+
+                    <div class="glass-panel rounded-3xl border border-white/10 overflow-hidden">
+                        <div class="p-4 border-b border-slate-200 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-white/5">
+                            <div class="flex items-center gap-2 shrink-0">
+                                <i class="fa-solid fa-clock-rotate-left text-rose-500"></i>
+                                <span class="text-sm font-bold" x-text="t('trash_files')"></span>
+                            </div>
+
+                            <div class="relative flex-1 max-w-md">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input type="text" x-model="trashSearchQuery" @input="trashCurrentPage = 1"
+                                    :placeholder="t('search_placeholder')"
+                                    class="w-full pl-9 pr-4 py-1.5 bg-slate-200/50 dark:bg-white/5 border-none rounded-xl text-xs focus:ring-2 focus:ring-rose-500/50 transition-all outline-none">
+                            </div>
+
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button @click="emptyTrash()" :disabled="isTrashLoading || trashFiles.length === 0"
+                                    class="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                                    <i class="fa-solid fa-trash-can-arrow-up text-xs"></i>
+                                    <span class="text-xs font-bold" x-text="t('empty_trash')"></span>
+                                </button>
+                                <button @click="fetchTrashFiles()" :disabled="isTrashLoading"
+                                    class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all active:scale-90 disabled:opacity-50">
+                                    <i class="fa-solid fa-arrows-rotate" :class="isTrashLoading ? 'fa-spin text-rose-500' : ''"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-200 dark:border-white/5">
+                                        <th class="px-6 py-4 font-bold" x-text="t('name')"></th>
+                                        <th class="px-6 py-4 font-bold text-right" x-text="t('actions')"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-white/5">
+                                    <template x-for="file in displayedTrashFiles" :key="file.id">
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                                                        :class="getFileTypeData(file).c">
+                                                        <div x-html="getFileTypeData(file).i"></div>
+                                                    </div>
+                                                    <div class="flex flex-col min-w-0">
+                                                        <span class="text-sm font-semibold truncate max-w-[120px] md:max-w-[400px]" x-text="file.filename"></span>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-[10px] text-slate-400" x-text="formatBytes(file.size)"></span>
+                                                            <span class="text-[10px] text-slate-400 opacity-60">•</span>
+                                                            <span class="text-[10px] text-slate-400" x-text="formatDate(file.deleted_at)"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="flex items-center justify-end gap-2">
+                                                    <button @click="restoreFile(file.id)"
+                                                        class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
+                                                        :title="t('restore')">
+                                                        <i class="fa-solid fa-trash-arrow-up"></i>
+                                                    </button>
+                                                    <button @click="permanentDeleteFile(file.id)"
+                                                        class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                                                        :title="t('delete_permanently')">
+                                                        <i class="fa-solid fa-circle-xmark"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="filteredTrashFiles.length === 0 && !isTrashLoading">
+                                        <tr>
+                                            <td colspan="2" class="px-6 py-12 text-center">
+                                                <div class="flex flex-col items-center gap-2 opacity-30">
+                                                    <i class="fa-solid fa-trash-can-arrow-up text-4xl"></i>
+                                                    <p class="text-sm font-medium" x-text="t('trash_empty')"></p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div x-show="trashTotalPages > 1" class="p-4 border-t border-slate-200 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
+                            <button @click="if(trashCurrentPage > 1) trashCurrentPage--" :disabled="trashCurrentPage === 1"
+                                class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg disabled:opacity-30 transition-colors">
+                                <i class="fa-solid fa-chevron-left text-xs"></i>
+                            </button>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs font-bold bg-rose-500/10 text-rose-600 px-2 py-1 rounded-lg" x-text="trashCurrentPage"></span>
+                                <span class="text-xs text-slate-400 font-medium">/</span>
+                                <span class="text-xs text-slate-400 font-medium" x-text="trashTotalPages"></span>
+                            </div>
+                            <button @click="if(trashCurrentPage < trashTotalPages) trashCurrentPage++" :disabled="trashCurrentPage === trashTotalPages"
+                                class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg disabled:opacity-30 transition-colors">
+                                <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-700/30 flex gap-3">
+                        <i class="fa-solid fa-circle-info text-amber-500 mt-0.5"></i>
+                        <p class="text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed" x-text="t('trash_note')"></p>
+                    </div>
+                </div>
+
                 <div x-show="currentTab === 'changelog'" x-cloak
                     class="max-w-3xl mx-auto py-4 md:py-6 animate-fade-in-up">
                     <div
@@ -2170,7 +2414,7 @@
                                 </template>
 
                                 <template x-if="files.length === 0 && !isLoading && !isRefreshing">
-                                    <div class="py-20 text-center flex flex-col items-center"
+                                    <div class="py-20 text-center flex flex-col items-center col-span-full"
                                         @contextmenu.prevent="openContextMenu($event, null)" x-transition.opacity>
                                         <div
                                             class="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
@@ -2183,7 +2427,7 @@
                                 </template>
 
                                 <template x-if="files.length > 0 && filteredFiles.length === 0">
-                                    <div class="py-16 text-center flex flex-col items-center" x-transition.opacity>
+                                    <div class="py-16 text-center flex flex-col items-center col-span-full" x-transition.opacity>
                                         <div
                                             class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                                             <i
@@ -2285,16 +2529,21 @@
         <div class="flex justify-around items-center p-2 relative">
 
             <button @click="navigateTo('/'); currentTab = 'files'"
-                class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors"
+                class="flex-1 flex flex-col items-center py-3 transition-colors"
                 :class="currentTab === 'files' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
-                <i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-semibold"
-                    x-text="t('home')"></span>
+                <i class="fa-solid fa-house text-xl"></i>
+            </button>
+
+            <button @click="currentTab = 'trash'; fetchTrashFiles()"
+                class="flex-1 flex flex-col items-center py-3 transition-colors"
+                :class="currentTab === 'trash' ? 'text-rose-600' : 'text-slate-500 dark:text-slate-400'">
+                <i class="fa-solid fa-trash-can text-xl"></i>
             </button>
 
             <button @click="currentTab = 'ytdlp'" x-show="ytdlpEnabled" x-cloak
-                class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors"
+                class="flex-1 flex flex-col items-center py-3 transition-colors"
                 :class="currentTab === 'ytdlp' ? 'text-red-600' : 'text-slate-500 dark:text-slate-400'">
-                <i class="fa-brands fa-youtube text-xl"></i><span class="text-[10px] font-semibold">YT-DLP</span>
+                <i class="fa-brands fa-youtube text-xl"></i>
             </button>
 
             <div class="flex-1 flex justify-center relative -top-6" x-data="{ showMobileAdd: false }"
@@ -2343,29 +2592,32 @@
                 </button>
             </div>
 
-            <button @click="currentTab = 'settings'"
-                class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors"
-                :class="currentTab === 'settings' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
-                <i class="fa-solid fa-gear text-xl"></i><span class="text-[10px] font-semibold"
-                    x-text="t('settings')"></span>
+            <button @click="currentTab = 'torrent'" x-show="torrentEnabled" x-cloak
+                class="flex-1 flex flex-col items-center py-3 transition-colors"
+                :class="currentTab === 'torrent' ? 'text-violet-600' : 'text-slate-500 dark:text-slate-400'">
+                <i class="fa-solid fa-magnet text-xl"></i>
             </button>
 
             {{ if .is_admin }}
             <button @click="currentTab = 'users'; fetchUsers()"
-                class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors"
+                class="flex-1 flex flex-col items-center py-3 transition-colors"
                 :class="currentTab === 'users' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
-                <i class="fa-solid fa-users text-xl"></i><span class="text-[10px] font-semibold"
-                    x-text="t('users')"></span>
+                <i class="fa-solid fa-users text-xl"></i>
             </button>
             {{ end }}
 
+            <button @click="currentTab = 'settings'"
+                class="flex-1 flex flex-col items-center py-3 transition-colors"
+                :class="currentTab === 'settings' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
+                <i class="fa-solid fa-gear text-xl"></i>
+            </button>
+
             <button @click="currentTab = 'changelog'" x-show="updateAvailable" x-cloak
-                class="flex-1 flex flex-col items-center gap-1.5 py-2 transition-colors relative"
+                class="flex-1 flex flex-col items-center py-3 transition-colors relative"
                 :class="currentTab === 'changelog' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'">
                 <i class="fa-solid fa-clock-rotate-left text-xl"></i>
-                <span class="text-[10px] font-semibold" x-text="t('changelog')"></span>
                 <span
-                    class="absolute top-2 right-[calc(50%-1.25rem)] w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>
+                    class="absolute top-3 right-[calc(50%-0.75rem)] w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>
             </button>
 
         </div>
