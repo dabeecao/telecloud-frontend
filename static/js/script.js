@@ -3053,16 +3053,16 @@ function shareApp() {
                 
                 let mediaHtml = '';
                 if (ext === 'md') {
-                    mediaHtml = `<div class="text-preview-container markdown-preview">${this.parseMarkdown(content)}</div>`;
+                    mediaHtml = `<div class="text-preview-container markdown-preview !max-h-[70vh] overflow-auto shadow-inner">${this.parseMarkdown(content)}</div>`;
                 } else {
                     const lang = langMap[ext] || 'none';
-                    mediaHtml = `<div class="text-preview-container"><pre><code class="language-${lang}">${content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre></div>`;
+                    mediaHtml = `<div class="text-preview-container !max-h-[70vh] overflow-auto bg-slate-900 shadow-inner relative"><pre class="!m-0 !p-4 !bg-transparent !overflow-visible"><code class="language-${lang} !whitespace-pre !word-break-normal">${content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre></div>`;
                 }
                 this.fileInfoModal.mediaHtml = mediaHtml;
                 this.fileInfoModal.isMedia = true;
                 
                 if (ext !== 'md' && window.Prism) {
-                    setTimeout(() => Prism.highlightAllUnder(document.querySelector('.text-preview-container')), 50);
+                    setTimeout(() => Prism.highlightAllUnder(document.querySelector('#media-preview-container')), 50);
                 }
             } catch (e) {
                 console.error("Preview failed", e);
@@ -3181,7 +3181,7 @@ function shareFileApp() {
                                 };
                                 const langClass = 'language-' + (langMap[ext] || 'none');
                                 const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                                this.textPreviewHtml = `<div class='w-full max-h-[60vh] overflow-auto rounded-xl bg-slate-900 text-left relative'><pre class='!m-0 !p-4 !bg-transparent'><code class='${langClass}'>${escaped}</code></pre></div>`;
+                                this.textPreviewHtml = `<div class='w-full max-h-[70vh] overflow-auto rounded-2xl bg-slate-900 text-left relative shadow-inner border border-white/5'><pre class='!m-0 !p-5 !bg-transparent !overflow-visible'><code class='${langClass} !whitespace-pre !word-break-normal'>${escaped}</code></pre></div>`;
                                 this.showTextPreviewPrompt = false;
                                 this.$nextTick(() => { if (window.Prism) Prism.highlightAllUnder(document.querySelector('#media-preview-container')); });
                             })

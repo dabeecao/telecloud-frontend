@@ -705,18 +705,17 @@ body.art-fullscreen-active {
    ========================================= */
 .text-preview-container {
     width: 100%;
+    max-width: 100%;
     max-height: 400px;
-    overflow-y: auto;
+    overflow: auto;
     border-radius: 1rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.85rem;
     line-height: 1.5;
-    background: var(--code-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-main);
     padding: 1rem;
-    white-space: pre-wrap;
-    word-break: break-all;
-    color: var(--code-text);
+    color: var(--text-primary);
 }
 
 /* Prism Overrides */
