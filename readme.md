@@ -6,9 +6,9 @@ This repository contains the source code for the [TeleCloud](https://github.com/
 - `templates/`: Go HTML templates.
 - `static/`: Frontend assets (CSS, JS, Fonts).
 - `static/locales/`: JSON translation files.
-- `build-frontend.sh/bat`: Build scripts for minification and bundling.
-- `minify-locales.js`: Node.js script for minifying JSON locale files.
 - `tailwind.config.js`: Tailwind CSS configuration.
+- `package.json`: Dependencies and build scripts.
+- `build.js`: Unified Node.js build engine (Tailwind, esbuild, sync/minify locales).
 
 ## 🌍 Contributing Translations (Localization)
 
@@ -48,33 +48,27 @@ The main TeleCloud repository integrates this as a git submodule. During the bui
 1. Cleans up old minified files.
 2. Optionally pulls latest changes from `origin/main` (controlled by argument).
 3. Verifies npm is installed, then runs `npm install`.
-4. Builds Tailwind CSS via `npx @tailwindcss/cli`.
-5. Downloads frontend libraries (Alpine.js, Plyr, Font Awesome, Prism.js).
-6. Minifies JS and CSS files via `esbuild`.
-7. Minifies theme CSS files.
-8. Minifies JSON locale files via `minify-locales.js`.
+4. Executes `build.js` which handles:
+   - Building Tailwind CSS via `@tailwindcss/cli`.
+   - Bundling and minifying JS and CSS files via `esbuild`.
+   - Minifying theme CSS files.
+   - Syncing and minifying JSON locale files.
 
 ### Local Development
 To manually build the frontend assets:
 1. Ensure you have **Node.js** and **npm** installed.
-2. Download the **Tailwind CLI** binary for your OS and place it in this directory.
-3. Run:
+2. Run the build command:
    ```bash
-   chmod +x build-frontend.sh
-
-   # Build from current checkout (no pull)
-   ./build-frontend.sh
-
-   # Pull latest from origin/main before building
-   ./build-frontend.sh 1
+   cd web
+   npm install
+   npm run build
    ```
-   On Windows:
-   ```bat
-   :: Build from current checkout (no pull)
+   *Alternatively, you can use the wrapper scripts:*
+   ```bash
+   # Linux/macOS
+   ./build-frontend.sh
+   # Windows
    build-frontend.bat
-
-   :: Pull latest from origin/main before building
-   build-frontend.bat 1
    ```
 
 ## ⚠️ Note

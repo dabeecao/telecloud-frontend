@@ -117,7 +117,7 @@
                     
                     <div id="media-preview-container" x-show="isMedia" x-cloak class="w-full mb-2 flex flex-col items-center justify-center rounded-[1.5rem] p-1.5 glass-panel shadow-md transition-all min-h-[200px] relative overflow-hidden">
                         <!-- Loading placeholder behind the image -->
-                        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 animate-pulse text-slate-300 dark:text-slate-700">
+                        <div x-show="(!showTextPreviewPrompt && !textPreviewHtml && !tooLarge) || isPreviewLoading" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-3 animate-pulse text-slate-300 dark:text-slate-700">
                             <i class="fa-solid fa-circle-notch fa-spin text-3xl"></i>
                             <p class="text-[10px] font-medium tracking-widest uppercase" x-text="t('loading')"></p>
                         </div>

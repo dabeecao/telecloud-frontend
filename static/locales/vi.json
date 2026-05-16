@@ -480,6 +480,7 @@
     "ytdlp_url_label": "YouTube / Social Media URL",
     "backup_and_security": "Cơ sở dữ liệu & Sao lưu",
     "backup_status": "Trạng thái",
+    "backup_sqlite_only_note": "Lưu ý: Bạn đang dùng MySQL/Postgres. Hệ thống sẽ chỉ sao lưu ảnh thu nhỏ (thumbnails), bạn cần tự sao lưu DB thủ công.",
     "last_backup": "Sao lưu gần nhất",
     "next_backup": "Lần sau lúc",
     "no_backup": "Chưa có bản sao lưu",
@@ -492,5 +493,8 @@
     "failed: file_too_large": "Lỗi: File quá lớn. Vui lòng dọn dẹp bớt tệp để giảm dung lượng hoặc tự sao lưu thủ công.",
     "failed: could not resolve log group": "Lỗi: Không tìm thấy Log Group",
     "failed: no files to backup": "Lỗi: Không có dữ liệu",
+    "failed: zip_error": "Lỗi: Không thể nén tệp sao lưu",
+    "failed: upload_error": "Lỗi: Không thể tải bản sao lưu lên Telegram",
+    "failed: telegram_send_error": "Lỗi: Không thể gửi tin nhắn sao lưu vào nhóm",
     "success": "Thành công"
 }

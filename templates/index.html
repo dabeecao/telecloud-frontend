@@ -19,11 +19,6 @@
 
 
     <!-- Theme CSS Files -->
-    <link rel="stylesheet" href="/static/themes/neon.min.css?v={{ .version }}">
-    <link rel="stylesheet" href="/static/themes/cyberpunk.min.css?v={{ .version }}">
-    <link rel="stylesheet" href="/static/themes/anime.min.css?v={{ .version }}">
-    <link rel="stylesheet" href="/static/themes/lavender.min.css?v={{ .version }}">
-    <link rel="stylesheet" href="/static/themes/forest.min.css?v={{ .version }}">
 
     <!-- SEO & Social Meta Tags -->
     <meta name="description" content="TeleCloud OS - Cloud file management via Telegram">
@@ -355,7 +350,7 @@
                 @click="if($event.target.tagName==='IMG' && $event.target.dataset.lightboxSrc) openImageViewer($event.target.dataset.lightboxSrc, $event.target.dataset.lightboxName)">
                 
                 <!-- Loading Placeholder -->
-                <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 animate-pulse text-slate-300 dark:text-slate-700">
+                <div x-show="!fileInfoModal.tooLarge && !fileInfoModal.needsLoad" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-3 animate-pulse text-slate-300 dark:text-slate-700">
                     <i class="fa-solid fa-circle-notch fa-spin text-3xl"></i>
                     <p class="text-[10px] font-medium tracking-widest uppercase" x-text="t('loading')"></p>
                 </div>
@@ -764,7 +759,7 @@
                             </div>
                             
                             <!-- Database & Backup Card -->
-                            <div class="glass-panel p-6 rounded-3xl border border-white/10" x-show="isAdmin && backupInfo.sqlite_only" x-cloak>
+                            <div class="glass-panel p-6 rounded-3xl border border-white/10" x-show="isAdmin" x-cloak>
                                 <div class="flex items-center justify-between mb-4">
                                     <h3 class="text-lg font-bold flex items-center gap-2">
                                         <i class="fa-solid fa-database text-emerald-500"></i>
@@ -776,6 +771,12 @@
                                     </label>
                                 </div>
                                 <div class="space-y-4">
+                                    <template x-if="!backupInfo.sqlite_only">
+                                        <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs mb-4">
+                                            <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                                            <span x-text="t('backup_sqlite_only_note')"></span>
+                                        </div>
+                                    </template>
                                     <div class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50" :class="!backupInfo.enabled ? 'opacity-50 pointer-events-none' : ''">
                                         <div class="flex items-center justify-between mb-3">
                                             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('backup_status')"></span>

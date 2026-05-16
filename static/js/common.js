@@ -211,6 +211,23 @@ const TeleCloud = window.TeleCloud = {
         
         // Update data-theme attribute
         if (body) body.setAttribute('data-theme', theme);
+
+        // Dynamic theme loading: load specialized CSS only when needed
+        const specializedThemes = ['neon', 'cyberpunk', 'anime', 'lavender', 'forest'];
+        const existingLink = document.getElementById('tc-dynamic-theme');
+        
+        if (specializedThemes.includes(theme)) {
+            if (!existingLink || !existingLink.href.includes(`/${theme}.min.css`)) {
+                if (existingLink) existingLink.remove();
+                const link = document.createElement('link');
+                link.id = 'tc-dynamic-theme';
+                link.rel = 'stylesheet';
+                link.href = `/static/themes/${theme}.min.css?v=${this.version}`;
+                document.head.appendChild(link);
+            }
+        } else if (existingLink) {
+            existingLink.remove();
+        }
         
         if (theme === 'system') {
             if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
