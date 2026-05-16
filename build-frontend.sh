@@ -36,21 +36,8 @@ download_lib() {
     curl -sSL "$url" -o "$out"
 }
 
-download_lib "https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" "static/js/alpine.min.js"
-download_lib "https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js" "static/js/alpine-collapse.min.js"
-download_lib "https://cdn.plyr.io/3.7.8/plyr.css" "static/css/plyr.css"
-download_lib "https://cdn.plyr.io/3.7.8/plyr.polyfilled.js" "static/js/plyr.polyfilled.js"
-download_lib "https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js" "static/js/artplayer.js"
-download_lib "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" "static/css/fontawesome.min.css"
 
-echo "Building Prism.js locally..."
-download_lib "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" "static/css/prism.css"
-download_lib "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" "static/js/prism.js"
-for lang in json javascript python go bash yaml sql; do
-  echo "Adding Prism language: $lang..."
-  echo "" >> static/js/prism.js
-  curl -sSL "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-$lang.min.js" >> static/js/prism.js
-done
+
 
 echo "Minifying JS, CSS, locales, and themes..."
 node build.js

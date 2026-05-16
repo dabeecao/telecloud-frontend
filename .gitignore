@@ -9,24 +9,15 @@ Thumbs.db
 
 # Dependencies
 node_modules/
-package-lock.json
 
-# --- Build artifacts & External Libraries ---
+# --- Build artifacts & Generated Assets ---
 static/css/*.min.css
 static/themes/*.min.css
 static/js/*.min.js
 static/locales/*.min.json
 static/css/tailwind.css
+static/webfonts/
 
-# Plyr and Prism and ArtPlayer
-static/css/plyr.css
-static/css/prism.css
-static/js/plyr.polyfilled.js
-static/js/prism.js
-static/js/artplayer.js
-# AlpineJS
-static/js/alpine.min.js
-static/js/alpine-collapse.min.js
 
 # Logs
 *.log

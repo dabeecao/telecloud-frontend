@@ -1,7 +1,13 @@
 {
   "dependencies": {
+    "@alpinejs/collapse": "^3.15.12",
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "@tailwindcss/cli": "^4.2.4",
+    "alpinejs": "^3.15.12",
+    "artplayer": "^5.4.0",
     "esbuild": "^0.25.0",
+    "plyr": "^3.8.4",
+    "prismjs": "^1.30.0",
     "tailwindcss": "^4.2.4"
   },
   "scripts": {

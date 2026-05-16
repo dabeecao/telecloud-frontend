@@ -1,3 +1,41 @@
+// Silence Artplayer's persistent console logs
+(function() {
+    const originalLog = console.log;
+    console.log = function(...args) {
+        if (args[0] && typeof args[0] === 'string' && (args[0].includes('Artplayer') || args[0].includes('artplayer.org'))) {
+            return;
+        }
+        originalLog.apply(console, args);
+    };
+})();
+
+import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
+import Plyr from 'plyr';
+import Artplayer from 'artplayer';
+import Prism from 'prismjs';
+
+// Import Prism languages
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-go';
+import 'prismjs/components/prism-bash';
+import 'prismjs/components/prism-yaml';
+import 'prismjs/components/prism-sql';
+
+Alpine.plugin(collapse);
+window.Alpine = Alpine;
+window.Plyr = Plyr;
+window.Artplayer = Artplayer;
+Artplayer.option.logger = false;
+window.Prism = Prism;
+
+// Expose main app functions to window for Alpine.js x-data
+window.cloudApp = cloudApp;
+window.shareApp = shareApp;
+window.shareFileApp = shareFileApp;
+
 function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnabled = false, webdavUser = '', webdavPassword = '', uploadAPIEnabled = false, uploadAPIKey = '', globalWebdavEnabled = true, globalAPIEnabled = true, webauthnRPID = '', webauthnOrigins = '', initialTheme = 'system', s3Enabled = false, s3AccessKey = '', s3SecretKey = '', globalS3Enabled = true, forceChange = false) {
     return {
         isLoggedIn: initialIsLoggedIn,
@@ -2364,6 +2402,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         this.playerInstance = new Plyr(playerTarget.el, plyrOpts);
                     } else {
                         this.playerInstance = new Artplayer({
+                            logger: false,
                             container: playerTarget.el,
                             url: streamUrl,
                             poster: thumbUrl,
@@ -3044,6 +3083,7 @@ function shareApp() {
                         this.playerInstance = new Plyr(playerTarget.el, plyrOpts);
                     } else {
                         this.playerInstance = new Artplayer({
+                            logger: false,
                             container: playerTarget.el,
                             url: streamUrl,
                             poster: thumbUrl,
@@ -3296,6 +3336,7 @@ function shareFileApp() {
                                 this.playerInstance = new Plyr('#tele-player', plyrOpts);
                             } else {
                                 this.playerInstance = new Artplayer({
+                                    logger: false,
                                     container: '#tele-player',
                                     url: streamUrl,
                                     poster: thumbUrl,
@@ -3376,4 +3417,8 @@ function shareFileApp() {
         }
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    Alpine.start();
+});
 

@@ -2,7 +2,7 @@
  * TeleCloud Common Utilities & I18n
  */
 
-const TeleCloud = {
+const TeleCloud = window.TeleCloud = {
     version: window.TELECLOUD_VERSION || 'dev',
     availableLangs: [
         { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
@@ -288,5 +288,22 @@ const TeleCloud = {
     }
 };
 
-// Initial load
+// Initialize load
 TeleCloud.loadTranslations(TeleCloud.lang);
+
+// Console welcome message
+(function() {
+    const ascii = `
+  ╔╦╗┌─┐┬  ┌─┐╔═╗┬  ┌─┐┬ ┬┌┬┐
+   ║ ├┤ │  ├┤ ║  │  │ ││ │ ││
+   ╩ └─┘┴─┘└─┘╚═╝┴─┘└─┘└─┘─┴┘
+`;
+    console.log(`%c${ascii}%cTeleCloud %c${TeleCloud.version} %c- Powered by %c@dabeecao`, 
+        "color: #3b82f6; font-weight: bold; font-family: monospace;",
+        "color: #64748b; font-weight: bold;",
+        "color: #3b82f6; font-weight: bold;",
+        "color: #64748b;",
+        "color: #3b82f6; font-weight: bold;"
+    );
+    console.log("%cJoin our Telegram group: %chttps://t.me/+p-d0qfGRbX4wNzJl", "color: #64748b;", "color: #3b82f6; text-decoration: underline;");
+})();

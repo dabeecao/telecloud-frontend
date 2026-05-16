@@ -103,18 +103,13 @@ async function main() {
 
   // JS files
   const jsBuilds = [
-    { in: 'static/js/common.js',  out: 'static/js/common.min.js' },
-    { in: 'static/js/script.js',  out: 'static/js/script.min.js' },
-    { in: 'static/js/prism.js',   out: 'static/js/prism.min.js'  },
-    { in: 'static/js/artplayer.js', out: 'static/js/artplayer.min.js' },
+    { in: 'static/js/common.js',  out: 'static/js/common.min.js',  bundle: true },
+    { in: 'static/js/script.js',  out: 'static/js/script.min.js',  bundle: true },
   ];
 
   // CSS files
   const cssBuilds = [
     { in: 'static/css/style.css',   out: 'static/css/style.min.css',   bundle: true  },
-    { in: 'static/css/nunito.css',  out: 'static/css/nunito.min.css',  bundle: false },
-    { in: 'static/css/prism.css',   out: 'static/css/prism.min.css',   bundle: false },
-    { in: 'static/css/plyr.css',    out: 'static/css/plyr.min.css',    bundle: false },
   ];
 
   // Theme files — discover at runtime, skip already-minified
@@ -145,6 +140,14 @@ async function main() {
         minify: true,
         bundle: !!bundle,
         external: bundle ? ['/static/*'] : [],
+        loader: {
+          '.woff': 'file',
+          '.woff2': 'file',
+          '.ttf': 'file',
+          '.eot': 'file',
+          '.svg': 'file',
+        },
+        assetNames: '../webfonts/[name]',
         logLevel: 'silent',
       }))
     ),
