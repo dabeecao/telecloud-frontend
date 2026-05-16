@@ -2224,7 +2224,7 @@
                             <div class="mt-2 pb-10"
                                 :class="viewMode === 'list' ? 'space-y-1.5' : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 px-1'">
                                 <template x-for="file in displayedFiles" :key="file.id">
-                                    <div class="contents">
+                                    <div class="contents" x-data="{ menuOpensUp: false }">
                                         <!-- List View Template -->
                                         <template x-if="viewMode === 'list'">
                                             <div class="group relative grid grid-cols-12 gap-4 px-3 md:px-4 py-2 md:py-3 items-center rounded-2xl hover:bg-white/60 dark:hover:bg-slate-800/50 transition-all border border-transparent"
@@ -2286,13 +2286,14 @@
                                                 <div class="col-span-4 md:col-span-2 flex justify-end md:justify-center relative"
                                                     @click.outside="if (openMenuId === file.id) openMenuId = null">
                                                     <button
-                                                        @click.stop="openMenuId = openMenuId === file.id ? null : file.id"
+                                                        @click.stop="openMenuId = openMenuId === file.id ? null : file.id; let rect = $event.currentTarget.getBoundingClientRect(); menuOpensUp = (window.innerHeight - rect.bottom) < 280;"
                                                         class="px-3 py-2 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:outline-none">
                                                         <i class="fa-solid fa-ellipsis-vertical text-lg"></i>
                                                     </button>
                                                     <div x-show="openMenuId === file.id" x-cloak
-                                                        x-transition.origin.top.right
-                                                        class="glass-menu absolute right-0 top-10 mt-1 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
+                                                        x-transition
+                                                        :class="menuOpensUp ? 'bottom-full mb-1 origin-bottom-right' : 'top-10 mt-1 origin-top-right'"
+                                                        class="glass-menu absolute right-0 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
                                                         <template x-if="file.share_token">
                                                             <div class="space-y-1 mb-1">
                                                                 <button
@@ -2361,13 +2362,14 @@
                                                     :class="openMenuId === file.id ? '!opacity-100' : ''"
                                                     @click.outside="if (openMenuId === file.id) openMenuId = null">
                                                     <button
-                                                        @click.stop="openMenuId = openMenuId === file.id ? null : file.id"
+                                                        @click.stop="openMenuId = openMenuId === file.id ? null : file.id; let rect = $event.currentTarget.getBoundingClientRect(); menuOpensUp = (window.innerHeight - rect.bottom) < 280;"
                                                         class="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors focus:outline-none">
                                                         <i class="fa-solid fa-ellipsis-vertical text-lg"></i>
                                                     </button>
                                                     <div x-show="openMenuId === file.id" x-cloak
-                                                        x-transition.origin.top.right
-                                                        class="glass-menu absolute right-0 top-8 mt-1 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
+                                                        x-transition
+                                                        :class="menuOpensUp ? 'bottom-full mb-1 origin-bottom-right' : 'top-8 mt-1 origin-top-right'"
+                                                        class="glass-menu absolute right-0 w-52 rounded-2xl p-1.5 z-[60] text-sm text-left">
                                                         <template x-if="file.share_token">
                                                             <div class="space-y-1 mb-1">
                                                                 <button
@@ -2567,7 +2569,6 @@
                 </div>
             </footer>
         </main>
-    </div>
 
     <nav
         class="md:hidden fixed bottom-0 left-0 w-full glass-menu z-50 border-t border-slate-200 dark:border-white/10 pb-safe rounded-t-[2rem]">
@@ -2885,6 +2886,7 @@
                 </template>
             </div>
         </div>
+    </div>
     </div>
 
 </body>
