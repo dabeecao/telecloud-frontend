@@ -96,7 +96,7 @@
                 </button>
             </div>
 
-            <div id="media-preview-container" class="w-full flex items-center justify-center p-1.5 min-h-[200px] relative overflow-hidden bg-slate-50/30 dark:bg-slate-900/10 rounded-2xl mt-4 mb-2" 
+            <div id="media-preview-container" class="w-full flex items-center justify-center p-1.5 min-h-[200px] relative overflow-hidden bg-slate-50/30 dark:bg-slate-900/10 rounded-2xl mt-4 mb-2 min-w-0" 
                 x-show="fileInfoModal.isMedia"
                 @click="if($event.target.tagName==='IMG' && $event.target.dataset.lightboxSrc) openImageViewer($event.target.dataset.lightboxSrc, $event.target.dataset.lightboxName)">
                 
@@ -106,7 +106,7 @@
                     <p class="text-[10px] font-medium tracking-widest uppercase" x-text="t('loading')"></p>
                 </div>
 
-                <div x-html="fileInfoModal.mediaHtml" class="relative z-10 w-full flex justify-center"></div>
+                <div x-html="fileInfoModal.mediaHtml" class="relative z-10 w-full min-w-0 flex justify-center"></div>
             </div>
 
             <!-- Fullscreen button (only for images, outside x-html) -->
