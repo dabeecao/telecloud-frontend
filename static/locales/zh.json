@@ -399,7 +399,7 @@
     "trash_desc": "管理已删除的文件。垳容箱的项目将在30天后永久删除。",
     "trash_empty": "垃圾箱是空的",
     "trash_files": "删除的文件",
-    "trash_note": "文件丸30天后将自动删除。如需不妨转付。",,
+    "trash_note": "文件丸30天后将自动删除。如需不妨转付。",
     "type_archive": "压缩包",
     "type_audio": "音频",
     "type_code": "源代码",
