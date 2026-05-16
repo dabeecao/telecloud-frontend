@@ -39,6 +39,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         },
         uploadQueue: [],
         tasks: {},
+        backupInfo: { last_time: '', status: '', is_running: false, sqlite_only: false },
         setTheme(theme) {
             this.currentTheme = theme;
             TeleCloud.applyTheme(theme);
@@ -450,6 +451,53 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 console.error("Fetch system status error", e);
             }
         },
+        async fetchBackupInfo() {
+            if (!this.isAdmin) return;
+            try {
+                const res = await fetch('/api/settings/backup');
+                if (res.ok) {
+                    this.backupInfo = await res.json();
+                }
+            } catch (e) {
+                console.error("Fetch backup info error", e);
+            }
+        },
+        async triggerBackup() {
+            if (!this.isAdmin) return;
+            try {
+                const res = await fetch('/api/settings/backup', { method: 'POST', headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                if (res.ok) {
+                    this.backupInfo.is_running = true;
+                    this.showToast(this.t('backup_started'), 'success');
+                } else {
+                    this.showToast(this.t('status_error'), 'error');
+                }
+            } catch (e) {
+                this.showToast(this.t('conn_error'), 'error');
+            }
+        },
+        async toggleBackupEnabled(e) {
+            const enabled = e.target.checked;
+            try {
+                const formData = new FormData();
+                formData.append('enabled', enabled);
+                const res = await fetch('/api/settings/backup/toggle', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() },
+                    body: formData
+                });
+                if (res.ok) {
+                    this.showToast(this.t('toast_settings_saved'), 'success');
+                    this.backupInfo.enabled = enabled;
+                } else {
+                    e.target.checked = !enabled;
+                    this.showToast(this.t('status_error'), 'error');
+                }
+            } catch (error) {
+                e.target.checked = !enabled;
+                this.showToast(this.t('conn_error'), 'error');
+            }
+        },
         async fetchChildAPIKey() {
             try {
                 const res = await fetch('/api/settings/child-api-key');
@@ -790,10 +838,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 this.fetchTorrentStatus();
                 this.checkYTDLPCookies();
                 this.fetchSystemStatus();
+                this.fetchBackupInfo();
 
                 // Refresh system status every 30 seconds
                 setInterval(() => {
                     this.fetchSystemStatus();
+                    this.fetchBackupInfo();
                 }, 30000);
                 
                 if (!this.isAdmin) {

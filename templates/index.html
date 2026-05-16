@@ -770,6 +770,51 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Database & Backup Card -->
+                            <div class="glass-panel p-6 rounded-3xl border border-white/10" x-show="isAdmin && backupInfo.sqlite_only" x-cloak>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-bold flex items-center gap-2">
+                                        <i class="fa-solid fa-database text-emerald-500"></i>
+                                        <span x-text="t('backup_and_security')"></span>
+                                    </h3>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" :checked="backupInfo.enabled" @change="toggleBackupEnabled">
+                                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50" :class="!backupInfo.enabled ? 'opacity-50 pointer-events-none' : ''">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('backup_status')"></span>
+                                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider" 
+                                                :class="backupInfo.is_running ? 'bg-blue-100 text-blue-600 animate-pulse' : (backupInfo.status === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-600')"
+                                                x-text="backupInfo.is_running ? t('running') : (t(backupInfo.status) || t('no_backup'))"></span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="flex flex-col gap-1">
+                                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('last_backup')"></span>
+                                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-200" x-text="backupInfo.last_time ? formatDate(backupInfo.last_time) : t('never')"></span>
+                                            </div>
+                                            <div class="flex flex-col gap-1" x-show="backupInfo.enabled">
+                                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('next_backup')"></span>
+                                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-200" x-text="backupInfo.next_time ? formatDate(backupInfo.next_time) : t('never')"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30 text-[10px] text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                                        <i class="fa-solid fa-circle-info mt-0.5"></i>
+                                        <span x-text="t('backup_desc_tg')"></span>
+                                    </div>
+
+                                    <button @click="triggerBackup" :disabled="backupInfo.is_running || !backupInfo.enabled"
+                                        class="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-400 disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+                                        <i class="fa-solid" :class="backupInfo.is_running ? 'fa-circle-notch fa-spin' : 'fa-cloud-arrow-up'"></i>
+                                        <span x-text="backupInfo.is_running ? t('backing_up') : t('start_backup_now')"></span>
+                                    </button>
+                                </div>
+                            </div>
 
                             <!-- WebDAV Card -->
                             <div class="glass-panel p-6 rounded-3xl border border-white/10">
