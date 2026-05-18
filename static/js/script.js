@@ -78,6 +78,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
         uploadQueue: [],
         tasks: {},
         backupInfo: { last_time: '', status: '', is_running: false, sqlite_only: false },
+        restoreLoading: false,
         setTheme(theme) {
             this.currentTheme = theme;
             TeleCloud.applyTheme(theme);
@@ -534,6 +535,51 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             } catch (error) {
                 e.target.checked = !enabled;
                 this.showToast(this.t('conn_error'), 'error');
+            }
+        },
+        async triggerRestore(e) {
+            if (!this.isAdmin) return;
+            const fileInput = e.target;
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Reset the file input value so same file can be selected again
+            fileInput.value = '';
+
+            // Use the promise-based customConfirm modal
+            const confirmed = await this.customConfirm(
+                this.t('restore_confirm_title'),
+                this.t('restore_confirm_msg'),
+                true
+            );
+            if (!confirmed) return;
+
+            this.restoreLoading = true;
+            try {
+                const formData = new FormData();
+                formData.append('backup_file', file);
+
+                const res = await fetch('/api/settings/restore', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    this.showToast(this.t('toast_restore_success'), 'success');
+                    // Delay a bit so toast is readable, then reload/refresh system after app restarts
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000);
+                } else {
+                    const data = await res.json();
+                    const errMsg = data.error || 'Unknown error';
+                    this.showToast(this.t('toast_restore_failed', {err: errMsg}), 'error');
+                }
+            } catch (err) {
+                this.showToast(this.t('toast_restore_failed', {err: err.message}), 'error');
+            } finally {
+                this.restoreLoading = false;
             }
         },
         async fetchChildAPIKey() {
