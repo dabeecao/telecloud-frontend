@@ -211,7 +211,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             fd.append('token', token);
             fd.append('password', this.password);
             try {
-                let res = await fetch('/reset-admin', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
+                let res = await fetch('/reset-admin' + window.location.search, { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
                 if (res.ok) window.location.href = '/login';
                 else {
                     let d = await res.json();
