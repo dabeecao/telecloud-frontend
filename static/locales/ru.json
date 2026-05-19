@@ -226,6 +226,8 @@
     "remote_no_thumb_warning": "Примечание: При загрузке видео/аудио по URL-адресу миниатюры не будут создаваться автоматически.",
     "remote_poor_url_confirm_msg": "Этот URL не поддерживает возобновление (Range Support). Если сеть нестабильна, загрузка будет очень медленной и потребует большого количества пропускной способности, так как она должна начать с начала. Вы все еще хотите скачать?",
     "remote_poor_url_confirm_title": "Предупреждение о плохом URL",
+    "remote_range_buffer_desc": "If the download URL does not support resume (Range) and the file is large (>200MB), the server will automatically buffer the file to local disk first to ensure a stable upload to Telegram without interruptions.",
+    "remote_range_buffer_title": "Smart Buffering System:",
     "remote_upload": "Удаленная загрузка",
     "remote_upload_note": "Система получит файл напрямую по URL-адресу в Telegram через сервер.",
     "remote_urls_placeholder": "Введите URL-адреса, по одному в строке...",

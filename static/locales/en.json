@@ -226,6 +226,8 @@
     "remote_no_thumb_warning": "Note: Remote uploads do not automatically generate thumbnails.",
     "remote_poor_url_confirm_msg": "This URL does not support resuming (Range Support). If the network is unstable, downloading will be very slow and cost a lot of bandwidth because it has to restart from the beginning. Do you still want to download it?",
     "remote_poor_url_confirm_title": "Poor URL Warning",
+    "remote_range_buffer_desc": "If the download URL does not support resume (Range) and the file is large (>200MB), the server will automatically buffer the file to local disk first to ensure a stable upload to Telegram without interruptions.",
+    "remote_range_buffer_title": "Smart Buffering System:",
     "remote_upload": "Remote Upload",
     "remote_upload_note": "System will download the file directly to Telegram via the server.",
     "remote_urls_placeholder": "Enter URLs, one per line...",

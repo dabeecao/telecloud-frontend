@@ -226,6 +226,8 @@
     "remote_no_thumb_warning": "ملاحظة: تحميل الفيديوهات/الصوت عبر الرابط لن يولد صوراً مصغرة تلقائياً.",
     "remote_poor_url_confirm_msg": "هذا الرابط لا يدعم الاستئناف (Range Support). إذا كانت الشبكة غير مستقرة، ستكون عملية التحميل بطيئة جدًا وتستهلك الكثير من النطاق الترددي لأنها يجب أن تبدأ من البداية. هل تريد التحميل مع ذلك؟",
     "remote_poor_url_confirm_title": "تحذير الرابط السيء",
+    "remote_range_buffer_desc": "If the download URL does not support resume (Range) and the file is large (>200MB), the server will automatically buffer the file to local disk first to ensure a stable upload to Telegram without interruptions.",
+    "remote_range_buffer_title": "Smart Buffering System:",
     "remote_upload": "الرفع عن بعد",
     "remote_upload_note": "سيقوم النظام بجلب الملف مباشرة من الرابط إلى تليجرام عبر الخادم.",
     "remote_urls_placeholder": "أدخل عناوين URL، واحد في كل سطر...",

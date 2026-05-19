@@ -226,6 +226,8 @@
     "remote_no_thumb_warning": "注意：通过 URL 下载视频/音频不会自动生成缩略图。",
     "remote_poor_url_confirm_msg": "此 URL 不支持继续（范围支持）。如果网络不稳定，下载将非常缓慢且消耗大量带宽，因为它必须从开始位置重新开始。你仍然想要下载吗？",
     "remote_poor_url_confirm_title": "URL 警告",
+    "remote_range_buffer_desc": "If the download URL does not support resume (Range) and the file is large (>200MB), the server will automatically buffer the file to local disk first to ensure a stable upload to Telegram without interruptions.",
+    "remote_range_buffer_title": "Smart Buffering System:",
     "remote_upload": "远程上传",
     "remote_upload_note": "系统将通过服务器直接从 URL 抓取文件到 Telegram。",
     "remote_urls_placeholder": "输入 URL，每行一个...",

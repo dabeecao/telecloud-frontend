@@ -213,6 +213,8 @@
     "remote_poor_url_confirm_title": "Cảnh báo URL chất lượng kém",
     "remote_upload": "Tải lên từ xa",
     "remote_upload_note": "Hệ thống sẽ tải file trực tiếp từ URL về Telegram thông qua máy chủ.",
+    "remote_range_buffer_title": "Cơ chế tải thông minh:",
+    "remote_range_buffer_desc": "Nếu liên kết tải xuống không hỗ trợ resume (Range) và kích thước file lớn hơn 200MB, máy chủ sẽ tự động đệm file về đĩa tạm trước (Disk Buffer) để bảo đảm quá trình upload lên Telegram không bị lỗi.",
     "remote_urls_placeholder": "Nhập các URL, mỗi URL một dòng...",
     "remove": "Gỡ bỏ",
     "remove_cookie": "Gỡ bỏ Cookie",

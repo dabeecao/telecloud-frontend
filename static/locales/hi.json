@@ -226,6 +226,8 @@
     "remote_no_thumb_warning": "नोट: URL के माध्यम से वीडियो/ऑडियो डाउनलोड करने से थंबनेल स्वचालित रूप से जनरेट नहीं होंगे।",
     "remote_poor_url_confirm_msg": "यह URL पुनरारंभ (Range Support) को समर्थन नहीं देता है। यदि नेटवर्क अस्थिर है, तो डाउनलोड बहुत धीमा होगा और बहुत अधिक बैंडविड्थ खर्च होगी क्योंकि शुरुआत से शुरू करना होगा। क्या आप अभी भी डाउनलोड करना चाहते हैं?",
     "remote_poor_url_confirm_title": "खराब URL चेतावनी",
+    "remote_range_buffer_desc": "If the download URL does not support resume (Range) and the file is large (>200MB), the server will automatically buffer the file to local disk first to ensure a stable upload to Telegram without interruptions.",
+    "remote_range_buffer_title": "Smart Buffering System:",
     "remote_upload": "रिमोट अपलोड",
     "remote_upload_note": "सिस्टम सर्वर के माध्यम से सीधे URL से Telegram तक फ़ाइल प्राप्त करेगा।",
     "remote_urls_placeholder": "URL दर्ज करें, एक प्रति पंक्ति...",
