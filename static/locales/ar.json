@@ -248,6 +248,7 @@
     "restore_confirm_msg": "Are you sure you want to restore the database from this backup? All current data will be overwritten and the system will restart immediately.",
     "restore_confirm_title": "Restore Database",
     "restore_desc": "The system supports restoring data from backup ZIP files (containing database.db and master.key) or raw database files (.db, .sqlite). This process will close all active connections, clean up old WAL/SHM logs, overwrite the database, and automatically restart the application immediately.",
+    "restore_desc_mysql": "The system supports restoring thumbnails and the encryption key (master.key) from the backup ZIP file. This process will close active connections, reload the key, and automatically restart the application immediately.",
     "restore_warning_note": "Important: Please do not close or reload this page during the restoration process. Once complete, the system will automatically restart and refresh the interface after 5 seconds.",
     "restoring": "Restoring...",
     "resumable": "وابل للاستئناف",

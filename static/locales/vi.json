@@ -234,6 +234,7 @@
     "restore_confirm_title": "Khôi phục Cơ sở dữ liệu",
     "restore_confirm_msg": "Bạn có chắc chắn muốn khôi phục dữ liệu từ bản sao lưu này? Toàn bộ dữ liệu hiện tại sẽ bị ghi đè và hệ thống sẽ tự động khởi động lại ngay lập tức.",
     "restore_desc": "Hệ thống hỗ trợ khôi phục dữ liệu từ tệp nén ZIP sao lưu (chứa database.db và master.key) hoặc tệp database thô (.db, .sqlite). Quá trình này sẽ đóng toàn bộ kết nối hiện tại, xóa sạch các tệp nhật ký WAL/SHM cũ, ghi đè cơ sở dữ liệu mới và tự động khởi động lại ứng dụng ngay lập tức.",
+    "restore_desc_mysql": "Hệ thống hỗ trợ khôi phục ảnh thu nhỏ (thumbnails) và khóa mã hóa (master.key) từ tệp nén ZIP sao lưu. Quá trình này sẽ đóng toàn bộ kết nối hiện tại, nạp lại khóa và tự động khởi động lại ứng dụng ngay lập tức.",
     "restore_warning_note": "Lưu ý quan trọng: Vui lòng không tắt hoặc tải lại trang trong quá trình khôi phục. Sau khi quá trình khôi phục hoàn tất, hệ thống sẽ tự động khởi động lại và tải lại giao diện sau 5 giây.",
     "resumable": "Có thể Resume",
     "retry": "Thử lại",

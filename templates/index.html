@@ -801,21 +801,19 @@
                                         <span x-text="t('backup_desc_tg')"></span>
                                     </div>
 
-                                    <template x-if="backupInfo.sqlite_only">
-                                        <div class="space-y-2">
-                                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/20 border border-slate-200/50 dark:border-slate-800/50 text-[10px] text-slate-600 dark:text-slate-400 flex items-start gap-2">
-                                                <i class="fa-solid fa-rotate-left mt-0.5 text-blue-500"></i>
-                                                <span x-text="t('restore_desc')"></span>
-                                            </div>
-                                            <div class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-2">
-                                                <i class="fa-solid fa-circle-exclamation mt-0.5 text-amber-500"></i>
-                                                <span x-text="t('restore_warning_note')"></span>
-                                            </div>
+                                    <div class="space-y-2">
+                                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/20 border border-slate-200/50 dark:border-slate-800/50 text-[10px] text-slate-600 dark:text-slate-400 flex items-start gap-2">
+                                            <i class="fa-solid fa-rotate-left mt-0.5 text-blue-500"></i>
+                                            <span x-text="backupInfo.sqlite_only ? t('restore_desc') : t('restore_desc_mysql')"></span>
                                         </div>
-                                    </template>
+                                        <div class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-2">
+                                            <i class="fa-solid fa-circle-exclamation mt-0.5 text-amber-500"></i>
+                                            <span x-text="t('restore_warning_note')"></span>
+                                        </div>
+                                    </div>
 
                                     <input type="file" id="restore-file-input" class="hidden" accept=".zip,.db" @change="triggerRestore">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" x-show="backupInfo.sqlite_only">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <button @click="triggerBackup" :disabled="backupInfo.is_running || !backupInfo.enabled"
                                             class="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-400 disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 whitespace-nowrap">
                                             <i class="fa-solid" :class="backupInfo.is_running ? 'fa-circle-notch fa-spin' : 'fa-cloud-arrow-up'"></i>
@@ -828,14 +826,6 @@
                                             <span x-text="restoreLoading ? t('restoring') : t('restore_backup')"></span>
                                         </button>
                                     </div>
-
-                                    <template x-if="!backupInfo.sqlite_only">
-                                        <button @click="triggerBackup" :disabled="backupInfo.is_running || !backupInfo.enabled"
-                                            class="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-400 disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
-                                            <i class="fa-solid" :class="backupInfo.is_running ? 'fa-circle-notch fa-spin' : 'fa-cloud-arrow-up'"></i>
-                                            <span x-text="backupInfo.is_running ? t('backing_up') : t('start_backup_now')"></span>
-                                        </button>
-                                    </template>
                                 </div>
                             </div>
 
