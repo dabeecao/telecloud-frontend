@@ -2822,9 +2822,10 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 const res = await fetch('/api/ytdlp/download', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': TeleCloud.getCsrfToken() } });
                 if (res.ok) {
                     const data = await res.json();
-                    this.uploadQueue.push({
-                        id: data.task_id,
-                        name: this.ytdlpInfo ? this.ytdlpInfo.title : 'Media Download',
+                    if (!this.uploadQueue.some(t => t.id === data.task_id)) {
+                        this.uploadQueue.push({
+                            id: data.task_id,
+                            name: this.ytdlpInfo ? this.ytdlpInfo.title : 'Media Download',
                         progress: 0,
                         statusText: this.t('initiating_ytdlp'),
                         hasError: false,
@@ -2834,7 +2835,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         startTime: Date.now(),
                         uploadedBytes: 0,
                         speed: 0
-                    });
+                        });
+                    } else {
+                        // If task already created via WebSocket, just update its name
+                        let t = this.uploadQueue.find(t => t.id === data.task_id);
+                        if (t && this.ytdlpInfo) t.name = this.ytdlpInfo.title;
+                    }
                     this.showToast(this.t('ytdlp_started'), 'success');
                     this.ytdlpUrl = '';
                     this.ytdlpInfo = null;
