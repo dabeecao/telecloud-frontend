@@ -424,11 +424,14 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                             // Don't restore finished tasks to keep UI clean
                             if (task.status === 'done' || task.status === 'error' || task.status === 'cancelled') continue;
                             
+                            const isSinglePhase = id.startsWith('torrent_') || id.startsWith('torrent_file_') || id.startsWith('remote_');
                             let displayProgress = task.percent;
-                            if (task.status === 'telegram') {
-                                displayProgress = 50 + Math.round(task.percent / 2);
-                            } else if (task.status === 'downloading' || task.status === 'uploading_to_server') {
-                                displayProgress = Math.round(task.percent / 2);
+                            if (!isSinglePhase) {
+                                if (task.status === 'telegram') {
+                                    displayProgress = 50 + Math.round(task.percent / 2);
+                                } else if (task.status === 'downloading' || task.status === 'uploading_to_server') {
+                                    displayProgress = Math.round(task.percent / 2);
+                                }
                             }
 
                             // Translate status message properly
@@ -469,7 +472,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 hasError: task.status === 'error',
                                 isCancelled: task.status === 'cancelled',
                                 size: task.size || 0,
-                                singlePhase: task.status === 'downloading' || task.status === 'telegram'
+                                singlePhase: isSinglePhase
                             });
                         }
                     }
@@ -1010,20 +1013,27 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                         // Dynamically create task if it's not in the visible queue (e.g., torrent subtasks)
                         if (data.status === 'done' || data.status === 'error' || data.status === 'cancelled') return;
                         
+                        const isSinglePhase = data.task_id.startsWith('torrent_') || data.task_id.startsWith('torrent_file_') || data.task_id.startsWith('remote_');
+                        let progress = data.percent || 0;
+                        if (!isSinglePhase) {
+                            progress = Math.round(progress / 2);
+                        }
+
                         task = {
                             id: data.task_id,
                             name: data.filename || 'File',
                             filename: data.filename,
                             size: data.size || 0,
                             uploadedBytes: data.uploaded_bytes || 0,
-                            progress: data.percent ? Math.round(data.percent / 2) : 0,
+                            progress: progress,
                             status: data.status,
                             statusText: '',
                             hasError: false,
                             isCancelled: false,
                             countdown: 5,
                             countdownInterval: null,
-                            isTorrent: data.task_id.startsWith('torrent_')
+                            isTorrent: data.task_id.startsWith('torrent_') || data.task_id.startsWith('torrent_file_'),
+                            singlePhase: isSinglePhase
                         };
                         
                         // Parse message immediately for new tasks
@@ -1091,7 +1101,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 task.statusText = this.t(data.message) || task.statusText;
                                 // Phase 1: 0-50%
                                 if (data.percent !== undefined) {
-                                    task.progress = Math.round(data.percent / 2);
+                                    task.progress = task.singlePhase ? data.percent : Math.round(data.percent / 2);
                                 }
                                 if (data.speed !== undefined && data.speed > 0) {
                                     task.speed = data.speed;
@@ -1695,7 +1705,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 if (!confirmed) continue;
                             }
 
-                            const taskId = 'task_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+                            const taskId = 'remote_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
                             const displayName = meta.filename || (targetUrl.split('/').pop() || targetUrl);
                             
                             this.uploadQueue.push({
