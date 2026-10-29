@@ -12,8 +12,16 @@
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 
+import { SessionUpload, createXhrTransport, getSessionConfig, shouldUseSessions } from './chunked-upload.js';
+
 Alpine.plugin(collapse);
 window.Alpine = Alpine;
+
+// Resumable upload sessions (large files). Kept outside the Alpine component on purpose:
+// Alpine's reactive proxies break promises and class instances with internal state.
+const sessionUploads = new Map(); // taskId -> SessionUpload
+let sessionCfgCache = null;       // { at, promise } of GET /api/uploads/config (60 s)
+const sessionTransport = createXhrTransport(() => TeleCloud.getCsrfToken());
 
 // Asynchronous loader helper for Artplayer & Plyr
 async function ensurePlayersLoaded() {
@@ -1648,6 +1656,13 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             // Otherwise, mark as cancelled and notify backend
             task.isCancelled = true;
             task.statusText = this.t('cancelled');
+
+            // Resumable-session upload: abort in-flight chunks and DELETE the session.
+            const sessionUpload = sessionUploads.get(taskId);
+            if (sessionUpload) {
+                sessionUpload.cancel();
+                return;
+            }
             
             // Abort active HTTP requests if any
             if (task._xhrs && Array.isArray(task._xhrs)) {
@@ -3303,7 +3318,79 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             }
         },
 
+        // Uploads `file` through the resumable session API (/api/uploads) when the server
+        // enables it and the file is above its threshold. Returns false when the caller
+        // must use the legacy multipart path instead (also on non-HTTPS origins, where
+        // crypto.subtle for the mandatory per-chunk SHA-256 is unavailable).
+        async uploadViaSession(file, taskId, targetPath, overwrite) {
+            if (!sessionCfgCache || Date.now() - sessionCfgCache.at > 60000) {
+                sessionCfgCache = { at: Date.now(), promise: getSessionConfig(sessionTransport) };
+            }
+            const cfg = await sessionCfgCache.promise;
+            if (!shouldUseSessions(cfg, file)) return false;
+
+            const getTask = () => this.uploadQueue.find(t => t.id === taskId);
+            let task = getTask();
+            if (!task || task.isCancelled) return true;
+            task.status = 'uploading';
+            task.speed = 0;
+            task.startTime = Date.now();
+            task.lastUpdateTime = task.startTime;
+            task.lastUploadedBytes = 0;
+            const progressText = () => this.t('pushing', { uploaded: this.formatBytes(getTask().uploadedBytes || 0), total: this.formatBytes(file.size) });
+
+            const upload = new SessionUpload({
+                file, targetPath, overwrite, config: cfg, transport: sessionTransport,
+                onProgress: (uploaded) => {
+                    const t = getTask();
+                    if (!t || t.isCancelled) return;
+                    const now = Date.now();
+                    t.uploadedBytes = uploaded;
+                    const elapsed = (now - t.lastUpdateTime) / 1000;
+                    if (elapsed > 0.1) {
+                        const instant = Math.max(0, uploaded - t.lastUploadedBytes) / elapsed;
+                        t.speed = t.speed === 0 ? instant : (t.speed * 0.8) + (instant * 0.2);
+                        t.lastUpdateTime = now;
+                        t.lastUploadedBytes = uploaded;
+                    }
+                    // The server stores parts as chunks arrive, so bytes sent map to 0-95%.
+                    t.progress = Math.min(95, Math.round((uploaded / file.size) * 95));
+                    t.statusText = progressText();
+                },
+                onStatus: (kind, info) => {
+                    const t = getTask();
+                    if (!t || t.isCancelled) return;
+                    if (kind === 'waiting') t.statusText = this.t('upload_server_busy', { seconds: info.seconds });
+                    else if (kind === 'retry') t.statusText = `${progressText()} (${this.t('retry')} ${info.attempt})`;
+                    else if (kind === 'verifying' || kind === 'probing') t.statusText = this.t('upload_verifying');
+                    else if (kind === 'finalizing') { t.progress = 95; t.statusText = this.t('pushing_to_tg'); }
+                },
+            });
+            sessionUploads.set(taskId, upload);
+            try {
+                const result = await upload.run();
+                task = getTask();
+                if (task) this.finishTaskDone(task, { file_id: result.fileId });
+            } catch (e) {
+                task = getTask();
+                if (task && !task.isCancelled && e.name !== 'AbortError') {
+                    console.error('Session upload failed:', e);
+                    task.hasError = true;
+                    if (e.code === 'network') task.statusText = this.t('conn_error');
+                    else if (e.code === 'session_failed' && e.reason) task.statusText = this.t('upload_session_failed', { reason: e.reason });
+                    // err_file_too_large is an unrelated 2 MB message; do not reuse it here.
+                    else if (e.code === 'file_too_large') task.statusText = `${this.t('status_error')} (${e.code})`;
+                    else task.statusText = this.handleCommonError(e.code, 'status_error');
+                }
+            } finally {
+                sessionUploads.delete(taskId);
+            }
+            return true;
+        },
+
         async uploadSingleFile(file, taskId, targetPath, overwrite = false) {
+            if (await this.uploadViaSession(file, taskId, targetPath, overwrite)) return;
+
             let CHUNK_SIZE = 5 * 1024 * 1024;
             if (file.size > 1000 * 1024 * 1024) {
                 CHUNK_SIZE = 16 * 1024 * 1024;
