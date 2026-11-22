@@ -130,6 +130,16 @@ async function main() {
     { in: 'static/css/style.css',   out: 'static/css/style.min.css',   bundle: true  },
   ];
 
+  // Fonts referenced by bundled CSS (Font Awesome's all.min.css uses
+  // url(../webfonts/...)) must be emitted to static/webfonts/. Asset paths are
+  // resolved relative to the esbuild outdir, so the bundle is built with
+  // outdir: 'static' and an explicit entry name rather than outfile plus an
+  // assetNames value containing '../'. A parent-traversal assetNames worked on
+  // macOS/Linux but emitted nothing on the Windows CI runner, which left
+  // static/webfonts/ missing and broke main.go's go:embed directive.
+  const BUNDLED_CSS_OUTDIR = 'static';
+  const BUNDLED_CSS_ENTRY = 'css/style.min';
+
   // Theme files — discover at runtime, skip already-minified
   const themesDir = 'static/themes';
   let themeBuilds = [];
@@ -152,10 +162,24 @@ async function main() {
     wrap('tailwind', buildTailwind),
     wrap('locales', () => Promise.resolve(syncAndMinifyLocales())),
     ...STATIC_DOWNLOADS.map(({ url, out }) => wrap(out, () => download(url, out))),
-    ...allBuilds.map(({ in: entryPoint, out: outfile, bundle }) =>
-      wrap(outfile, () => esbuild.build({
-        entryPoints: [entryPoint],
-        outfile,
+    ...allBuilds.map(({ in: entryPoint, out: outfile, bundle }) => {
+      // Bundled CSS needs outdir-based output so font assets can be placed in
+      // static/webfonts/ without a parent-traversal assetNames (see above).
+      // Everything else keeps the simple outfile form.
+      const opts = bundle && entryPoint.endsWith('.css')
+        ? {
+            entryPoints: { [BUNDLED_CSS_ENTRY]: entryPoint },
+            outdir: BUNDLED_CSS_OUTDIR,
+            assetNames: 'webfonts/[name]',
+          }
+        : {
+            entryPoints: [entryPoint],
+            outfile,
+            assetNames: '../webfonts/[name]',
+          };
+
+      return wrap(outfile, () => esbuild.build({
+        ...opts,
         minify: true,
         bundle: !!bundle,
         external: bundle ? ['/static/*'] : [],
@@ -166,10 +190,9 @@ async function main() {
           '.eot': 'file',
           '.svg': 'file',
         },
-        assetNames: '../webfonts/[name]',
         logLevel: 'silent',
-      }))
-    ),
+      }));
+    }),
     // Script splitting build step
     wrap('static/js/script.min.js', () => esbuild.build({
       entryPoints: ['static/js/script.js'],
