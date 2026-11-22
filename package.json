@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "node build.js",
-    "sync-locales": "node sync_locales.js"
+    "sync-locales": "node sync_locales.js",
+    "test": "node --test tests/chunked-upload.test.mjs"
   }
 }
