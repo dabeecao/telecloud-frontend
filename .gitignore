@@ -21,8 +21,4 @@ static/webfonts/
 
 # Logs
 *.log
-
-# NOTE: bun.lock is intentionally committed. Pinning dependency versions keeps
-# builds reproducible across machines and CI: an unpinned install pulled
-# @fortawesome/fontawesome-free 7.3.1, which no longer ships the webfonts
-# directory that main.go's go:embed directive requires.
+bun.lock
