@@ -40,15 +40,7 @@ if errorlevel 1 (
 )
 
 echo Installing dependencies...
-REM Use the committed lockfile so every machine installs the same versions.
-REM An unpinned install once pulled a newer Font Awesome that no longer ships
-REM the webfonts/ directory required by main.go's go:embed directive.
-if exist bun.lock (
-    call bun install --frozen-lockfile
-) else (
-    echo WARNING: bun.lock is missing; installing unpinned versions.
-    call bun install
-)
+call bun install
 
 echo Minifying JS, CSS, locales, and themes...
 call bun run build.js
