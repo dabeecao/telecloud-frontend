@@ -28,7 +28,15 @@ if ! command -v bun > /dev/null 2>&1; then
 fi
 
 echo "Installing dependencies..."
-bun install
+# Use the committed lockfile so every machine and CI run installs the same
+# versions. An unpinned install once pulled a newer Font Awesome that no longer
+# ships the webfonts/ directory required by main.go's go:embed directive.
+if [ -f bun.lock ]; then
+  bun install --frozen-lockfile
+else
+  echo "WARNING: bun.lock is missing; installing unpinned versions."
+  bun install
+fi
 
 echo "Minifying JS, CSS, locales, and themes..."
 bun run build.js
