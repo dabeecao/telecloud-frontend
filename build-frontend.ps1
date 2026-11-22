@@ -47,7 +47,15 @@ if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Installing dependencies..."
-bun install
+# Use the committed lockfile so every machine installs the same versions.
+# An unpinned install once pulled a newer Font Awesome that no longer ships
+# the webfonts/ directory required by main.go's go:embed directive.
+if (Test-Path "bun.lock") {
+    bun install --frozen-lockfile
+} else {
+    Write-Warning "bun.lock is missing; installing unpinned versions."
+    bun install
+}
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "Minifying JS, CSS, locales, and themes..."
