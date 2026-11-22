@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'dev/**'
+      - 'feat/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run unit tests
+        run: |
+          if node -e "const p=require('./package.json');process.exit(p.scripts&&p.scripts.test?0:1)"; then
+            npm test
+          else
+            echo "::notice::No 'test' script in package.json; skipping unit tests."
+            echo "This is expected until the first test suite lands."
+          fi
+
+  build:
+    name: Build assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # build.js shells out to `bun` for the Tailwind CLI step.
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build frontend assets
+        run: node build.js
+
+      - name: Verify templates reference only produced assets
+        run: node scripts/check-assets.js
+
+  locales:
+    name: Locale parity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check every locale matches en.json and is sorted
+        run: node scripts/check-locales.js
