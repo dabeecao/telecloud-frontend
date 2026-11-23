@@ -204,6 +204,34 @@ test('full upload with 429+Retry-After, 422, dropped connection, 202 finalize; d
     assert.equal(st.creates, 1);
 });
 
+test('staging_window_full stops the pass instead of retrying the chunk forever', async (t) => {
+    const { st, transport } = await setup(t);
+    const file = mkFile(6 * MIB);
+    const cfg = await getSessionConfig(transport);
+    // First request past chunk 3 (two parts of 2 x 1 MiB) is refused exactly
+    // once. A client that keeps retrying that chunk spins; the fixed client
+    // waits for the window and then sends the chunk once.
+    let windowHits = 0;
+    const guarded = async (req) => {
+        const m = /\/chunks\/(\d+)$/.exec(req.url);
+        if (m && Number(m[1]) >= 4 && windowHits === 0) {
+            windowHits++;
+            return { status: 429, retryAfter: '5', json: { error: 'staging_window_full' } };
+        }
+        return transport(req);
+    };
+    const sleeps = [];
+    const up = new SessionUpload({
+        file, targetPath: '/', config: { ...cfg, max_parallel_chunks: 4 }, transport: guarded, store: memStore(),
+        sleep: fastSleep(sleeps), random: () => 0,
+    });
+    const r = await up.run();
+    assert.equal(r.fileId, 42);
+    assert.equal(windowHits, 1, 'the out-of-window chunk was refused once');
+    assert.ok(sleeps.includes(5000), 'client waited out the window instead of retrying immediately: ' + sleeps);
+    assert.equal(st.sessions.get('s1').chunks.size, 6);
+});
+
 test('resume: failed run leaves the session, second run skips confirmed chunks and reuses the session', async (t) => {
     const { st, transport } = await setup(t);
     st.faults.always500.add(5);

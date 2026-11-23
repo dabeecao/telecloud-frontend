@@ -649,7 +649,7 @@
     "upload_api_share_endpoint": "Share Path",
     "upload_api_show_key": "Show Key",
     "upload_api_status_endpoint": "Task Status",
-    "upload_api_sync_note": "Note: Cloudflare Tunnel/Proxy limits uploads to 100MB. For small files, avoid using async=true for best results.",
+    "upload_api_sync_note": "Note: Cloudflare Tunnel/Proxy limits each request to 100MB, but larger files still upload — the web UI splits them into small parts automatically. For small files, avoid using async=true for best results.",
     "upload_api_warning": "Keep your API Key secret. Anyone with this key can upload files to your account.",
     "upload_cancelled_waiting": "Upload cancelled while waiting for slot",
     "upload_date": "Upload Date",
