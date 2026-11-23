@@ -649,7 +649,7 @@
     "upload_api_share_endpoint": "Chia sẻ đường dẫn",
     "upload_api_show_key": "Hiển thị key",
     "upload_api_status_endpoint": "Kiểm tra tiến độ",
-    "upload_api_sync_note": "Lưu ý: Nếu dùng Cloudflare Tunnel/Proxy, giới hạn upload là 100MB. Với file nhẹ, hãy dùng API đồng bộ (không có async=true) để đạt hiệu quả tốt nhất.",
+    "upload_api_sync_note": "Lưu ý: Cloudflare Tunnel/Proxy giới hạn mỗi request ở 100MB, nhưng file lớn hơn vẫn tải lên được — giao diện tự chia thành nhiều phần nhỏ. Với file nhẹ, hãy dùng API đồng bộ (không có async=true) để đạt hiệu quả tốt nhất.",
     "upload_api_warning": "Giữ API Key bí mật. Ai có key này có thể upload file vào TeleCloud của bạn.",
     "upload_cancelled_waiting": "Đã hủy tải lên khi đang chờ hàng đợi",
     "upload_date": "Ngày đăng",

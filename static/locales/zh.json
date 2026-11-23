@@ -649,7 +649,7 @@
     "upload_api_share_endpoint": "分享路径",
     "upload_api_show_key": "显示密钥",
     "upload_api_status_endpoint": "任务状态",
-    "upload_api_sync_note": "注意：Cloudflare Tunnel/Proxy 限制上传大小为 100MB。对于小文件，避免使用 async=true 以获得最佳结果。",
+    "upload_api_sync_note": "注意：Cloudflare Tunnel/Proxy 将每个请求限制为 100MB，但更大的文件仍可上传——网页界面会自动将其分成小块。对于小文件，避免使用 async=true 以获得最佳结果。",
     "upload_api_warning": "请妥善保管您的 API 密钥。任何拥有此密钥的人都可以将文件上传到您的 TeleCloud。",
     "upload_cancelled_waiting": "排队时已取消上传",
     "upload_date": "上传日期",

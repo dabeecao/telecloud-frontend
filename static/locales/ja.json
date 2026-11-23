@@ -649,7 +649,7 @@
     "upload_api_share_endpoint": "パスを共有",
     "upload_api_show_key": "キーを表示",
     "upload_api_status_endpoint": "タスクステータス",
-    "upload_api_sync_note": "注：Cloudflare Tunnel/Proxy はアップロードを 100MB に制限しています。小さなファイルの場合は、最良の結果を得るために async=true の使用を避けてください。",
+    "upload_api_sync_note": "注：Cloudflare Tunnel/Proxy は1リクエストを 100MB に制限しますが、それより大きなファイルもアップロードできます。Web UI が自動的に小さなパートに分割します。小さなファイルは、最良の結果を得るために async=true を使わないでください。",
     "upload_api_warning": "APIキーは秘密にしてください。このキーを知っている人は誰でもあなたのTeleCloudにファイルをアップロードできます。",
     "upload_cancelled_waiting": "待機中にアップロードがキャンセルされました",
     "upload_date": "アップロード日",

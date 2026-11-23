@@ -513,21 +513,56 @@ export class SessionUpload {
         hashPromise.catch(() => {});
 
         for (let pass = 0; ; pass++) {
-            const queue = [];
-            for (let i = 0; i < total; i++) if (!ok[i]) queue.push(i);
+            // Shared cursor, not a pre-built queue: workers always take the
+            // lowest missing index, so bytes land in part order. The server
+            // only keeps a few Telegram parts staged at once and answers 429
+            // staging_window_full past that window; grabbing high indexes
+            // first (the old queue.shift() race) spent every worker on chunks
+            // the server must refuse, and the earliest part never completed.
+            let cursor = 0;
+            const nextIndex = () => {
+                while (cursor < total && ok[cursor]) cursor++;
+                return cursor < total ? cursor++ : -1;
+            };
             let failure = null;
+            let windowFull = false;
             const worker = async () => {
-                while (queue.length && !failure && !this.cancelled) {
-                    const i = queue.shift();
+                for (;;) {
+                    if (failure || windowFull || this.cancelled) return;
+                    const i = nextIndex();
+                    if (i < 0) return;
                     try {
                         await this._putChunk(session.id, i, chunkSize, sizeOf(i), setBytes);
                         ok[i] = 1;
-                    } catch (e) { failure = failure || e; }
+                    } catch (e) {
+                        if (e instanceof UploadError && e.code === 'staging_window_full') {
+                            // The part this chunk belongs to is past the staging
+                            // window. Everything above it is too, so stop this
+                            // pass and let the server drain before continuing.
+                            windowFull = true;
+                            return;
+                        }
+                        failure = failure || e;
+                        return;
+                    }
                 }
             };
-            await Promise.all(Array.from({ length: Math.min(this.parallel, queue.length) }, worker));
+            const missing = ok.reduce((n, v) => n + (v ? 0 : 1), 0);
+            await Promise.all(Array.from({ length: Math.min(this.parallel, missing) }, worker));
             if (this.cancelled) throw abortError();
             if (failure) throw failure;
+            if (windowFull) {
+                // Re-read what the server actually kept (a 429 can arrive after
+                // the body was stored) and wait for earlier parts to be sent
+                // to Telegram before filling the window again.
+                const st = await this._call('GET', `/api/uploads/${session.id}`, undefined, [200]);
+                ok = confirm(st.json.confirmed_ranges);
+                this.uploaded = 0; this.chunkBytes.fill(0);
+                for (let i = 0; i < total; i++) if (ok[i]) setBytes(i, sizeOf(i));
+                this.status('waiting', { seconds: 5 });
+                await this.sleep(5000, this.ac.signal);
+                continue;
+            }
 
             this.status('verifying');
             const sha = await hashPromise;
@@ -585,6 +620,12 @@ export class SessionUpload {
             setBytes(index, 0);
             const code = res && res.json && res.json.error;
             const st = res ? res.status : 0;
+            if (res && st === 429 && code === 'staging_window_full') {
+                // Not a per-chunk retry: the server will refuse this chunk until
+                // earlier parts reach Telegram. Let the scheduler wait once and
+                // resume in order instead of every worker spinning on 429s.
+                throw new UploadError(code, 'staging window full', { status: st });
+            }
             if (res && (st === 429 || st === 503 || (st === 409 && code === 'chunk_in_progress'))) {
                 const ms = parseRetryAfter(res.retryAfter) ?? 1500;
                 waited += ms;
