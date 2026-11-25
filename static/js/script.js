@@ -3388,7 +3388,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             return true;
         },
 
-        async uploadSingleFile(file, taskId, targetPath, overwrite = false) {
+        async uploadSingleFile(file, taskId, targetPath, overwrite = false, restarts = 0) {
             if (await this.uploadViaSession(file, taskId, targetPath, overwrite)) return;
 
             let CHUNK_SIZE = 5 * 1024 * 1024;
@@ -3399,6 +3399,7 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             }
             const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
             let hasError = false;
+            let restartNeeded = false;
             let task = this.uploadQueue.find(t => t.id === taskId);
             if (task) {
                 task._progressMap = new Array(totalChunks).fill(0);
@@ -3438,16 +3439,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
             const chunkQueue = Array.from({ length: totalChunks }, (_, i) => i)
                                     .filter(i => !existingChunks.includes(i));
             
-            if (chunkQueue.length === 0 && totalChunks > 0) {
-                // All chunks already uploaded — still register the fallback poller so the
-                // task cannot hang at 50% if WS misses the terminal message.
-                task = this.uploadQueue.find(t => t.id === taskId);
-                if (task) {
-                    task.progress = 50;
-                    task.statusText = this.t('syncing_tg');
-                }
-                this.registerTaskPoll(taskId);
-                return;
+            if (chunkQueue.length === 0) {
+                // The server holds every chunk but never handed the file to Telegram
+                // (e.g. it restarted right after the last write). Hand-off only happens
+                // when a chunk arrives, so re-send the last one instead of waiting on a
+                // task that does not exist — the poller would then mark it done falsely.
+                chunkQueue.push(totalChunks - 1);
             }
             
             const uploadWorker = async () => {
@@ -3541,12 +3538,12 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                         }
                                         try { resolve(JSON.parse(xhr.responseText)); } catch(e) { reject(e); }
                                     } else {
-                                        try {
-                                            const err = JSON.parse(xhr.responseText);
-                                            reject(new Error(err.error || `Upload failed (${xhr.status})`));
-                                        } catch(e) {
-                                            reject(new Error(`Upload failed (${xhr.status})`));
-                                        }
+                                        let code = '';
+                                        try { code = JSON.parse(xhr.responseText).error || ''; } catch(e) {}
+                                        const err = new Error(code || `Upload failed (${xhr.status})`);
+                                        err.status = xhr.status;
+                                        err.code = code;
+                                        reject(err);
                                     }
                                 };
                                 xhr.onerror = () => {
@@ -3577,6 +3574,34 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                                 }
                             }
                         } catch (err) { 
+                            // 4xx answers are deterministic: re-sending the same chunk cannot succeed.
+                            if (err.status >= 400 && err.status < 500) {
+                                let task = this.uploadQueue.find(t => t.id === taskId);
+                                hasError = true;
+                                chunkQueue.length = 0;
+                                if (task && task.isCancelled) return;
+                                if (err.code === 'upload_cancelled') {
+                                    // Cancelled elsewhere (another tab or device).
+                                    if (task) {
+                                        task.isCancelled = true;
+                                        task.statusText = this.t('cancelled');
+                                    }
+                                    return;
+                                }
+                                // The server lost this task's temp file (cleanup sweep, cancel from
+                                // another tab): start over once from a clean server state.
+                                if (err.code === 'upload_state_lost' && restarts === 0) {
+                                    restartNeeded = true;
+                                    return;
+                                }
+                                if (task) {
+                                    task.statusText = err.code
+                                        ? this.handleCommonError(err.code, 'status_error')
+                                        : `${this.t('status_error')} (${err.status})`;
+                                    task.hasError = true;
+                                }
+                                return;
+                            }
                             retries--;
                             console.error(`Upload chunk ${chunkIndex} error (retries left: ${retries}):`, err);
                             if (retries === 0) {
@@ -3599,6 +3624,17 @@ function cloudApp(initialIsLoggedIn, isAdmin = true, storageUsed = 0, webdavEnab
                 workers.push(uploadWorker());
             }
             await Promise.all(workers);
+
+            if (restartNeeded) {
+                task = this.uploadQueue.find(t => t.id === taskId);
+                if (task && !task.isCancelled) {
+                    task.progress = 0;
+                    task.uploadedBytes = 0;
+                    task.hasError = false;
+                    await this.uploadSingleFile(file, taskId, targetPath, overwrite, restarts + 1);
+                }
+                return;
+            }
 
             // Fallback polling: if WS missed the `done`/`error` message (common when uploading
             // many files simultaneously and WS reconnects or browser is overloaded), register
